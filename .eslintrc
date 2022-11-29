@@ -1,0 +1,18 @@
+{
+  "env": {
+    "browser": true
+  },
+  "extends": "standard",
+  "globals": {
+    "chrome": true,
+    "crypto": true
+  },
+  "parser": "babel-eslint",
+  "plugins": [],
+  "rules": {
+    "no-unused-vars": "off",
+    "no-multiple-empty-lines": "off",
+    "padded-blocks": "off",
+    "prefer-const": "off"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "Test",
+  "definition": [
+    {
+      "name": "Presentation",
+      "description": "Gathers mistakes and errors related to how the documentation is presented",
+      "codes": [
+        {
+          "name": "Typo",
+          "description": "A mistake in typing"
+        },
+        {
+          "name": "Grammar error",
+          "description": "A faulty, unconventional or controversial usage in verb tenses"
+        },
+        {
+          "name": "Orthography error",
+          "description": "An error in spelling, hyphenation, capitalization, word breaks, emphasis and punctuation"
+        }
+      ]
+    }
+  ]
+}

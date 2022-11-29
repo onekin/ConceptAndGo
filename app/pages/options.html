@@ -1,0 +1,69 @@
+<html lang="en">
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <link rel="stylesheet" type="text/css" href="../styles/options.css">
+
+  <title>Configuration</title>
+</head>
+<body>
+<div class="container">
+  <!-- Header -->
+  <header></header>
+
+  <!-- Navigation bar -->
+
+  <!-- Container -->
+  <div id="main-container" class="container">
+
+    <div class="jumbotron">
+      <img class="logo" src="../images/cag/icon-38.png">
+      <h2 class="title">Concept&Go configuration</h2>
+      <div class="card">
+        <div class="card-header bg-dark text-white">User manual</div>
+        <div class="card-body">
+          <div class="form-group">
+            Visit the <a href="https://github.com/onekin/WacLine/wiki/User-manual-for-Concept&Go" target="_blank">user manual</a> for further information.
+          </div>
+        </div>
+      </div>
+      <!-- Hypothesis login -->
+      <div id="hypothesisConfigurationCard" class="card annotationServerConfiguration">
+        <div class="card-header bg-dark text-white">Hypothesis</div>
+        <div class="card-body">
+          <div id="hypothesisLoginContainer" class="configurationSectionContainer">
+            <button class="btn btn-secondary" id="hypothesisLogin">Log in</button>
+          </div>
+          <div id="hypothesisLoggedInContainer" class="configurationSectionContainer">
+            Logged in as <span id="hypothesisLoggedInUsername" class="clickableInfoSpan">Unknown user</span>
+            <button class="btn btn-secondary" id="hypothesisLogout">Log out</button>
+          </div>
+        </div>
+      </div>
+      <div id="cmapCloudConfigurationCard" class="card storageConfiguration">
+        <a id="cmapCloudConfiguration"></a>
+        <div class="card-header bg-dark text-white">Cmap Cloud configuration</div>
+        <div class="card-body">
+          <div class="form-group">
+            <label id="cmapCloudUser" class="requiredFormInput">Username</label>
+            <input type="text" class="form-control" id="cmapCloudUserValue" placeholder="Enter your CmapCloud account email">
+          </div>
+          <div class="form-group">
+            <label id="cmapCloudPassword" class="requiredFormInput">Password</label>
+            <input type="password" class="form-control" id="cmapCloudPasswordValue" placeholder="Enter your CmapCloud account password">
+          </div>
+          <div class="form-group">
+            <label id="uidValue"></label>
+          </div>
+          <button id="checkCmapValues">Validate account</button>
+          <label id="cmapCloudMessage"></label>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="../scripts/options.js"></script>
+</body>
+</html>

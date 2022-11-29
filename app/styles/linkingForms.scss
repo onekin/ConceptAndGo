@@ -1,0 +1,65 @@
+@import "./variables";
+
+.large-swal {
+  width:875px !important;
+}
+
+/* Linking management form header */
+
+.relationDivHeader {
+  text-align: left;
+  font-size: 14px;
+}
+
+.relationSpanHeader {
+  font-weight: bold;
+  text-decoration: underline;
+}
+
+/* Linking management form rows css */
+
+.relationDiv {
+  text-align: left;
+  font-size: 14px;
+  /* border-style: solid;
+  border-color: black; */
+}
+
+.relationFromPartSpan {
+  width: 200px;
+  display: inline-block;
+}
+
+.relationLinkingWordSpan {
+  width: 110px;
+  display: inline-block;
+  margin-left: 10px;
+}
+
+.relationToSpan {
+  width: 200px;
+  display: inline-block;
+}
+
+/* Form buttons css */
+
+.relationFormBtn {
+  float: right;
+  margin-right: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+/* Relationship creation form css */
+
+.divRow {
+  text-align:center;
+}
+
+.rowElement {
+  display:inline;
+}
+
+.linkingConceptInput {
+  width: 200px;
+}

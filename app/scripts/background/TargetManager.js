@@ -1,0 +1,80 @@
+import DOI from 'doi-regex'
+import URLUtils from '../utils/URLUtils'
+import Config from '../Config'
+import _ from 'lodash'
+
+class TargetManager {
+  constructor () {
+    this.scienceDirect = { urls: ['*://www.sciencedirect.com/science/article/pii/*'] }
+    this.dropbox = { urls: ['*://www.dropbox.com/s/*?raw=1*'] }
+    this.dropboxContent = { urls: ['*://*.dropboxusercontent.com/*'] }
+    this.tabs = {}
+  }
+
+  init () {
+    // Requests to sciencedirect, redirection from linkinghub.elsevier.com (parse doi and annotation hash param if present)
+    chrome.webRequest.onBeforeSendHeaders.addListener((requestHeaders) => {
+      const referer = _.find(requestHeaders.requestHeaders, (requestHeader) => { return requestHeader.name === 'Referer' })
+      if (referer && referer.value.includes('linkinghub.elsevier.com')) {
+        chrome.tabs.get(requestHeaders.tabId, (tab) => {
+          let doi = null
+          let annotationId = null
+          const url = tab.url
+          // Retrieve doi
+          const doiGroups = DOI.groups(url)
+          if (doiGroups && doiGroups[1]) {
+            doi = doiGroups[1]
+            doi = doi.split('&' + Config.urlParamName)[0] // If doi-regex inserts also the annotation hash parameter, remove it, is not part of the doi
+          }
+          const params = URLUtils.extractHashParamsFromUrl(url)
+          if (params && params[Config.urlParamName]) {
+            annotationId = params[Config.urlParamName]
+          }
+          console.debug(requestHeaders)
+          if (doi && annotationId) {
+            const redirectUrl = requestHeaders.url + '#doi:' + doi + '&' + Config.urlParamName + ':' + annotationId
+            chrome.tabs.update(requestHeaders.tabId, { url: redirectUrl })
+          } else if (doi) {
+            const redirectUrl = requestHeaders.url + '#doi:' + doi
+            chrome.tabs.update(requestHeaders.tabId, { url: redirectUrl })
+          } else if (annotationId) {
+            const redirectUrl = requestHeaders.url + '#' + Config.urlParamName + ':' + annotationId
+            chrome.tabs.update(requestHeaders.tabId, { url: redirectUrl })
+          }
+        })
+      }
+    }, this.scienceDirect, ['requestHeaders', 'blocking', 'extraHeaders'])
+    // Request to dropbox
+    chrome.webRequest.onHeadersReceived.addListener((responseDetails) => {
+      this.tabs[responseDetails.tabId] = {
+        url: responseDetails.url.split('#')[0],
+        annotationId: this.extractAnnotationId(responseDetails.url)
+      }
+    }, this.dropbox, ['responseHeaders', 'blocking'])
+    // Request dropbox pdf files
+    chrome.webRequest.onBeforeSendHeaders.addListener((details) => {
+      const index = _.findIndex(details.requestHeaders, (header) => { return header.name.toLowerCase() === 'accept' })
+      details.requestHeaders[index].value = 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8'
+      return { requestHeaders: details.requestHeaders }
+    }, this.dropboxContent, ['blocking', 'requestHeaders'])
+
+    chrome.webRequest.onCompleted.addListener((details) => {
+      if (this.tabs[details.tabId]) {
+        chrome.tabs.sendMessage(details.tabId, this.tabs[details.tabId])
+      }
+    }, this.dropboxContent)
+  }
+
+  extractAnnotationId (url) {
+    if (url.includes('#')) {
+      const parts = url.split('#')[1].split(':')
+      if (parts[0] === Config.urlParamName) {
+        return parts[1] || null
+      }
+    } else {
+      return null
+    }
+  }
+}
+
+export default TargetManager

@@ -1,0 +1,153 @@
+'use strict'
+
+import jQuery from 'jquery'
+import _ from 'lodash'
+
+class LanguageUtils {
+  /**
+   * Check if a given object is a function
+   * @param func An object
+   * @returns {*|boolean}
+   */
+  static isFunction (func) {
+    return func && typeof func === 'function'
+  }
+
+  /**
+   * Returns true if the object is empty, null, etc.
+   * @param obj
+   * @returns {*|boolean}
+   */
+  static isEmptyObject (obj) {
+    return jQuery.isEmptyObject(obj)
+  }
+
+  /**
+   * Returns true if the object is instance of a Class
+   * @param obj
+   * @param classReference
+   * @returns {boolean}
+   */
+  static isInstanceOf (obj, classReference) {
+    return obj instanceof classReference
+  }
+
+  /**
+   * Fill the object with the properties
+   * @param object
+   * @param properties
+   * @returns {*}
+   */
+  static fillObject (object, properties) {
+    return Object.assign(object, properties)
+  }
+
+  /**
+   * Create a custom event with the corresponding name, message and metadata
+   * @param name
+   * @param message
+   * @param data
+   * @returns {CustomEvent}
+   */
+  static createCustomEvent (name, message, data) {
+    return (new window.CustomEvent(name, {
+      detail: {
+        message: message,
+        data: data,
+        time: new Date()
+      },
+      bubbles: true,
+      cancelable: true
+    }))
+  }
+
+  /**
+   * Renames an object's key
+   * @param o
+   * @param oldKey
+   * @param newKey
+   */
+  static renameObjectKey (o, oldKey, newKey) {
+    if (oldKey !== newKey) {
+      Object.defineProperty(o, newKey,
+        Object.getOwnPropertyDescriptor(o, oldKey))
+      delete o[oldKey]
+    }
+  }
+
+  /**
+   * Dispatches a custom event with the given name
+   * @param eventName
+   * @param metadata
+   */
+  static dispatchCustomEvent (eventName, metadata) {
+    const event = new window.CustomEvent(
+      eventName, {
+        detail: metadata,
+        bubbles: true,
+        cancelable: true
+      }
+    )
+    document.body.dispatchEvent(event)
+    return event
+  }
+
+  /**
+   * Run promises in serial. Taken from https://decembersoft.com/posts/promises-in-serial-with-array-reduce/
+   * @param promises
+   * @param callback
+   */
+  static runPromisesInSerial (promises, callback) {
+    promises.reduce((promiseChain, currentTask) => {
+      return promiseChain.then(chainResults =>
+        currentTask.then(currentResult => {
+          return [...chainResults, currentResult]
+        })
+      )
+    }, Promise.resolve([])).then(arrayOfResults => {
+      // Do something with all results
+      if (_.isFunction(callback)) {
+        callback(arrayOfResults)
+      }
+    })
+  }
+
+  /**
+   * Normalize strings removing tildes, etc.
+   * @param string
+   * @returns {*}
+   */
+  static normalizeString (string) {
+    return string.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  }
+
+  /**
+   * Normalizes string to a valid string for ID. Based on: https://stackoverflow.com/questions/10619126/make-sure-string-is-a-valid-css-id-name
+   * @param string
+   */
+  static normalizeStringToValidID (string) {
+    return string.replace(/(^-\d-|^\d|^-\d|^--)/, 'a$1').replace(/[\W]/g, '-')
+  }
+
+  static getStringBetween (string, previous, after) {
+    const firstSplit = string.split(previous)
+    if (firstSplit.length > 1) {
+      const secondSplit = firstSplit.pop().split(after)
+      if (secondSplit.length > 1) {
+        return secondSplit[0]
+      } else {
+        return null
+      }
+    } else {
+      return null
+    }
+  }
+
+  static camelize (str) {
+    return str.replace(/(?:^\w|[A-Z]|\b\w)/g, function (word, index) {
+      return index === 0 ? word.toLowerCase() : word.toUpperCase()
+    }).replace(/\s+/g, '')
+  }
+}
+
+export default LanguageUtils
