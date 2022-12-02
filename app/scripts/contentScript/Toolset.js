@@ -172,15 +172,15 @@ class Toolset {
             if (key === 'import') {
               // AnnotationImporter.importReviewAnnotations()
             }
-            chrome.runtime.sendMessage({ scope: 'cmapCloud', cmd: 'getUserData' }, (response) => {
+            chrome.runtime.sendMessage({ scope: 'cmapCloud', cmd: 'getCmapCloudUserData' }, (response) => {
               if (response.data) {
                 let data = response.data
-                if (data.userData.user && data.userData.password && data.userData.uid) {
+                if (data.cmapCloudUserData.user && data.cmapCloudUserData.password && data.cmapCloudUserData.uid) {
                   if (key === 'exportWithHypothesisURL') {
-                    CXLExporter.exportCXLFile('cmapCloud', 'hypothesis', data.userData)
+                    CXLExporter.exportCXLFile('cmapCloud', 'hypothesis', data.cmapCloudUserData)
                   }
                   if (key === 'exportWithToolURL') {
-                    CXLExporter.exportCXLFile('cmapCloud', 'tool', data.userData)
+                    CXLExporter.exportCXLFile('cmapCloud', 'tool', data.cmapCloudUserData)
                   }
                 }
               } else {
@@ -213,7 +213,20 @@ class Toolset {
               Alerts.simpleSuccessAlert({ text: 'This feature is work in progress' })
             }
             if (key === 'exportToSero') {
-              Alerts.simpleSuccessAlert({ text: 'This feature is work in progress' })
+              // Alerts.simpleSuccessAlert({ text: 'This feature is work in progress' })
+              chrome.runtime.sendMessage({ scope: 'sero', cmd: 'getSeroUserData' }, (response) => {
+                if (response.data && response.data.seroUserData) {
+                  let data = response.data.seroUserData
+                  if (data.user && data.password) {
+                    CXLExporter.exportCXLFile('sero', 'tool', data)
+                  }
+                } else {
+                  let callback = () => {
+                    window.open(chrome.extension.getURL('pages/options.html#seroConfiguration'))
+                  }
+                  Alerts.infoAlert({ text: 'Please, provide us your Sero login credentials in the configuration page of the Web extension.', title: 'We need your Sero credentials', callback: callback() })
+                }
+              })
             }
           },
           items: items

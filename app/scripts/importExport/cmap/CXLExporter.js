@@ -1,5 +1,6 @@
 import ExportCXLArchiveFile from './ExportCXLArchiveFile'
 import ExportCmapCloud from './cmapCloud/ExportCmapCloud'
+import ExportSero from './sero/ExportSero'
 import HypothesisURL from './evidenceAnnotation/HypothesisURL'
 import ToolURL from './evidenceAnnotation/ToolURL'
 import LanguageUtils from '../../utils/LanguageUtils'
@@ -299,6 +300,8 @@ export class CXLExporter {
       ExportCXLArchiveFile.export(xmlDoc, urlFiles)
     } else if (exportType === 'cmapCloud') {
       ExportCmapCloud.export(xmlDoc, urlFiles, userData)
+    } else if (exportType === 'sero') {
+      ExportSero.export(xmlDoc, userData)
     }
   }
 
