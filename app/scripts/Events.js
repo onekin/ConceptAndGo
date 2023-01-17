@@ -21,6 +21,12 @@ const Events = {
   // Annotation codebook management events
   createCodebook: 'createCodebook',
   codebookCreated: 'codebookCreated',
+  createDimension: 'createDimension',
+  dimensionCreated: 'dimensionCreated',
+  removeDimension: 'removeDimension',
+  dimensionRemoved: 'dimensionRemoved',
+  updateDimension: 'updateDimension',
+  dimensionUpdated: 'dimensionUpdated',
   codebookUpdated: 'codebookUpdated',
   createTheme: 'createTheme',
   themeCreated: 'themeCreated',

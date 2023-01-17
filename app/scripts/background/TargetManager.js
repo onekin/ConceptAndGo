@@ -5,6 +5,7 @@ import _ from 'lodash'
 
 class TargetManager {
   constructor () {
+    this.doiUrlFilterObject = { urls: ['*://*.doi.org/*', '*://doi.org/*'] }
     this.scienceDirect = { urls: ['*://www.sciencedirect.com/science/article/pii/*'] }
     this.dropbox = { urls: ['*://www.dropbox.com/s/*?raw=1*'] }
     this.dropboxContent = { urls: ['*://*.dropboxusercontent.com/*'] }
@@ -12,6 +13,40 @@ class TargetManager {
   }
 
   init () {
+    // Requests to doi.org
+    chrome.webRequest.onHeadersReceived.addListener((responseDetails) => {
+      console.debug(responseDetails)
+      const locationIndex = _.findIndex(responseDetails.responseHeaders, (header) => header.name === 'location')
+      const locationUrl = responseDetails.responseHeaders[locationIndex].value
+      try {
+        const redirectUrl = new URL(locationUrl)
+        // Retrieve doi from call
+        let doi = ''
+        if (_.isArray(DOI.groups(responseDetails.url))) {
+          doi = DOI.groups(responseDetails.url)[1]
+        }
+        const annotationId = this.extractAnnotationId(responseDetails.url)
+        if (doi) {
+          if (_.isEmpty(redirectUrl.hash)) {
+            redirectUrl.hash += '#doi:' + doi
+          } else {
+            redirectUrl.hash += '&doi:' + doi
+          }
+        }
+        if (annotationId) {
+          if (_.isEmpty(redirectUrl.hash)) {
+            redirectUrl.hash += '#' + Config.urlParamName + ':' + annotationId
+          } else {
+            redirectUrl.hash += '&' + Config.urlParamName + ':' + annotationId
+          }
+        }
+        responseDetails.responseHeaders[locationIndex].value = redirectUrl.toString()
+        this.tabs[responseDetails.tabId] = { doi: doi, annotationId: annotationId }
+        return { responseHeaders: responseDetails.responseHeaders }
+      } catch (e) {
+        return { responseHeaders: responseDetails.responseHeaders }
+      }
+    }, this.doiUrlFilterObject, ['responseHeaders', 'blocking'])
     // Requests to sciencedirect, redirection from linkinghub.elsevier.com (parse doi and annotation hash param if present)
     chrome.webRequest.onBeforeSendHeaders.addListener((requestHeaders) => {
       const referer = _.find(requestHeaders.requestHeaders, (requestHeader) => { return requestHeader.name === 'Referer' })

@@ -9,6 +9,8 @@ import HypothesisClientManager from '../../annotationServer/hypothesis/Hypothesi
 import Config from '../../Config'
 import Events from '../../Events'
 import { Relationship } from '../../contentScript/MapContentManager'
+import ColorUtils from '../../utils/ColorUtils'
+
 
 class CXLImporter {
   static askUserToImportCxlFile (callback) {
@@ -42,8 +44,13 @@ class CXLImporter {
       selectFrom.id = 'topicConcept'
       themes.forEach(theme => {
         let option = document.createElement('option')
-        option.text = theme.name
-        option.value = theme.name
+        if (theme.topic !== '') {
+          option.text = theme.topic
+          option.value = theme.topic
+        } else {
+          option.text = theme.name
+          option.value = theme.name
+        }
         selectFrom.add(option)
       })
       html += 'Topic:' + selectFrom.outerHTML + '<br>'
@@ -72,12 +79,15 @@ class CXLImporter {
       if (err) {
         Alerts.errorAlert({ text: 'Unable to parse cxl file. Error:<br/>' + err.message })
       } else {
-        let title, groupID
+        let title, groupID, focusQuestion
         try {
           let titleElement = cxlObject.getElementsByTagName('dc:title')[0]
           title = titleElement.innerHTML
-          let groupIDElement = cxlObject.getElementsByTagName('dc:description')[0]
+          let contributor = cxlObject.getElementsByTagName('dc:contributor')[0]
+          let groupIDElement = contributor.getElementsByTagName('vcard:FN')[0]
           groupID = groupIDElement.innerHTML
+          let focusQuestionElement = cxlObject.getElementsByTagName('dc:description')[0]
+          focusQuestion = focusQuestionElement.innerHTML
         } catch (err) {
           title = ''
           groupID = ''
@@ -102,20 +112,26 @@ class CXLImporter {
   }
 
   static createNewImportedCmap (cxlObject, title) {
+    let inputValue = title
+    let focusQuestionElement = cxlObject.getElementsByTagName('dc:description')[0]
+    let focusQuestion = focusQuestionElement.innerHTML
+    if (focusQuestionElement || focusQuestion) {
+      inputValue = focusQuestion
+    }
     Alerts.inputTextAlert({
       alertType: Alerts.alertType.warning,
       title: 'You have imported a new concept map',
       text: 'When the configuration is imported a new highlighter is created. You can return to your other annotation codebooks using the sidebar.',
       inputPlaceholder: 'Type here the name of your new concept map...',
-      inputValue: title,
+      inputValue: inputValue,
       preConfirm: (groupName) => {
         if (_.isString(groupName)) {
           if (groupName.length <= 0) {
             const swal = require('sweetalert2')
             swal.showValidationMessage('Name cannot be empty.')
           } else if (groupName.length > 25) {
-            const swal = require('sweetalert2')
-            swal.showValidationMessage('The concept map name cannot be higher than 25 characters.')
+            groupName = groupName.slice(0, 25)
+            return groupName
           } else {
             return groupName
           }
@@ -129,16 +145,19 @@ class CXLImporter {
             if (err) {
               Alerts.errorAlert({ text: 'Unable to create a new annotation group. Error: ' + err.message })
             } else {
-
               let conceptList = cxlObject.getElementsByTagName('concept-list')[0]
-              let tempCodebook = Codebook.fromCXLFile(conceptList, groupName)
+              let conceptAppearanceList = cxlObject.getElementsByTagName('concept-appearance-list')[0]
+              let dimensionsListElement = cxlObject.getElementsByTagName('dc:subject')[0]
+              let dimensionsList = dimensionsListElement.innerHTML.split(';')
+              let tempCodebook = Codebook.fromCXLFile(conceptList, dimensionsList, groupName, focusQuestion, conceptAppearanceList)
               window.abwa.groupSelector.groups.push(newGroup)
               Codebook.setAnnotationServer(newGroup.id, (annotationServer) => {
                 tempCodebook.annotationServer = annotationServer
                 let title = 'Which is the topic or focus question?'
                 CXLImporter.askUserRootTheme(tempCodebook.themes, title, (topicConceptName) => {
-                  let topicThemeObject = _.filter(tempCodebook.themes, (theme) => {
-                    return theme.name === topicConceptName
+                  let topicThemeObject
+                  topicThemeObject = _.filter(tempCodebook.themes, (theme) => {
+                    return theme.topic === topicConceptName || theme.name === topicConceptName
                   })
                   topicThemeObject[0].isTopic = true
                   let annotations = tempCodebook.toAnnotations()
@@ -201,19 +220,29 @@ class CXLImporter {
                               }
                             }
                           }
-                          window.abwa.annotationServerManager.client.createNewAnnotations(linkingAnnotations, (err, annotations) => {
-                            if (err) {
-                              Alerts.errorAlert({ text: 'Unable to import annotations. Error: ' + err.message })
-                            } else {
-                              window.abwa.groupSelector.retrieveGroups(() => {
-                                window.abwa.groupSelector.setCurrentGroup(newGroup.id, () => {
-                                  window.abwa.sidebar.openSidebar()
-                                  // Dispatch annotations updated
-                                  Alerts.closeAlert()
+                          if (linkingAnnotations.length !== 0) {
+                            window.abwa.annotationServerManager.client.createNewAnnotations(linkingAnnotations, (err, annotations) => {
+                              if (err) {
+                                Alerts.errorAlert({ text: 'Unable to import annotations. Error: ' + err.message })
+                              } else {
+                                window.abwa.groupSelector.retrieveGroups(() => {
+                                  window.abwa.groupSelector.setCurrentGroup(newGroup.id, () => {
+                                    window.abwa.sidebar.openSidebar()
+                                    // Dispatch annotations updated
+                                    Alerts.closeAlert()
+                                  })
                                 })
+                              }
+                            })
+                          } else {
+                            window.abwa.groupSelector.retrieveGroups(() => {
+                              window.abwa.groupSelector.setCurrentGroup(newGroup.id, () => {
+                                window.abwa.sidebar.openSidebar()
+                                // Dispatch annotations updated
+                                Alerts.closeAlert()
                               })
-                            }
-                          })
+                            })
+                          }
                         }
                       })
                     }
@@ -229,15 +258,22 @@ class CXLImporter {
 
   static updateImportedMap (cxlObject, restoredGroup) {
     // IF THE IMPORTED MAP HAS AN EXISTING GROUP
+    let focusQuestion
+    let focusQuestionElement = cxlObject.getElementsByTagName('dc:description')[0]
+    focusQuestion = focusQuestionElement.innerHTML
     window.abwa.groupSelector.updateCurrentGroupHandler(restoredGroup.id)
     let conceptList = cxlObject.getElementsByTagName('concept-list')[0]
-    let importedCodebook = Codebook.fromCXLFile(conceptList, restoredGroup)
+    let conceptAppearanceList = cxlObject.getElementsByTagName('concept-appearance-list')[0]
+    let dimensionsListElement = cxlObject.getElementsByTagName('dc:subject')[0]
+    let dimensionsList = dimensionsListElement.innerHTML.split(';')
+    let importedCodebook = Codebook.fromCXLFile(conceptList, dimensionsList, restoredGroup, focusQuestion, conceptAppearanceList)
     Codebook.setAnnotationServer(restoredGroup.id, (annotationServer) => {
       importedCodebook.annotationServer = annotationServer
       let title = 'Concept&Go has detected a version of this map. What was the topic or focus question?'
       CXLImporter.askUserRootTheme(importedCodebook.themes, title, (topicConceptName) => {
-        let topicThemeObject = _.filter(importedCodebook.themes, (theme) => {
-          return theme.name === topicConceptName
+        let topicThemeObject
+        topicThemeObject = _.filter(importedCodebook.themes, (theme) => {
+          return theme.topic === topicConceptName || theme.name === topicConceptName
         })
         topicThemeObject[0].isTopic = true
         window.abwa.annotationServerManager.client.searchAnnotations({
@@ -252,6 +288,9 @@ class CXLImporter {
               let previousCodebookIDs = previousCodebook.themes.map(previousCodebookTheme => previousCodebookTheme.id)
               let previousCodebookNames = previousCodebook.themes.map(previousCodebookTheme => previousCodebookTheme.name)
               let importedCodebookIDs = importedCodebook.themes.map(importedCodebookTheme => importedCodebookTheme.id)
+              let previousDimensionsIDs = previousCodebook.dimensions.map(previousCodebookDimensions => previousCodebookDimensions.id)
+              let previousDimensionsNames = previousCodebook.dimensions.map(previousCodebookDimensions => previousCodebookDimensions.name)
+              let importedDimensionsNames = importedCodebook.dimensions.map(importedCodebookDimensions => importedCodebookDimensions.name)
               let importedRelationships = []
               // construct relationships
               let linkingPhraseList = cxlObject.getElementsByTagName('linking-phrase-list')[0]
@@ -288,18 +327,54 @@ class CXLImporter {
               console.log(previousRelationships)
               console.log('importedRelationships')
               console.log(importedRelationships)
-              console.log('previousCodebook')
-              console.log(previousCodebook)
-              console.log('importedCodebook')
-              console.log(importedCodebook)
               if (err) {
                 Alerts.errorAlert({ text: 'Error parsing codebook. Error: ' + err.message })
               } else {
+                // NEW DIMENSIONS
+                let dimensionsToInclude = importedCodebook.dimensions.filter(importedCodebookDimension => !(previousDimensionsNames.includes(importedCodebookDimension.name)))
+                if (dimensionsToInclude[0]) {
+                  dimensionsToInclude.forEach(dimensionToInclude => {
+                    const newDimensionAnnotation = dimensionToInclude.toAnnotation()
+                    window.abwa.annotationServerManager.client.createNewAnnotation(newDimensionAnnotation, (err, annotation) => {
+                      if (err) {
+                        Alerts.errorAlert({ text: 'Unable to create the new code. Error: ' + err.toString() })
+                      } else {
+                        LanguageUtils.dispatchCustomEvent(Events.dimensionCreated, { newDimensionAnnotation: annotation, target: event.detail.target })
+                      }
+                    })
+                  })
+                }
+                // REMOVE DIMENSIONS
+                let dimensionsToRemove = previousCodebook.dimensions.filter(previousCodebookDimension => !(importedDimensionsNames.includes(previousCodebookDimension.name)))
+                dimensionsToRemove.forEach(dimensionToRemove => {
+                  let annotationsToDelete = [dimensionToRemove.id]
+                  window.abwa.annotationServerManager.client.deleteAnnotations(annotationsToDelete, (err, result) => {
+                    if (err) {
+                      Alerts.errorAlert({ text: 'Unexpected error when deleting the code.' })
+                    } else {
+                      LanguageUtils.dispatchCustomEvent(Events.dimensionRemoved, { dimension: dimensionToRemove })
+                    }
+                  })
+                })
+                // UPDATE DIMENSION FOR THEMES
+                let maintainedDimensions = previousCodebook.dimensions.filter(previousCodebookDimension => importedDimensionsNames.includes(previousCodebookDimension.name))
+                importedCodebook.themes.forEach(theme => {
+                  let themeColor = CXLImporter.getThemeColor(conceptAppearanceList, theme)
+                  themeColor = ColorUtils.getColorFromCXLFormat(themeColor)
+                  let dimension = maintainedDimensions.find((dim) => {
+                    // Delete element 5 on first iteration
+                    let dimColor = dim.color.replaceAll(' ', '')
+                    return dimColor === themeColor
+                  })
+                  if (dimension) {
+                    theme.dimension = dimension.name
+                  }
+                })
                 // UPDATED THEMES
                 let candidateThemesToUpdate = importedCodebook.themes.filter(importedCodebookTheme => previousCodebookIDs.includes(importedCodebookTheme.id))
                 let themesToUpdate = candidateThemesToUpdate.filter(themeToUpdate => {
                   let elementToCompare = previousCodebook.themes.filter(previousCodebookTheme => previousCodebookTheme.id === themeToUpdate.id)
-                  return !(themeToUpdate.name === elementToCompare[0].name)
+                  return !(themeToUpdate.name === elementToCompare[0].name) || !(themeToUpdate.dimension === elementToCompare[0].dimension)
                 })
                 console.log(themesToUpdate)
                 if (themesToUpdate[0]) {
@@ -389,11 +464,54 @@ class CXLImporter {
                 }
               }
               Alerts.simpleSuccessAlert({ text: 'Concept map succesfully uploaded. Refresh the page!' })
+              window.abwa.groupSelector.retrieveGroups(() => {
+                window.abwa.groupSelector.setCurrentGroup(restoredGroup.id, () => {
+                  window.abwa.sidebar.openSidebar()
+                  // Dispatch annotations updated
+                  Alerts.closeAlert()
+                })
+              })
             })
           }
         })
       })
     })
+  }
+
+  static getThemeColor (conceptAppearanceList, theme) {
+    let concept = _.filter(conceptAppearanceList.childNodes, (conceptNode) => {
+      return conceptNode.getAttribute('id') === theme.id
+    })
+    if (concept) {
+      let backgroundColor = concept[0].getAttribute('background-color')
+      if (backgroundColor) {
+        return backgroundColor
+      } else {
+        return null
+      }
+    } else {
+      return null
+    }
+  }
+
+  static isDimension (conceptAppearanceList, elementID) {
+    let concept = _.filter(conceptAppearanceList.childNodes, (conceptNode) => {
+      return conceptNode.getAttribute('id') === elementID
+    })
+    if (concept) {
+      let fontStyle = concept[0].getAttribute('font-style')
+      if (fontStyle) {
+        if (fontStyle === 'italic|bold' || fontStyle === 'bold|italic') {
+          return true
+        } else {
+          return false
+        }
+      } else {
+        return false
+      }
+    } else {
+      return false
+    }
   }
 }
 

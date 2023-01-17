@@ -10,6 +10,7 @@ import LinkingButton from '../../../annotationManagement/purposes/linking/Linkin
 import ColorUtils from '../../../utils/ColorUtils'
 import LanguageUtils from '../../../utils/LanguageUtils'
 import UpdateCodebook from '../update/UpdateCodebook'
+import Dimension from '../../model/Dimension'
 
 class ReadCodebook {
   constructor () {
@@ -24,6 +25,9 @@ class ReadCodebook {
     this.initThemeCreatedEvent()
     this.initThemeUpdatedEvent()
     this.initThemeRemovedEvent()
+    this.initDimensionCreatedEvent()
+    this.initDimensionUpdatedEvent()
+    this.initDimensionRemovedEvent()
     this.initRelationshipsLoadedEvent()
     this.initRelationshipAddedEvent()
     this.initRelationshipDeletedEvent()
@@ -74,6 +78,21 @@ class ReadCodebook {
   initThemeRemovedEvent () {
     this.events.themeRemovedEvent = { element: document, event: Events.themeRemoved, handler: this.themeRemovedEventHandler() }
     this.events.themeRemovedEvent.element.addEventListener(this.events.themeRemovedEvent.event, this.events.themeRemovedEvent.handler, false)
+  }
+
+  initDimensionCreatedEvent () {
+    this.events.dimensionCreatedEvent = { element: document, event: Events.dimensionCreated, handler: this.dimensionCreatedEventHandler() }
+    this.events.dimensionCreatedEvent.element.addEventListener(this.events.dimensionCreatedEvent.event, this.events.dimensionCreatedEvent.handler, false)
+  }
+
+  initDimensionUpdatedEvent () {
+    this.events.dimensionUpdatedEvent = { element: document, event: Events.dimensionUpdated, handler: this.dimensionUpdatedEventHandler() }
+    this.events.dimensionUpdatedEvent.element.addEventListener(this.events.dimensionUpdatedEvent.event, this.events.dimensionUpdatedEvent.handler, false)
+  }
+
+  initDimensionRemovedEvent () {
+    this.events.dimensionRemovedEvent = { element: document, event: Events.dimensionRemoved, handler: this.dimensionRemovedEventHandler() }
+    this.events.dimensionRemovedEvent.element.addEventListener(this.events.dimensionRemovedEvent.event, this.events.dimensionRemovedEvent.handler, false)
   }
 
   initCodebookReadEvent (callback) {
@@ -196,7 +215,7 @@ class ReadCodebook {
     // Remove buttons from previous codebook if exists
     this.buttonContainer.innerText = ''
     // Set colors for each element
-    this.applyColorsToThemes()
+    this.applyColorsToDimensions()
     // Populate sidebar buttons container
     this.createButtons()
   }
@@ -205,24 +224,30 @@ class ReadCodebook {
    * This function adds the buttons that must appear in the sidebar to be able to annotate
    */
   createButtons () {
-    // Create new theme button
-    UpdateCodebook.createNewThemeButton()
-    LinkingButton.createNewLinkButton()
     // Create new relation button
-    // Create current buttons
-    let themes
+    LinkingButton.createNewLinkButton()
     const rootTheme = this.getTopicTheme()
-    themes = this.filterTopicTheme()
-    themes.sort((a, b) => a.name.localeCompare(b.name))
     let themeButtonContainer
-    if (rootTheme) {
-      themeButtonContainer = this.createThemeButtonContainer(rootTheme)
-      if (_.isElement(themeButtonContainer)) {
-        this.buttonContainer.append(themeButtonContainer)
+    this.codebook.dimensions.forEach((dimension) => {
+      // Create new theme button
+      UpdateCodebook.createNewThemeButton(dimension)
+      let themes = this.codebook.themes.filter((theme) => {
+        return theme.dimension === dimension.name
+      })
+      themes.sort((a, b) => a.name.localeCompare(b.name))
+      for (let i = 0; i < themes.length; i++) {
+        const theme = themes[i]
+        themeButtonContainer = this.createThemeButtonContainer(theme)
+        if (_.isElement(themeButtonContainer)) {
+          this.buttonContainer.append(themeButtonContainer)
+        }
       }
-    }
-    for (let i = 0; i < themes.length; i++) {
-      const theme = themes[i]
+    })
+    let undefindedThemes = this.codebook.themes.filter((theme) => {
+      return !theme.dimension
+    })
+    for (let i = 0; i < undefindedThemes.length; i++) {
+      const theme = undefindedThemes[i]
       themeButtonContainer = this.createThemeButtonContainer(theme)
       if (_.isElement(themeButtonContainer)) {
         this.buttonContainer.append(themeButtonContainer)
@@ -323,9 +348,15 @@ class ReadCodebook {
   }
 
   createThemeButtonContainer (theme) {
+    let name
+    if (theme.topic !== '') {
+      name = theme.topic
+    } else {
+      name = theme.name
+    }
     return Buttons.createButton({
       id: theme.id,
-      name: theme.name,
+      name: name,
       className: 'codingElement',
       description: theme.description,
       color: theme.color,
@@ -384,15 +415,32 @@ class ReadCodebook {
     }) !== -1
   }
 
+
   /**
    * This function gives a color to each codebook element
    */
-  applyColorsToThemes () {
-    if (this.codebook && this.codebook.themes) {
-      const listOfColors = ColorUtils.getDifferentColors(this.codebook.themes.length)
-      this.codebook.themes.forEach((theme) => {
-        const color = listOfColors.pop()
-        theme.color = ColorUtils.setAlphaToColor(color, 0.5)
+  applyColorsToDimensions () {
+    if (this.codebook && this.codebook.dimensions) {
+      // const listOfColors = ColorUtils.getDifferentColors(this.codebook.dimensions.length + 1)
+      let topic = this.codebook.themes.filter((theme) => {
+        return theme.isTopic === true
+      })
+      if (topic) {
+        let topicColor = ColorUtils.getTopicColor()
+        topic[0].color = ColorUtils.setAlphaToColor(topicColor, 0.6)
+      }
+      this.codebook.dimensions.forEach((dimension) => {
+        // const color = listOfColors.pop()
+        // Set a color for each theme
+        let themesPerDimension = this.codebook.themes.filter((theme) => {
+          return theme.dimension === dimension.name
+        })
+        // Set color gradient for each code
+        if (themesPerDimension) {
+          themesPerDimension.forEach((theme) => {
+            theme.color = ColorUtils.setAlphaToColor(dimension.color, 0.5)
+          })
+        }
       })
     }
   }
@@ -471,6 +519,50 @@ class ReadCodebook {
   /**
    * This function stores the new theme in the codebook and reloads the button container.
    */
+  dimensionCreatedEventHandler () {
+    return (event) => {
+      const dimension = Dimension.fromAnnotation(event.detail.newDimensionAnnotation, this.codebook)
+      // Add to the model the new theme
+      this.codebook.addDimension(dimension)
+      // Reload button container
+      this.reloadButtonContainer()
+      // Dispatch codebook updated event
+      LanguageUtils.dispatchCustomEvent(Events.codebookUpdated, { codebook: this.codebook })
+      // Open the sidebar
+      window.abwa.sidebar.openSidebar()
+    }
+  }
+
+  dimensionUpdatedEventHandler () {
+    return (event) => {
+      // Update model
+      this.codebook.updateTheme(event.detail.updatedTheme)
+      // Reload button container
+      this.reloadButtonContainer()
+      // Dispatch codebook updated event
+      LanguageUtils.dispatchCustomEvent(Events.codebookUpdated, { codebook: this.codebook })
+      // Open the sidebar
+      window.abwa.sidebar.openSidebar()
+    }
+  }
+
+  /**
+   * This function removes the given theme from the codebook and reloads the button container.
+   */
+  dimensionRemovedEventHandler () {
+    return (event) => {
+      const theme = event.detail.theme
+      theme.annotationGuide.removeTheme(theme)
+      // Reload button container
+      this.reloadButtonContainer()
+      // Dispatch codebook updated event
+      LanguageUtils.dispatchCustomEvent(Events.codebookUpdated, { codebook: this.codebook })
+    }
+  }
+
+  /**
+   * This function stores the new theme in the codebook and reloads the button container.
+   */
   themeCreatedEventHandler () {
     return (event) => {
       const theme = Theme.fromAnnotation(event.detail.newThemeAnnotation, this.codebook)
@@ -519,9 +611,6 @@ class ReadCodebook {
     }
   }
 
-  /**
-   * This function stores the new code in the codebook and reloads the button container.
-   */
 
   /**
    * Creates event handler for event CodebookCreated
@@ -583,10 +672,6 @@ class ReadCodebook {
     return _.find(themes, (theme) => { return theme.isTopic === true })
   }
 
-  filterTopicTheme () {
-    let themes = this.codebook.themes
-    return themes.filter((theme) => { return theme.isTopic === false })
-  }
 }
 
 export default ReadCodebook

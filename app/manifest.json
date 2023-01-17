@@ -74,6 +74,8 @@
     "contextMenus",
     "webRequest",
     "webRequestBlocking",
+    "*://doi.org/*",
+    "*://dx.doi.org/*",
     "*://www.sciencedirect.com/science/article/pii/*",
     "*://www.dropbox.com/s/",
     "*://*.dropboxusercontent.com/*"

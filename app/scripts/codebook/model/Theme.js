@@ -8,14 +8,17 @@ class Theme {
   constructor ({
     id,
     name,
+    dimension,
     color,
     annotationGuide,
     createdDate = new Date(),
     description = ''/*  *//*  *//*  */,
-    isTopic = false/*  */
+    isTopic = false/*  */ /*  */,
+    topic = '' /*  */
   }) {
     this.id = id
     this.name = name
+    this.dimension = dimension
     this.description = description
     this.color = color
     this.annotationGuide = annotationGuide
@@ -28,6 +31,7 @@ class Theme {
       }
     }
     this.isTopic = isTopic
+    this.topic = topic
   }
 
   toAnnotations () {
@@ -39,8 +43,9 @@ class Theme {
 
   toAnnotation () {
     const themeTag = Config.namespace + ':' + Config.tags.grouped.group + ':' + this.name
+    const assignedDimensionTag = Config.namespace + ':assignedDimension' + ':' + this.dimension
     const motivationTag = Config.namespace + ':' + Config.tags.motivation + ':' + 'codebookDevelopment'
-    const tags = [themeTag, motivationTag]
+    const tags = [themeTag, assignedDimensionTag, motivationTag]
     return {
       id: this.id,
       group: this.annotationGuide.annotationServer.group.id,
@@ -54,7 +59,8 @@ class Theme {
       text: jsYaml.dump({
         id: this.id || ''/*  */,
         description: this.description/*  *//*  */,
-        isTopic: this.isTopic/*  */
+        isTopic: this.isTopic,
+        topic: this.topic/*  */
       }),
       uri: this.annotationGuide.annotationServer.getGroupUrl()
     }
@@ -64,20 +70,32 @@ class Theme {
     const themeTag = _.find(annotation.tags, (tag) => {
       return tag.includes(Config.namespace + ':' + Config.tags.grouped.group + ':')
     })
+    const dimensionTag = _.find(annotation.tags, (tag) => {
+      return tag.includes(Config.namespace + ':assignedDimension' + ':')
+    })
     if (_.isString(themeTag)) {
+      let dimension
+      if (dimensionTag) {
+        dimension = dimensionTag.replace(Config.namespace + ':assignedDimension' + ':', '')
+      } else {
+        dimension = ''
+      }
       const name = themeTag.replace(Config.namespace + ':' + Config.tags.grouped.group + ':', '')
       const config = jsYaml.load(annotation.text)
       if (_.isObject(config)) {
         const description = config.description
         const id = annotation.id
         let isTopic = config.isTopic
+        let topic = config.topic
         return new Theme({
           id,
           name,
+          dimension,
           description,
           createdDate: annotation.updated,
           annotationGuide/*  *//*  *//*  */,
-          isTopic/*  */
+          isTopic,
+          topic/*  */
         })
       } else {
         console.error('Unable to retrieve configuration for annotation')
@@ -100,7 +118,8 @@ class Theme {
       name: this.name,
       description: this.description,
       id: this.id/*  */,
-      isTopic: this.isTopic/*  */
+      isTopic: this.isTopic/*  */ /*  */,
+      topic: this.topic/*  */
     }
   }
 

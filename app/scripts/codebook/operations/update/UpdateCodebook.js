@@ -6,8 +6,10 @@ import Config from '../../../Config'
 import Theme from '../../model/Theme'
 import Classifying from '../../../annotationManagement/purposes/Classifying'
 import Annotation from '../../../annotationManagement/Annotation'
+import Dimension from '../../model/Dimension'
 import LanguageUtils from '../../../utils/LanguageUtils'
 import ImageUtilsOCR from '../../../utils/ImageUtilsOCR'
+import ColorUtils from '../../../utils/ColorUtils'
 
 
 class UpdateCodebook {
@@ -20,6 +22,9 @@ class UpdateCodebook {
     this.initCreateThemeEvent()
     this.initRemoveThemeEvent()
     this.initUpdateThemeEvent()
+    this.initCreateDimensionEvent()
+    this.initRemoveDimensionEvent()
+    this.initUpdateDimensionEvent()
   }
 
   destroy () {
@@ -48,15 +53,41 @@ class UpdateCodebook {
     }
   }
 
+
+  initCreateDimensionEvent () {
+    this.events.createDimensionEvent = { element: document, event: Events.createDimension, handler: this.createNewDimensionEventHandler() }
+    this.events.createDimensionEvent.element.addEventListener(this.events.createDimensionEvent.event, this.events.createDimensionEvent.handler, false)
+  }
+
+  initUpdateDimensionEvent () {
+    this.events.updateDimensionEvent = { element: document, event: Events.updateDimension, handler: this.createUpdateDimensionEventHandler() }
+    this.events.updateDimensionEvent.element.addEventListener(this.events.updateDimensionEvent.event, this.events.updateDimensionEvent.handler, false)
+  }
+
+  initRemoveDimensionEvent (callback) {
+    this.events.removeDimensionEvent = { element: document, event: Events.removeDimension, handler: this.removeDimensionEventHandler() }
+    this.events.removeDimensionEvent.element.addEventListener(this.events.removeDimensionEvent.event, this.events.removeDimensionEvent.handler, false)
+    if (_.isFunction(callback)) {
+      callback()
+    }
+  }
+
   /**
    * This function adds a button in the sidebar that allows to create new themes.
    */
-  static createNewThemeButton () {
-    const newThemeButton = document.createElement('button')
-    newThemeButton.innerText = 'New ' + Config.tags.grouped.group
-    newThemeButton.id = 'newThemeButton'
-    newThemeButton.className = 'tagButton codingElement'
-    newThemeButton.addEventListener('click', async () => {
+  static createNewThemeButton (dimension) {
+    let dimensionName = dimension.name
+    const header = document.createElement('div')
+    header.className = 'containerHeaderDimension'
+    header.id = 'newThemeButton' + dimensionName
+    header.style.backgroundColor = ColorUtils.setAlphaToColor(dimension.color, 0.9)
+    header.style.border = '1px solid'
+    const headerText = document.createElement('a')
+    headerText.innerText = '+ ' + dimensionName
+    headerText.style.color = 'black'
+    headerText.style.fontSize = '15px'
+    header.appendChild(headerText)
+    header.addEventListener('click', async () => {
       let newTheme
       let target = window.abwa.annotationManagement.annotationCreator.obtainTargetToCreateAnnotation({})
       let retrievedThemeName = ''
@@ -87,9 +118,8 @@ class UpdateCodebook {
         }
       }
       Alerts.multipleInputAlert({
-        title: 'You are creating a new ' + Config.tags.grouped.group + ': ',
-        html: '<input autofocus class="formCodeName swal2-input" type="text" id="themeName" placeholder="New ' + Config.tags.grouped.group + ' name" value="' + retrievedThemeName + '"/>' +
-          '<textarea class="formCodeDescription swal2-textarea" data-minchars="1" data-multiple rows="6" id="themeDescription" placeholder="Please type a description that describes this ' + Config.tags.grouped.group + '..."></textarea>',
+        title: 'You are creating a new ' + dimensionName + ' code: ',
+        html: '<input autofocus class="formCodeName swal2-input" type="text" id="themeName" placeholder="New ' + Config.tags.grouped.group + ' name" value="' + retrievedThemeName + '"/>',
         preConfirm: () => {
           const themeNameElement = document.querySelector('#themeName')
           let themeName
@@ -105,6 +135,7 @@ class UpdateCodebook {
               }
               newTheme = new Theme({
                 name: themeName,
+                dimension: dimensionName,
                 description: themeDescription,
                 annotationGuide: window.abwa.codebookManager.codebookReader.codebook
               })
@@ -125,7 +156,207 @@ class UpdateCodebook {
         }
       })
     })
-    window.abwa.codebookManager.codebookReader.buttonContainer.append(newThemeButton)
+    window.abwa.codebookManager.codebookReader.buttonContainer.append(header)
+  }
+
+  /**
+   * This function adds a button in the sidebar that allows to create new themes.
+   */
+  static createNewDimensionButton (dimensionName) {
+    const newDimensionButton = document.createElement('button')
+    newDimensionButton.innerText = 'New THEME'
+    newDimensionButton.id = 'newDimensionButton'
+    newDimensionButton.className = 'tagButton codingElement'
+    newDimensionButton.addEventListener('click', async () => {
+      if (window.abwa.codebookManager.codebookReader.codebook.dimensions.length < 12) {
+        let newDimension
+        let target = window.abwa.annotationManagement.annotationCreator.obtainTargetToCreateAnnotation({})
+        let retrievedDimensionName = ''
+        // Get user selected content
+        let selection = document.getSelection()
+        // If selection is child of sidebar, return null
+        if (selection.anchorNode) {
+          if ($(selection.anchorNode).parents('#annotatorSidebarWrapper').toArray().length !== 0 || selection.toString().length < 1) {
+            if (selection.anchorNode.innerText) {
+              retrievedDimensionName = selection.anchorNode.innerText
+            } else {
+              if (selection.anchorNode.nodeName === 'IMG') {
+                retrievedDimensionName = await ImageUtilsOCR.getStringFromImage(selection.anchorNode)
+              } else {
+                if (selection.anchorNode.childNodes) {
+                  let childArray = Array.from(selection.anchorNode.childNodes)
+                  let imgChild = childArray.filter((node) => {
+                    return node.nodeName === 'IMG'
+                  })
+                  if (imgChild[0]) {
+                    retrievedDimensionName = await ImageUtilsOCR.getStringFromImage(imgChild[0])
+                  }
+                }
+              }
+            }
+          } else {
+            retrievedDimensionName = selection.toString().trim().replace(/^\w/, c => c.toUpperCase())
+          }
+        }
+        Alerts.multipleInputAlert({
+          title: 'You are creating a new theme:',
+          html: '<input autofocus class="formCodeName swal2-input" type="text" id="dimensionName" placeholder="New ' + 'theme' + ' name" value="' + retrievedDimensionName + '"/>' +
+            '<textarea class="formCodeDescription swal2-textarea" data-minchars="1" data-multiple rows="6" id="dimensionDescription" placeholder="Please type a description that describes this theme' + '..."></textarea>',
+          preConfirm: () => {
+            const dimensionNameElement = document.querySelector('#dimensionName')
+            let dimensionName
+            if (_.isElement(dimensionNameElement)) {
+              dimensionName = dimensionNameElement.value
+            }
+            if (dimensionName.length > 0) {
+              if (!this.dimensionNameExist(dimensionName)) {
+                const dimensionDescriptionElement = document.querySelector('#dimensionDescription')
+                let dimensionDescription
+                if (_.isElement(dimensionDescriptionElement)) {
+                  dimensionDescription = dimensionDescriptionElement.value
+                }
+                let dimensionColor = ColorUtils.getDimensionColor(window.abwa.codebookManager.codebookReader.codebook.dimensions)
+                newDimension = new Dimension({
+                  name: dimensionName,
+                  description: dimensionDescription,
+                  color: dimensionColor,
+                  annotationGuide: window.abwa.codebookManager.codebookReader.codebook
+                })
+              } else {
+                const swal = require('sweetalert2')
+                swal.showValidationMessage('There exist a ' + Config.tags.grouped.group + ' with the same name. Please select a different name.')
+              }
+            } else {
+              const swal = require('sweetalert2')
+              swal.showValidationMessage('Name cannot be empty.')
+            }
+          },
+          callback: () => {
+            LanguageUtils.dispatchCustomEvent(Events.createDimension, { dimension: newDimension, target: target })
+          },
+          cancelCallback: () => {
+            console.log('new dimension canceled')
+          }
+        })
+      } else {
+        Alerts.errorAlert({
+          title: 'No more themes available',
+          text: 'Please, delete one of your themes to be able to create a new one'
+        })
+      }
+    })
+    window.abwa.codebookManager.codebookReader.buttonContainer.append(newDimensionButton)
+  }
+
+  static dimensionNameExist (newDimensionName) {
+    let dimensions = window.abwa.codebookManager.codebookReader.codebook.dimensions
+    let dimension = _.find(dimensions, (dimension) => {
+      return dimension.name === newDimensionName
+    })
+    if (dimension) {
+      return true
+    } else {
+      return false
+    }
+  }
+
+  /**
+   * This function creates a handler to create a new theme when it receives the createTheme event.
+   * @return Event
+   */
+  createNewDimensionEventHandler () {
+    return (event) => {
+      const newDimensionAnnotation = event.detail.dimension.toAnnotation()
+      window.abwa.annotationServerManager.client.createNewAnnotation(newDimensionAnnotation, (err, annotation) => {
+        if (err) {
+          Alerts.errorAlert({ text: 'Unable to create the new code. Error: ' + err.toString() })
+        } else {
+          LanguageUtils.dispatchCustomEvent(Events.dimensionCreated, { newDimensionAnnotation: annotation, target: event.detail.target })
+        }
+      })
+    }
+  }
+
+  /**
+   * This function creates a handler to update a new theme when it receives the updateTheme event.
+   * @return Event
+   */
+  createUpdateDimensionEventHandler () {
+    return (event) => {
+      const dimension = event.detail.dimension
+      let dimensionToUpdate
+      // Show form to update theme
+      Alerts.multipleInputAlert({
+        title: 'You are updating the theme ' + dimension.name,
+        html: '<input autofocus class="formCodeName swal2-input" type="text" id="themeName" type="text" placeholder="New theme name" value="' + dimension.name + '"/>' +
+          '<textarea class="formCodeDescription swal2-textarea" data-minchars="1" data-multiple rows="6"  id="themeDescription" placeholder="Please type a description that describes this theme...">' + dimension.description + '</textarea>',
+        preConfirm: () => {
+          const dimensionNameElement = document.querySelector('#dimensionName')
+          let dimensionName
+          if (_.isElement(dimensionNameElement)) {
+            dimensionName = dimensionNameElement.value
+          }
+          const dimensionDescriptionElement = document.querySelector('#dimensionDescription')
+          let dimensionDescription
+          if (_.isElement(dimensionDescriptionElement)) {
+            dimensionDescription = dimensionDescriptionElement.value
+          }
+          dimensionToUpdate = new Dimension({ name: dimensionName, description: dimensionDescription, annotationGuide: window.abwa.codebookManager.codebookReader.codebook })
+          dimensionToUpdate.id = dimension.id
+        },
+        callback: () => {
+          // Update codebook
+          this.updateCodebookTheme(dimensionToUpdate)
+          // Update all annotations done with this theme
+          this.updateAnnotationsWithTheme(dimensionToUpdate)
+        },
+        cancelCallback: () => {
+          // showForm(preConfirmData)
+        }
+      })
+    }
+  }
+
+  /**
+   * This function creates a handler to remove a theme when it receives the removeTheme event.
+   * @return Event
+   */
+  removeDimensionEventHandler () {
+    return (event) => {
+      const theme = event.detail.theme
+      // Ask user is sure to remove
+      Alerts.confirmAlert({
+        title: 'Removing ' + Config.tags.grouped.group + theme.name,
+        text: 'Are you sure that you want to remove the ' + Config.tags.grouped.group + ' ' + theme.name + '. All dependant codes will be deleted too. You cannot undo this operation.',
+        alertType: Alerts.alertType.warning,
+        callback: () => {
+          let annotationsToDelete = [theme.id]
+          // Get theme codes id to be removed too
+          const codesId = _.map(theme.codes, (code) => { return code.id })
+          if (_.every(codesId, _.isString)) {
+            annotationsToDelete = annotationsToDelete.concat(codesId)
+          }
+          // Get linking annotions made with removed theme
+          let groupLinkingAnnotations = window.abwa.annotationManagement.annotationReader.groupLinkingAnnotations
+          let linkingAnnotationToRemove = _.filter(groupLinkingAnnotations, (linkingAnnotation) => {
+            let linkingBody = linkingAnnotation.body[0]
+            return linkingBody.value.from.id === theme.id || linkingBody.value.to === theme.id
+          })
+          console.log(linkingAnnotationToRemove)
+          let linkingsId = _.map(linkingAnnotationToRemove, (annotation) => { return annotation.id })
+          if (_.every(linkingsId, _.isString)) {
+            annotationsToDelete = annotationsToDelete.concat(linkingsId)
+          }
+          window.abwa.annotationServerManager.client.deleteAnnotations(annotationsToDelete, (err, result) => {
+            if (err) {
+              Alerts.errorAlert({ text: 'Unexpected error when deleting the code.' })
+            } else {
+              LanguageUtils.dispatchCustomEvent(Events.themeRemoved, { theme: theme })
+            }
+          })
+        }
+      })
+    }
   }
 
   static themeNameExist (newThemeName) {

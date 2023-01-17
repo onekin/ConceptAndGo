@@ -3,6 +3,8 @@ import Theme from './Theme'
 import Config from '../../Config'
 import _ from 'lodash'
 import LanguageUtils from '../../utils/LanguageUtils'
+import Dimension from './Dimension'
+import CXLImporter from '../../importExport/cmap/CXLImporter'
 import Hypothesis from '../../annotationServer/hypothesis/Hypothesis'
 import ColorUtils from '../../utils/ColorUtils'
 
@@ -15,6 +17,7 @@ class Codebook {
     this.id = id
     this.name = name
     this.themes = []
+    this.dimensions = []
     this.annotationServer = annotationServer
   }
 
@@ -45,8 +48,15 @@ class Codebook {
     // Create annotation for current element
     annotations.push(this.toAnnotation())
     // Create annotations for all criterias
-    for (let i = 0; i < this.themes.length; i++) {
-      annotations = annotations.concat(this.themes[i].toAnnotations())
+    if (this.themes) {
+      for (let i = 0; i < this.themes.length; i++) {
+        annotations = annotations.concat(this.themes[i].toAnnotations())
+      }
+    }
+    if (this.dimensions) {
+      for (let i = 0; i < this.dimensions.length; i++) {
+        annotations = annotations.concat(this.dimensions[i].toAnnotation())
+      }
     }
     return annotations
   }
@@ -76,10 +86,29 @@ class Codebook {
             return tag.includes(Config.namespace + ':' + Config.tags.grouped.group + ':')
           })
         })
+        const dimensionsAnnotations = _.remove(annotations, (annotation) => {
+          return _.some(annotation.tags, (tag) => {
+            return tag.includes(Config.namespace + ':' + 'dimension:')
+          })
+        })
         for (let i = 0; i < themeAnnotations.length; i++) {
           const theme = Theme.fromAnnotation(themeAnnotations[i], guide)
           if (LanguageUtils.isInstanceOf(theme, Theme)) {
             guide.themes.push(theme)
+          }
+        }
+        for (let i = 0; i < dimensionsAnnotations.length; i++) {
+          const dimension = Dimension.fromAnnotation(dimensionsAnnotations[i], guide)
+          let themes = guide.themes.filter((theme) => {
+            return theme.dimension === dimension.name
+          })
+          if (themes) {
+            for (let i = 0; i < themes.length; i++) {
+              dimension.addTheme(themes[i])
+            }
+          }
+          if (LanguageUtils.isInstanceOf(dimension, Dimension)) {
+            guide.dimensions.push(dimension)
           }
         }
         if (_.isFunction(callback)) {
@@ -128,16 +157,40 @@ class Codebook {
     return annotationGuide
   }
 
-  static fromCXLFile (conceptList, name) {
+  static fromCXLFile (conceptList, dimensionsList, name, topic, conceptAppearanceList) {
     let annotationGuide = new Codebook({ name: name })
-    for (let i = 0; i < conceptList.childNodes.length; i++) {
-      let concept = conceptList.childNodes[i]
-      let conceptName = concept.getAttribute('label')
-      let conceptID = concept.getAttribute('id')
-      let theme = new Theme({ id: conceptID, name: conceptName, annotationGuide })
+    if (dimensionsList.length > 0) {
+      for (let i = 0; i < dimensionsList.length; i++) {
+        let dimension = new Dimension({ name: dimensionsList[i], annotationGuide })
+        let color = ColorUtils.getDimensionColor(annotationGuide.dimensions)
+        dimension.color = ColorUtils.setAlphaToColor(color, 0.6)
+        annotationGuide.dimensions.push(dimension)
+      }
+    }
+    if (conceptList && conceptList.childNodes && conceptList.childNodes.length > 0) {
+      for (let i = 0; i < conceptList.childNodes.length; i++) {
+        let concept = conceptList.childNodes[i]
+        let conceptName = concept.getAttribute('label')
+        let conceptID = concept.getAttribute('id')
+        if (!CXLImporter.isDimension(conceptAppearanceList, conceptID)) {
+          let theme = new Theme({ id: conceptID, name: conceptName, annotationGuide })
+          annotationGuide.themes.push(theme)
+        }
+      }
+    } else {
+      let theme = new Theme({ name: name, annotationGuide, topic })
       annotationGuide.themes.push(theme)
     }
     return annotationGuide
+  }
+
+  getDimensionsForCmapCloud () {
+    let dimensionsString = ''
+    this.dimensions.forEach(dimension => {
+      dimensionsString = dimensionsString + dimension.name + ';'
+    })
+    dimensionsString = dimensionsString.slice(0, -1)
+    return dimensionsString
   }
 
   getCodeOrThemeFromId (id) {
@@ -154,10 +207,9 @@ class Codebook {
   addTheme (theme) {
     if (LanguageUtils.isInstanceOf(theme, Theme)) {
       this.themes.push(theme)
-      // Get new color for the theme
-      const colors = ColorUtils.getDifferentColors(this.themes.length)
-      const lastColor = colors.pop()
-      theme.color = ColorUtils.setAlphaToColor(lastColor, Config.colors.minAlpha)
+      let dimension = this.getDimensionByName(theme.dimension)
+      theme.color = dimension.color
+      dimension.addTheme(theme)
     }
   }
 
@@ -175,6 +227,30 @@ class Codebook {
   }
 
   removeTheme (theme) {
+    _.remove(this.themes, theme)
+  }
+
+  addDimension (dimension) {
+    if (LanguageUtils.isInstanceOf(dimension, Dimension)) {
+      dimension.color = ColorUtils.setAlphaToColor(dimension.color, 0.6)
+      this.dimensions.push(dimension)
+    }
+  }
+
+  updateDimension (theme, previousId) {
+    if (LanguageUtils.isInstanceOf(theme, Theme)) {
+      // Find item index using _.findIndex
+      const index = _.findIndex(this.themes, (it) => {
+        return it.id === theme.id || it.id === previousId
+      })
+      const previousTheme = this.themes[index]
+      // Replace item at index using native splice
+      this.themes.splice(index, 1, theme)
+      theme.color = previousTheme.color
+    }
+  }
+
+  removeDimension (theme) {
     _.remove(this.themes, theme)
   }
 
@@ -196,6 +272,14 @@ class Codebook {
   getThemeByName (name) {
     if (_.isString(name)) {
       return this.themes.find(theme => theme.name === name)
+    } else {
+      return null
+    }
+  }
+
+  getDimensionByName (name) {
+    if (_.isString(name)) {
+      return this.dimensions.find(dimension => dimension.name === name)
     } else {
       return null
     }

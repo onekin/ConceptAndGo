@@ -4,9 +4,9 @@ import $ from 'jquery'
 
 class Options {
   init () {
-    // TODO Restore form from CmapCloud credentials saved in storage
+    // TODO Restore form from credentials saved in storage
     let cmapCloudButton = document.querySelector('#checkCmapValues')
-    chrome.runtime.sendMessage({ scope: 'cmapCloud', cmd: 'getCmapCloudUserData' }, (response) => {
+    chrome.runtime.sendMessage({ scope: 'cmapCloud', cmd: 'getUserData' }, (response) => {
       if (response.data) {
         let data = response.data
         if (data.userData.user && data.userData.password && data.userData.uid) {
@@ -19,22 +19,7 @@ class Options {
         }
       }
     })
-    // TODO Restore form from Sero credentials saved in storage
-    let seroButton = document.querySelector('#checkSeroValues')
-    chrome.runtime.sendMessage({ scope: 'sero', cmd: 'getSeroUserData' }, (response) => {
-      if (response.data) {
-        let data = response.data
-        if (data.seroUserData.user && data.seroUserData.password) {
-          document.querySelector('#seroUserValue').value = data.seroUserData.user
-          document.querySelector('#seroPasswordValue').value = data.seroUserData.password
-          document.querySelector('#seroValue').innerHTML = 'You are logged in!'
-          $('#seroUserValue').prop('readonly', true)
-          $('#seroPasswordValue').prop('readonly', true)
-          seroButton.innerHTML = 'Change user credentials'
-        }
-      }
-    })
-    // CmapCloud button listener
+    // Button listener
     cmapCloudButton.addEventListener('click', () => {
       if (cmapCloudButton.innerHTML === 'Change user credentials') {
         $('#cmapCloudUserValue').prop('readonly', false)
@@ -44,18 +29,6 @@ class Options {
         let userInputToValidate = document.querySelector('#cmapCloudUserValue').value
         let passwordInputToValidate = document.querySelector('#cmapCloudPasswordValue').value
         this.checkCmapCloudValues(userInputToValidate, passwordInputToValidate)
-      }
-    })
-    // Sero button listener
-    seroButton.addEventListener('click', () => {
-      if (seroButton.innerHTML === 'Change user credentials') {
-        $('#seroUserValue').prop('readonly', false)
-        $('#seroPasswordValue').prop('readonly', false)
-        document.querySelector('#checkSeroValues').innerHTML = 'Validate account'
-      } else if (seroButton.innerHTML === 'Validate account') {
-        let userInputToValidate = document.querySelector('#seroUserValue').value
-        let passwordInputToValidate = document.querySelector('#seroPasswordValue').value
-        this.checkSeroValues(userInputToValidate, passwordInputToValidate)
       }
     })
     // Hypothesis login
@@ -76,6 +49,7 @@ class Options {
       }
     })
   }
+
 
   showSelectedAnnotationServerConfiguration (selectedAnnotationServer) {
     // Hide all annotation server configurations
@@ -98,8 +72,8 @@ class Options {
       cmd: 'getUserUid',
       data: { user: user, password: password }
     }, (response) => {
-      if (response.cmapCloudUserData) {
-        if (response.cmapCloudUserData.uid) {
+      if (response.userData) {
+        if (response.userData.uid) {
           document.querySelector('#uidValue').innerHTML = 'You are logged in!'
           $('#cmapCloudUserValue').prop('readonly', true)
           $('#cmapCloudPasswordValue').prop('readonly', true)
@@ -109,28 +83,7 @@ class Options {
       } else if (response.err) {
         // Not validated
         document.querySelector('#uidValue').className = 'errorMessage'
-        document.querySelector('#uidValue').innerHTML = 'Incorrect username or password. Please try again.'
-      }
-    })
-  }
-
-  checkSeroValues (user, password) {
-    document.querySelector('#seroUidValue').className = 'textMessage'
-    document.querySelector('#seroUidValue').innerHTML = 'Validating given credentials ... wait a moment please.'
-    chrome.runtime.sendMessage({
-      scope: 'sero',
-      cmd: 'login',
-      data: { user: user, password: password }
-    }, (response) => {
-      if (response.seroUserData) {
-        document.querySelector('#seroUidValue').innerHTML = 'You are logged in!'
-        $('#seroUserValue').prop('readonly', true)
-        $('#seroPasswordValue').prop('readonly', true)
-        document.querySelector('#checkSeroValues').innerHTML = 'Change user credentials'
-      } else if (response.err) {
-        // Not validated
-        document.querySelector('#seroUidValue').className = 'errorMessage'
-        document.querySelector('#seroUidValue').innerHTML = 'Incorrect username or password. Please try again.'
+        document.querySelector('#uidValue').innerHTML = 'Unable to retrieve the user id for the given credentials.'
       }
     })
   }

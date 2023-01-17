@@ -1,10 +1,10 @@
 import ExportCXLArchiveFile from './ExportCXLArchiveFile'
 import ExportCmapCloud from './cmapCloud/ExportCmapCloud'
-import ExportSero from './sero/ExportSero'
 import HypothesisURL from './evidenceAnnotation/HypothesisURL'
 import ToolURL from './evidenceAnnotation/ToolURL'
 import LanguageUtils from '../../utils/LanguageUtils'
 import _ from 'lodash'
+import ColorUtils from '../../utils/ColorUtils'
 
 export class LinkingPhrase {
   constructor (linkingWord, id) {
@@ -81,10 +81,33 @@ export class CXLExporter {
     title.textContent = LanguageUtils.camelize(window.abwa.groupSelector.currentGroup.name)
     metadata.appendChild(title)
 
-    // Set description
-    let description = xmlDoc.createElement('dc:description')
-    description.textContent = window.abwa.groupSelector.currentGroup.id
-    metadata.appendChild(description)
+    // Set focus question
+    let focusQuestion = xmlDoc.createElement('dc:description')
+    let topicTheme = window.abwa.codebookManager.codebookReader.getTopicTheme()
+    if (topicTheme.topic !== '') {
+      focusQuestion.textContent = topicTheme.topic
+    } else {
+      focusQuestion.textContent = topicTheme.name
+    }
+    metadata.appendChild(focusQuestion)
+
+    // Set keywords
+    let dimensionsTag = xmlDoc.createElement('dc:subject')
+    dimensionsTag.textContent = window.abwa.codebookManager.codebookReader.codebook.getDimensionsForCmapCloud()
+    metadata.appendChild(dimensionsTag)
+
+    // Set Hypothes.is group
+    let rights = xmlDoc.createElement('dcterms:rightsHolder')
+    let creator = xmlDoc.createElement('dc:creator')
+    let contributor = xmlDoc.createElement('dc:contributor')
+    let groupId = xmlDoc.createElement('vcard:FN')
+    groupId.textContent = window.abwa.groupSelector.currentGroup.id
+    rights.appendChild(groupId)
+    creator.appendChild(groupId)
+    contributor.appendChild(groupId)
+    metadata.appendChild(rights)
+    metadata.appendChild(creator)
+    metadata.appendChild(contributor)
 
     // Create map
     let map = xmlDoc.createElement('map')
@@ -137,6 +160,32 @@ export class CXLExporter {
     styleSheetList.appendChild(styleSheetDefault)
     styleSheetList.appendChild(styleSheetLatest)
     map.appendChild(styleSheetList)
+
+    // Add meta-concepts
+    let dimensions = window.abwa.codebookManager.codebookReader.codebook.dimensions
+    for (let i = 0; i < dimensions.length; i++) {
+      let dimension = dimensions[i]
+      let dimensionElement = xmlDoc.createElement('concept')
+      let id = document.createAttribute('id')
+      id.value = dimension.id
+      dimensionElement.setAttributeNode(id)
+      let label = document.createAttribute('label')
+      label.value = dimension.name
+      dimensionElement.setAttributeNode(label)
+      conceptList.appendChild(dimensionElement)
+      let dimensionAppearance = xmlDoc.createElement('concept-appearance')
+      id = document.createAttribute('id')
+      let elementID = dimension.id
+      id.value = elementID
+      dimensionAppearance.setAttributeNode(id)
+      let background = document.createAttribute('background-color')
+      background.value = ColorUtils.turnForCmapCloud(dimension.color)
+      dimensionAppearance.setAttributeNode(background)
+      let font = document.createAttribute('font-style')
+      font.value = 'italic|bold'
+      dimensionAppearance.setAttributeNode(font)
+      conceptAppearanceList.appendChild(dimensionAppearance)
+    }
     // Add concepts
     for (let i = 0; i < concepts.length; i++) {
       let concept = concepts[i]
@@ -145,7 +194,11 @@ export class CXLExporter {
       id.value = concept.theme.id
       conceptElement.setAttributeNode(id)
       let label = document.createAttribute('label')
-      label.value = concept.theme.name
+      if (concept.theme.topic !== '') {
+        label.value = concept.theme.topic
+      } else {
+        label.value = concept.theme.name
+      }
       conceptElement.setAttributeNode(label)
       conceptList.appendChild(conceptElement)
       let conceptAppearance = xmlDoc.createElement('concept-appearance')
@@ -153,17 +206,28 @@ export class CXLExporter {
       let elementID = concept.theme.id
       id.value = elementID
       conceptAppearance.setAttributeNode(id)
+      let background = document.createAttribute('background-color')
+      if (concept.theme.isTopic) {
+        background.value = ColorUtils.turnForCmapCloud(ColorUtils.getTopicColor())
+        conceptAppearance.setAttributeNode(background)
+      } else {
+        let dimension = window.abwa.codebookManager.codebookReader.codebook.getDimensionByName(concept.theme.dimension)
+        if (dimension) {
+          background.value = ColorUtils.turnForCmapCloud(dimension.color)
+          conceptAppearance.setAttributeNode(background)
+        }
+      }
       conceptAppearanceList.appendChild(conceptAppearance)
       if (concept.evidenceAnnotations.length > 0) {
         for (let i = 0; i < concept.evidenceAnnotations.length; i++) {
           let annotation = concept.evidenceAnnotations[i]
           let name
           if (i === 0) {
-            name = LanguageUtils.camelize(concept.theme.name) + '_source_' + LanguageUtils.camelize(annotation.target[0].source.title)
+            name = LanguageUtils.camelize(concept.theme.name)
           } else {
-            name = LanguageUtils.camelize(concept.theme.name + i) + '_source_' + LanguageUtils.camelize(annotation.target[0].source.title)
+            name = LanguageUtils.camelize(concept.theme.name)
           }
-          name = name.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s/g, '')
+          name = name.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s/g, '') + '---' + annotation.id
           let url
           if (evidenceAnnotations === 'hypothesis') {
             url = new HypothesisURL({ elementID, name, annotation })
@@ -203,11 +267,11 @@ export class CXLExporter {
               let fromName = annotation.tags[0].replace('from:', '')
               let toName = annotation.tags[2].replace('to:', '')
               if (i === 0) {
-                name = LanguageUtils.camelize(fromName) + '_To_' + LanguageUtils.camelize(toName) + '_source_' + LanguageUtils.camelize(annotation.target[0].source.title)
+                name = LanguageUtils.camelize(fromName) + '_To_' + LanguageUtils.camelize(toName)
               } else {
-                name = LanguageUtils.camelize(fromName) + '_To_' + LanguageUtils.camelize(toName + i) + '_source_' + LanguageUtils.camelize(annotation.target[0].source.title)
+                name = LanguageUtils.camelize(fromName) + '_To_' + LanguageUtils.camelize(toName)
               }
-              name = name.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s/g, '')
+              name = name.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s/g, '') + '---' + annotation.id
               let url
               if (evidenceAnnotations === 'hypothesis') {
                 url = new HypothesisURL({ elementID, name, annotation })
@@ -300,8 +364,6 @@ export class CXLExporter {
       ExportCXLArchiveFile.export(xmlDoc, urlFiles)
     } else if (exportType === 'cmapCloud') {
       ExportCmapCloud.export(xmlDoc, urlFiles, userData)
-    } else if (exportType === 'sero') {
-      ExportSero.export(xmlDoc, userData)
     }
   }
 

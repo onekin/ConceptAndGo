@@ -1,7 +1,7 @@
 import Popup from './popup/Popup'
 import HypothesisManager from './background/HypothesisManager'
+import TargetManager from './background/TargetManager'
 import CmapCloudBackgroundManager from './background/CmapCloudBackgroundManager'
-import SeroBackgroundManager from './background/SeroBackgroundManager'
 
 import _ from 'lodash'
 
@@ -31,13 +31,13 @@ class Background {
     this.hypothesisManager = new HypothesisManager()
     this.hypothesisManager.init()
 
+    // Initialize doi manager
+    this.targetManager = new TargetManager()
+    this.targetManager.init()
+
     // Initialize cmapCloud manager
     this.cmapCloudManager = new CmapCloudBackgroundManager()
     this.cmapCloudManager.init()
-
-    // Initialize cmapCloud manager
-    this.seroManager = new SeroBackgroundManager()
-    this.seroManager.init()
 
     // Initialize page_action event handler
     chrome.pageAction.onClicked.addListener((tab) => {

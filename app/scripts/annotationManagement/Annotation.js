@@ -66,7 +66,7 @@ class Annotation {
       tags: this.tags,
       target: this.target,
       text: '',
-      uri: /*  */ this.target[0].source.url || this.target[0].source.urn
+      uri: /*  */ this.target[0].source.doi || /*  */ this.target[0].source.url || this.target[0].source.urn
     }
     // The following lines are added to maintain compatibility with hypothes.is's data model that doesn't follow the W3C in all their attributes
     // Adaptation of target source to hypothes.is's compatible document attribute

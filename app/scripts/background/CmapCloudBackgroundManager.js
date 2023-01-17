@@ -15,21 +15,21 @@ class CmapCloudBackgroundManager {
               if (err) {
                 sendResponse({ err: err })
               } else {
-                let cmapCloudUserData = {}
-                cmapCloudUserData.user = user
-                cmapCloudUserData.password = password
-                cmapCloudUserData.uid = uid
-                ChromeStorage.setData('cmapCloudUserData', { cmapCloudUserData: cmapCloudUserData }, ChromeStorage.sync, (err) => {
+                let userData = {}
+                userData.user = user
+                userData.password = password
+                userData.uid = uid
+                ChromeStorage.setData('cmapCloudUserData', { userData: userData }, ChromeStorage.sync, (err) => {
                   if (err) {
                     sendResponse({ err: err })
                   } else {
-                    sendResponse({ cmapCloudUserData: cmapCloudUserData })
+                    sendResponse({ userData: userData })
                   }
                 })
               }
             })
           }
-        } else if (request.cmd === 'getCmapCloudUserData') {
+        } else if (request.cmd === 'getUserData') {
           ChromeStorage.getData('cmapCloudUserData', ChromeStorage.sync, (err, userData) => {
             if (err) {
               sendResponse({ err: err })

@@ -37,6 +37,8 @@ class TargetManager {
   }
 
   reloadTargetInformation (callback) {
+    // Try to load doi from the document, page metadata or URL hash param
+    this.tryToLoadDoi()
     this.tryToLoadPublicationPDF()
     this.tryToLoadURLParam()
     this.loadDocumentFormat().catch((err) => {
@@ -153,6 +155,27 @@ class TargetManager {
         }
       }
     }, 500)
+  }
+
+  tryToLoadDoi () {
+    // Try to load doi from hash param
+    const decodedUri = decodeURIComponent(window.location.href)
+    const params = URLUtils.extractHashParamsFromUrl(decodedUri)
+    if (!_.isEmpty(params) && !_.isEmpty(params.doi)) {
+      this.doi = decodeURIComponent(params.doi)
+    }
+    // Try to load doi from page metadata
+    if (_.isEmpty(this.doi)) {
+      try {
+        this.doi = document.querySelector('meta[name="citation_doi"]').content
+        if (!this.doi) {
+          this.doi = document.querySelector('meta[name="dc.identifier"]').content
+        }
+      } catch (e) {
+        console.debug('Doi not found for this document')
+      }
+    }
+    // TODO Try to load doi from chrome tab storage
   }
 
   tryToLoadURLParam () {
