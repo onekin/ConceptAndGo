@@ -211,15 +211,17 @@ class LinkingForm {
     divTo.appendChild(inputTo)
 
     window.abwa.codebookManager.codebookReader.codebook.themes.forEach(theme => {
-      let fromOption = document.createElement('option')
-      fromOption.value = theme.id
-      fromOption.text = theme.name
-      inputFrom.add(fromOption)
-      if (!theme.isTopic) {
-        let toOption = document.createElement('option')
-        toOption.value = theme.id
-        toOption.text = theme.name
-        inputTo.add(toOption)
+      if (!theme.isMisc) {
+        let fromOption = document.createElement('option')
+        fromOption.value = theme.id
+        fromOption.text = theme.name
+        inputFrom.add(fromOption)
+        if (!theme.isTopic) {
+          let toOption = document.createElement('option')
+          toOption.value = theme.id
+          toOption.text = theme.name
+          inputTo.add(toOption)
+        }
       }
     })
 

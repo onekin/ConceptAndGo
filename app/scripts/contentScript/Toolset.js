@@ -27,13 +27,14 @@ class Toolset {
       const toolsetButtonTemplate = this.sidebarContainer.querySelector('#toolsetButtonTemplate')
       // Add link to configuration page of the tool
       this.toolsetHeader.querySelector('#appNameBadge').href = chrome.extension.getURL('/pages/options.html')
+      // Import CXL
       const cxlArchiveFileImageUrl = chrome.extension.getURL('/images/cxl.png')
       this.cxlArchiveFileImage = $(toolsetButtonTemplate.content.firstElementChild).clone().get(0)
       this.cxlArchiveFileImage.src = cxlArchiveFileImageUrl
       this.cxlArchiveFileImage.id = 'cxlArchiveFileButton'
       this.cxlArchiveFileImage.title = 'Export resources to an archive file on the local file system'
       this.toolsetBody.appendChild(this.cxlArchiveFileImage)
-      // Add menu when clicking on the button
+      // CmapCloud Home
       this.CXLArchiveFileButtonHandler()
       const cxlCloudHomeImageUrl = chrome.extension.getURL('/images/cmapCloudHome.png')
       this.cxlCloudHomeImage = $(toolsetButtonTemplate.content.firstElementChild).clone().get(0)
@@ -45,7 +46,7 @@ class Toolset {
       this.cxlCloudHomeImage.addEventListener('click', () => {
         this.CXLCloudHomeButtonHandler()
       })
-
+      // Export to CmapCloud
       const cxlCloudImageUrl = chrome.extension.getURL('/images/cmapCloud.png')
       this.cxlCloudImage = $(toolsetButtonTemplate.content.firstElementChild).clone().get(0)
       this.cxlCloudImage.src = cxlCloudImageUrl
@@ -111,36 +112,6 @@ class Toolset {
     }
   }
 
-
-  CXLArchiveFileButtonHandler () {
-    // Create context menu for import export
-    $.contextMenu({
-      selector: '#cxlArchiveFileButton',
-      trigger: 'left',
-      build: () => {
-        // Create items for context menu
-        let items = {}
-        items.import = { name: 'Import CXL' }
-        items.exportWithToolURL = { name: 'Export CXL with ' + 'Concept&Go' + ' URLs' }
-        items.exportWithHypothesisURL = { name: 'Export CXL with Hypothes.is URLs' }
-        return {
-          callback: (key, opt) => {
-            if (key === 'import') {
-              CXLImporter.importCXLfile()
-            }
-            if (key === 'exportWithHypothesisURL') {
-              CXLExporter.exportCXLFile('archiveFile', 'hypothesis')
-            }
-            if (key === 'exportWithToolURL') {
-              CXLExporter.exportCXLFile('archiveFile', 'tool')
-            }
-          },
-          items: items
-        }
-      }
-    })
-  }
-
   CXLCloudHomeButtonHandler () {
     chrome.runtime.sendMessage({ scope: 'cmapCloud', cmd: 'getUserData' }, (response) => {
       if (response.data) {
@@ -153,6 +124,35 @@ class Toolset {
           window.open(chrome.extension.getURL('pages/options.html#cmapCloudConfiguration'))
         }
         Alerts.infoAlert({ text: 'Please, provide us your Cmap Cloud login credentials in the configuration page of the Web extension.', title: 'We need your Cmap Cloud credentials', callback: callback() })
+      }
+    })
+  }
+
+  CXLArchiveFileButtonHandler () {
+    // Create context menu for import export
+    $.contextMenu({
+      selector: '#cxlArchiveFileButton',
+      trigger: 'left',
+      build: () => {
+        // Create items for context menu
+        let items = {}
+        items.import = { name: 'Import CXL' }
+        // items.exportWithToolURL = { name: 'Export CXL with ' + 'Concept&Go' + ' URLs' }
+        // items.exportWithHypothesisURL = { name: 'Export CXL with Hypothes.is URLs' }
+        return {
+          callback: (key, opt) => {
+            if (key === 'import') {
+              CXLImporter.importCXLfile()
+            }
+            /* if (key === 'exportWithHypothesisURL') {
+              CXLExporter.exportCXLFile('archiveFile', 'hypothesis')
+            }
+            if (key === 'exportWithToolURL') {
+              CXLExporter.exportCXLFile('archiveFile', 'tool')
+            } */
+          },
+          items: items
+        }
       }
     })
   }

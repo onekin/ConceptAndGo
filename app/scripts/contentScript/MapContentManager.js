@@ -199,9 +199,13 @@ export class MapContentManager {
   createConcepts (callback) {
     let conceptsList = []
     let themes = window.abwa.codebookManager.codebookReader.codebook.themes
-    if (themes) {
-      for (let i = 0; i < themes.length; i++) {
-        let theme = themes[i]
+    let filteredThemes = themes.filter((theme) => {
+      return !theme.isMisc
+    })
+
+    if (filteredThemes) {
+      for (let i = 0; i < filteredThemes.length; i++) {
+        let theme = filteredThemes[i]
         let conceptEvidenceAnnotation = _.filter(window.abwa.annotationManagement.annotationReader.groupClassifiyingAnnotations, (annotation) => {
           return annotation.body[0].value.id === theme.id
         })

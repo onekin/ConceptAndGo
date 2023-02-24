@@ -6,6 +6,9 @@ import LanguageUtils from '../utils/LanguageUtils'
 import Events from '../Events'
 import HypothesisClientManager from '../annotationServer/hypothesis/HypothesisClientManager'
 import Config from '../Config'
+import CXLImporter from '../importExport/cmap/CXLImporter'
+import Codebook from '../codebook/model/Codebook'
+
 const GroupName = Config.groupName
 
 class GroupSelector {
@@ -91,65 +94,50 @@ class GroupSelector {
               }
               // If group cannot be retrieved from saved in extension annotationServer
               // Try to load a group with defaultName
-              // TODO Refactoring required
               if (_.isEmpty(this.currentGroup)) {
                 if (!_.isEmpty(window.abwa.groupSelector.groups)) {
                   this.currentGroup = _.first(window.abwa.groupSelector.groups)
                   callback(null)
                 } else {
-                  // TODO i18n
-                  let title
-                  title = 'What is the topic or the focus question of the concept map?'
-                  let inputPlaceholder
-                  inputPlaceholder = 'Type here the topic of the map...'
-                  Alerts.inputTextAlert({
-                    title: title,
-                    inputPlaceholder: inputPlaceholder,
-                    showCancelButton: false,
-                    allowOutsideClick: false,
-                    allowEscapeKey: false,
-                    preConfirm: (groupName) => {
-                      if (_.isString(groupName)) {
-                        if (groupName.length <= 0) {
-                          const swal = require('sweetalert2')
-                          swal.showValidationMessage('Name cannot be empty.')
-                        } else if (groupName.length > 25) {
-                          this.groupFullName = groupName
-                          console.log(groupName)
-                          groupName = groupName.substring(0, 24)
-                          console.log(groupName)
-                          return groupName
-                        } else {
-                          this.groupFullName = groupName
-                          return groupName
-                        }
-                      }
-                    },
-                    callback: (err, groupName) => {
+                  let options = {}
+                  options.importCXLFile = () => {
+                    CXLImporter.importCXLfile()
+                  }
+
+                  options.configure = () => {
+                    this.createNewGroup((err, result) => {
                       if (err) {
-                        window.alert('Unable to load swal. Please contact developer.')
+                        Alerts.errorAlert({ text: 'Unable to create a new group. Please try again or contact developers if the error continues happening.' })
                       } else {
-                        groupName = LanguageUtils.normalizeString(groupName)
-                        window.abwa.annotationServerManager.client.createNewGroup({
-                          name: groupName,
-                          description: 'A group created using annotation tool ' + chrome.runtime.getManifest().name
-                        }, (err, group) => {
-                          if (err) {
-                            Alerts.errorAlert({ text: 'We are unable to create the group. Please check if you are logged in the annotation server.' })
-                          } else {
-                            // Modify group URL in hypothesis
-                            if (LanguageUtils.isInstanceOf(window.abwa.annotationServerManager, HypothesisClientManager)) {
-                              if (_.has(group, 'links.html')) {
-                                group.links.html = group.links.html.substr(0, group.links.html.lastIndexOf('/'))
-                              }
-                            }
-                            this.currentGroup = group
+                        // Update list of groups from annotation Server
+                        this.retrieveGroups(() => {
+                          // Move group to new created one
+                          this.setCurrentGroup(result.id, () => {
+                            // Expand groups container
+                            this.container.setAttribute('aria-expanded', 'false')
+                            // Reopen sidebar if closed
+                            window.abwa.sidebar.openSidebar()
                             callback(null)
-                          }
+                          })
                         })
                       }
-                    }
-                  })
+                    })
+                  }
+                  let showForm = () => {
+                    // Create form
+                    let html = ''
+                    Alerts.twoOptionsAlert({
+                      title: 'How do you want to start concept mapping?',
+                      html: html,
+                      confirmButtonText: 'Import cxl file',
+                      denyButtonText: 'Configurate by myself',
+                      callback: options.importCXLFile,
+                      denyCallback: options.configure,
+                      customClass: 'large-swal',
+                      allowOutsideClick: false
+                    })
+                  }
+                  showForm()
                 }
               } else { // If group was found in extension annotation server
                 if (_.isFunction(callback)) {
@@ -380,14 +368,14 @@ class GroupSelector {
     }
   }
 
-  createNewGroup (callback) {
-    let title
-    let inputPlaceholder
-    title = 'What is the topic or the focus question?'
-    inputPlaceholder = 'Type here the topic ...'
+  createNewGroup (loadingCallback) {
+    let title = 'What is the topic or the focus question?'
+    let inputPlaceholder = 'What is the topic or the focus question?'
     Alerts.inputTextAlert({
       title: title,
+      allowOutsideClick: false,
       inputPlaceholder: inputPlaceholder,
+      showCancelButton: false,
       preConfirm: (groupName) => {
         if (_.isString(groupName)) {
           if (groupName.length <= 0) {
@@ -410,10 +398,61 @@ class GroupSelector {
           window.alert('Unable to load swal. Please contact developer.')
         } else {
           groupName = LanguageUtils.normalizeString(groupName)
-          window.abwa.annotationServerManager.client.createNewGroup({
-            name: groupName,
-            description: 'A group created using annotation tool ' + chrome.runtime.getManifest().name
-          }, callback)
+          window.abwa.annotationServerManager.client.createNewGroup({ name: groupName, description: 'A group created using annotation tool ' + chrome.runtime.getManifest().name }, (err, newGroup) => {
+            if (err) {
+              window.alert('Unable to load swal. Please contact developer.')
+            } else {
+              Alerts.inputTextAlert({
+                title: 'Introduce the meta-concepts. Separate each meta-concept with a ;',
+                allowOutsideClick: false,
+                inputPlaceholder: 'meta-concept1;meta-concept2...',
+                showCancelButton: false,
+                preConfirm: (dimensionString) => {
+                  if (_.isString(dimensionString)) {
+                    let dimensionsList = dimensionString.split(';')
+                    dimensionsList.forEach(element => console.log(element.trim))
+                    if (dimensionsList.length <= 0) {
+                      const swal = require('sweetalert2').default
+                      swal.showValidationMessage('Meta-concepts not found.')
+                    } else {
+                      return dimensionsList
+                    }
+                  }
+
+                },
+                callback: (err, dimensionsList) => {
+                  if (err) {
+                    window.alert('Unable to load swal. Please contact developer.')
+                  } else {
+                    groupName = LanguageUtils.normalizeString(groupName)
+                    let tempCodebook = Codebook.fromCXLFile(null, dimensionsList, groupName, groupName, [])
+                    window.abwa.groupSelector.groups.push(newGroup)
+                    Codebook.setAnnotationServer(newGroup.id, (annotationServer) => {
+                      tempCodebook.annotationServer = annotationServer
+                      let topicThemeObject
+                      topicThemeObject = _.filter(tempCodebook.themes, (theme) => {
+                        return theme.topic === groupName || theme.name === groupName
+                      })
+                      topicThemeObject[0].isTopic = true
+                      let annotations = tempCodebook.toAnnotations()
+                      // Send create highlighter
+                      window.abwa.annotationServerManager.client.createNewAnnotations(annotations, (err, codebookAnnotations) => {
+                        if (err) {
+                          Alerts.errorAlert({ text: 'Unable to create new group.' })
+                        } else {
+                          loadingCallback(null, newGroup)
+                        }
+                      })
+                    })
+                  }
+                  // window.abwa.annotationServerManager.client.createNewGroup({ name: groupName, description: 'A group created using annotation tool ' + chrome.runtime.getManifest().name }, () => {
+                  // })
+                  // loadingCallback()
+                }
+              })
+            }
+            // loadingCallback()
+          })
         }
       }
     })

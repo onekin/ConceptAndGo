@@ -180,7 +180,10 @@ class Codebook {
     } else {
       let theme = new Theme({ name: name, annotationGuide, topic })
       annotationGuide.themes.push(theme)
+      let miscTheme = new Theme({ name: 'misc', annotationGuide, isMisc: true })
+      annotationGuide.themes.push(miscTheme)
     }
+
     return annotationGuide
   }
 

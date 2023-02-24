@@ -298,6 +298,44 @@ class Alerts {
     }
   }
 
+  static twoOptionsAlert ({ title = 'Input', html = '', preConfirm, preDeny, position = Alerts.position.center, onBeforeOpen, showDenyButton = true, confirmButtonText = 'Confirm', confirmButtonColor = '#4BB543', denyButtonText = 'Deny', denyButtonColor = '#3085D6', allowOutsideClick = true, allowEscapeKey = true, callback, denyCallback }) {
+    Alerts.tryToLoadSwal()
+    if (_.isNull(swal)) {
+      if (_.isFunction(callback)) {
+        callback(new Error('Unable to load swal'))
+      }
+    } else {
+      swal.fire({
+        title: title,
+        html: html,
+        focusConfirm: false,
+        preConfirm: preConfirm,
+        preDeny: preDeny,
+        position: position,
+        willOpen: onBeforeOpen,
+        allowOutsideClick,
+        allowEscapeKey,
+        showDenyButton: showDenyButton,
+        confirmButtonText: confirmButtonText,
+        confirmButtonColor: confirmButtonColor,
+        denyButtonText: denyButtonText,
+        denyButtonColor: denyButtonColor
+
+      }).then((result) => {
+        /* Read more about isConfirmed, isDenied below */
+        if (result.isConfirmed) {
+          if (_.isFunction(callback)) {
+            callback(null, result.value)
+          }
+        } else if (result.isDenied) {
+          if (_.isFunction(callback)) {
+            denyCallback(null, result.value)
+          }
+        }
+      })
+    }
+  }
+
   static tryToLoadSwal () {
     if (_.isNull(swal)) {
       try {

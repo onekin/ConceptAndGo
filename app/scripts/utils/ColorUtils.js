@@ -55,7 +55,6 @@ class ColorUtils {
   static getDimensionColor (dimensions) {
     const cmapCloudColors = [
       'rgba(255,150,200)',
-      'rgba(255,255,150)',
       'rgba(200,255,200)',
       'rgba(150,200,255)',
       'rgba(255,200,0)',
@@ -78,6 +77,10 @@ class ColorUtils {
 
   static getTopicColor () {
     return 'rgba(239,109,121)'
+  }
+
+  static getMiscColor () {
+    return 'rgba(255,255,150)'
   }
 
   static getUsedColors (dimensions) {

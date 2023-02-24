@@ -224,10 +224,18 @@ class ReadCodebook {
    * This function adds the buttons that must appear in the sidebar to be able to annotate
    */
   createButtons () {
+    let themeButtonContainer
+    const miscTheme = this.getMiscTheme()
+    if (miscTheme) {
+      themeButtonContainer = this.createUndefinedHighlightTheme(miscTheme)
+      if (_.isElement(themeButtonContainer)) {
+        this.buttonContainer.append(themeButtonContainer)
+      }
+    }
+    // Create new theme button
+    UpdateCodebook.createNewDimensionButton()
     // Create new relation button
     LinkingButton.createNewLinkButton()
-    const rootTheme = this.getTopicTheme()
-    let themeButtonContainer
     this.codebook.dimensions.forEach((dimension) => {
       // Create new theme button
       UpdateCodebook.createNewThemeButton(dimension)
@@ -347,6 +355,41 @@ class ReadCodebook {
     })
   }
 
+  createUndefinedHighlightTheme (theme) {
+    let name = 'Highlight'
+    return Buttons.createButton({
+      id: theme.id,
+      name: name,
+      className: 'codingElement',
+      description: theme.description,
+      color: theme.color,
+      handler: (event) => {
+        const themeId = event.target.dataset.codeId
+        if (themeId) {
+          const theme = this.codebook.getCodeOrThemeFromId(themeId)
+          if (LanguageUtils.isInstanceOf(theme, Theme)) {
+            const tags = [Config.namespace + ':' + Config.tags.grouped.group + ':' + theme.name]
+            // Test if text is selected
+            if (document.getSelection().toString().length > 0) {
+              // If selected create annotation
+              LanguageUtils.dispatchCustomEvent(Events.createAnnotation, {
+                purpose: 'classifying',
+                tags: tags,
+                codeId: theme.id
+              })
+            } else {
+              // Else navigate to annotation
+              LanguageUtils.dispatchCustomEvent(Events.navigateToAnnotationByCode, {
+                codeId: theme.id
+              })
+            }
+          }
+        }
+      }/*  */,
+      buttonRightClickHandler: this.themeRightClickHandler()/*  */
+    })
+  }
+
   createThemeButtonContainer (theme) {
     let name
     if (theme.topic !== '') {
@@ -422,12 +465,15 @@ class ReadCodebook {
   applyColorsToDimensions () {
     if (this.codebook && this.codebook.dimensions) {
       // const listOfColors = ColorUtils.getDifferentColors(this.codebook.dimensions.length + 1)
-      let topic = this.codebook.themes.filter((theme) => {
-        return theme.isTopic === true
-      })
+      let topic = this.getTopicTheme()
       if (topic) {
         let topicColor = ColorUtils.getTopicColor()
-        topic[0].color = ColorUtils.setAlphaToColor(topicColor, 0.6)
+        topic.color = ColorUtils.setAlphaToColor(topicColor, 0.6)
+      }
+      let misc = this.getMiscTheme()
+      if (misc) {
+        let miscColor = ColorUtils.getMiscColor()
+        misc.color = ColorUtils.setAlphaToColor(miscColor, 0.6)
       }
       this.codebook.dimensions.forEach((dimension) => {
         // const color = listOfColors.pop()
@@ -670,6 +716,11 @@ class ReadCodebook {
   getTopicTheme () {
     let themes = this.codebook.themes
     return _.find(themes, (theme) => { return theme.isTopic === true })
+  }
+
+  getMiscTheme () {
+    let themes = this.codebook.themes
+    return _.find(themes, (theme) => { return theme.isMisc === true })
   }
 
 }
