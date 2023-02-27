@@ -677,10 +677,12 @@ class ReadCodebook {
         // Get button
         let themeButton = document.querySelectorAll('.tagButton[data-code-id="' + relation.fromConcept.id + '"]')
         // Add relation to tooltip
-        if (themeButton[0].title.includes('Relationships:')) {
-          themeButton[0].title += '\n' + relation.linkingWord + ' ' + relation.toConcept.name
-        } else {
-          themeButton[0].title += '\nRelationships:\n' + relation.linkingWord + ' ' + relation.toConcept.name
+        if (themeButton.length > 0) {
+          if (themeButton[0].title.includes('Relationships:')) {
+            themeButton[0].title += '\n' + relation.linkingWord + ' ' + relation.toConcept.name
+          } else {
+            themeButton[0].title += '\nRelationships:\n' + relation.linkingWord + ' ' + relation.toConcept.name
+          }
         }
       }
     }

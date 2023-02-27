@@ -285,6 +285,10 @@ class CXLImporter {
           } else {
             let codebookDefinitionAnnotations = annotations.filter(annotation => annotation.motivation === 'codebookDevelopment' || 'defining')
             Codebook.fromAnnotations(codebookDefinitionAnnotations, (err, previousCodebook) => {
+              let miscThemeObject = _.filter(previousCodebook.themes, (theme) => {
+                return theme.isMisc === true
+              })
+              importedCodebook.themes.push(miscThemeObject[0])
               let previousCodebookIDs = previousCodebook.themes.map(previousCodebookTheme => previousCodebookTheme.id)
               let previousCodebookNames = previousCodebook.themes.map(previousCodebookTheme => previousCodebookTheme.name)
               let importedCodebookIDs = importedCodebook.themes.map(importedCodebookTheme => importedCodebookTheme.id)
@@ -359,15 +363,17 @@ class CXLImporter {
                 // UPDATE DIMENSION FOR THEMES
                 let maintainedDimensions = previousCodebook.dimensions.filter(previousCodebookDimension => importedDimensionsNames.includes(previousCodebookDimension.name))
                 importedCodebook.themes.forEach(theme => {
-                  let themeColor = CXLImporter.getThemeColor(conceptAppearanceList, theme)
-                  themeColor = ColorUtils.getColorFromCXLFormat(themeColor)
-                  let dimension = maintainedDimensions.find((dim) => {
-                    // Delete element 5 on first iteration
-                    let dimColor = dim.color.replaceAll(' ', '')
-                    return dimColor === themeColor
-                  })
-                  if (dimension) {
-                    theme.dimension = dimension.name
+                  if (!theme.isMisc) {
+                    let themeColor = CXLImporter.getThemeColor(conceptAppearanceList, theme)
+                    themeColor = ColorUtils.getColorFromCXLFormat(themeColor)
+                    let dimension = maintainedDimensions.find((dim) => {
+                      // Delete element 5 on first iteration
+                      let dimColor = dim.color.replaceAll(' ', '')
+                      return dimColor === themeColor
+                    })
+                    if (dimension) {
+                      theme.dimension = dimension.name
+                    }
                   }
                 })
                 // UPDATED THEMES

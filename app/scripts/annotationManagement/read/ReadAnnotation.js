@@ -10,6 +10,8 @@ import HypothesisClientManager from '../../annotationServer/hypothesis/Hypothesi
 import Neo4JClientManager from '../../annotationServer/neo4j/Neo4JClientManager'
 import Linking from '../purposes/linking/Linking'
 import Classifying from '../../annotationManagement/purposes/Classifying'
+import Alerts from '../../utils/Alerts'
+import Config from '../../Config'
 const ANNOTATIONS_UPDATE_INTERVAL_IN_SECONDS = 5
 const ANNOTATION_OBSERVER_INTERVAL_IN_SECONDS = 3
 require('jquery-contextmenu/dist/jquery.contextMenu')
@@ -353,6 +355,9 @@ class ReadAnnotation {
         if (annotation.creator === window.abwa.groupSelector.getCreatorData()) {
           // Check if somebody has replied
           items.delete = { name: 'Delete' }
+          if (annotation.body[0].purpose === 'classifying') {
+            items.update = { name: 'Update' }
+          }
         } else {
           // Currently there is nothing to do
         }
@@ -363,6 +368,51 @@ class ReadAnnotation {
                 annotation: annotation
               })
             }/*  *//*  */
+            if (key === 'update') {
+              let showForm = () => {
+                let previousTheme = annotation.body[0].value
+                // let previousTheme = window.abwa.codebookManager.codebookReader.codebook.getCodeOrThemeFromId(previousThemeId)
+                let themes = window.abwa.codebookManager.codebookReader.codebook.themes
+                themes = themes.filter((theme) => {
+                  return !theme.isMisc && !theme.isTopic
+                })
+                // Create form
+                let html = ''
+                let select = document.createElement('select')
+                select.id = 'conceptName'
+                themes.forEach(theme => {
+                  let option = document.createElement('option')
+                  if (theme.id !== previousTheme.id && theme.dimension !== 'undefined') {
+                    option.text = theme.name
+                    option.value = theme.id
+                    select.add(option)
+                  }
+                })
+                html += 'Update to:' + select.outerHTML + '<br>'
+                let themeToUpdateID
+                Alerts.multipleInputAlert({
+                  title: 'Updating ' + previousTheme.name + ' annotation:',
+                  html: html,
+                  // position: Alerts.position.bottom, // TODO Must be check if it is better to show in bottom or not
+                  preConfirm: () => {
+                    themeToUpdateID = document.querySelector('#conceptName').value
+                    // let themeToUpdate = window.abwa.codebookManager.codebookReader.codebook.getCodeOrThemeFromId(themeToUpdateID)
+                  },
+                  callback: (err) => {
+                    if (err) {
+                      window.alert('An unexpected error happened when trying to load the alert.')
+                    } else {
+                      annotation.tags = window.abwa.annotationManagement.annotationCreator.obtainTagsToCreateAnnotation({ codeId: themeToUpdateID })
+                      annotation.body = window.abwa.annotationManagement.annotationCreator.obtainBodyToCreateAnnotation({ codeId: themeToUpdateID, purpose: 'classifying' })
+                      LanguageUtils.dispatchCustomEvent(Events.updateAnnotation, {
+                        annotation: annotation
+                      })
+                    }
+                  }
+                })
+              }
+              showForm()
+            }
           },
           items: items
         }
