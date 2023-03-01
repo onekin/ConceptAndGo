@@ -2,7 +2,7 @@
   "name": "__MSG_appName__",
   "short_name": "__MSG_appShortName__",
   "description": "__MSG_appDescription__",
-  "version": "0.2.3",
+  "version": "0.0.3",
   "manifest_version": 2,
   "default_locale": "en",
   "icons": {
@@ -82,5 +82,5 @@
   ],
   "web_accessible_resources": ["pages/*.html", "content/*", "images/*"],
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAh62oqu5gL13CQVRafRtqaTWkS6UQru7zvTinTn2UxJvFUjsOttkumdEhKh4g4fOvBdYtT07LNsxgVpehKNRiZqdlwSBVIrNTO2vdDKIIHGd4WGYZ/DJLJ7IMgoIvVgvDozH+WwqMEhaeldI+flDAPPswBClT8Sve3npYpM1pZAd9MPyi8HPUXOyJd83gJY3n156rS+DKIEvlR3Ree1Hs8Jns7oNG0AN4+XNZQ3U4vE3W8+YWBfgIn0GOqKnAtza2WPQ2Pml3wupILypaVP7fIt4yQ++YI9ucvOqYzhaD1l1aFi2OMCOZSXNaixQ4PrRooLqGsWoKuiechYE92dijOQIDAQAB"
-  
+
 }
