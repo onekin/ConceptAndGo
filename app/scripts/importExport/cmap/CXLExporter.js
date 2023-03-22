@@ -25,7 +25,7 @@ export class CXLExporter {
     let relationships = window.abwa.mapContentManager.relationships
     // Prepare linking phrases for doing conections
     let linkingPhrases = []
-    for (let i = 0; i < relationships.length; i++) {
+    /* for (let i = 0; i < relationships.length; i++) {
       let relation = relationships[i]
       let linkingPhrase = this.findLinkingPhrase(linkingPhrases, relation)
       if (linkingPhrase) {
@@ -43,6 +43,14 @@ export class CXLExporter {
         linkingPhraseToAdd.evidenceAnnotations = linkingPhraseToAdd.evidenceAnnotations.concat(relation.evidenceAnnotations)
         linkingPhrases.push(linkingPhraseToAdd)
       }
+    } */
+    for (let i = 0; i < relationships.length; i++) {
+      let relation = relationships[i]
+      let linkingPhraseToAdd = new LinkingPhrase(relation.linkingWord, relation.id)
+      linkingPhraseToAdd.fromConcepts.push(relation.fromConcept.id)
+      linkingPhraseToAdd.toConcepts.push(relation.toConcept.id)
+      linkingPhraseToAdd.evidenceAnnotations = linkingPhraseToAdd.evidenceAnnotations.concat(relation.evidenceAnnotations)
+      linkingPhrases.push(linkingPhraseToAdd)
     }
 
     let urlFiles = []
@@ -184,6 +192,9 @@ export class CXLExporter {
       let font = document.createAttribute('font-style')
       font.value = 'italic|bold'
       dimensionAppearance.setAttributeNode(font)
+      let fontSize = document.createAttribute('font-size')
+      fontSize.value = '14'
+      dimensionAppearance.setAttributeNode(fontSize)
       conceptAppearanceList.appendChild(dimensionAppearance)
     }
     // Add concepts
@@ -217,6 +228,10 @@ export class CXLExporter {
           conceptAppearance.setAttributeNode(background)
         }
       }
+      // font-size="14"
+      let fontSize = document.createAttribute('font-size')
+      fontSize.value = '14'
+      conceptAppearance.setAttributeNode(fontSize)
       conceptAppearanceList.appendChild(conceptAppearance)
       if (concept.evidenceAnnotations.length > 0) {
         for (let i = 0; i < concept.evidenceAnnotations.length; i++) {
