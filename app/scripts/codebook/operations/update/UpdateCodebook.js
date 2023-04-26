@@ -10,7 +10,7 @@ import Dimension from '../../model/Dimension'
 import LanguageUtils from '../../../utils/LanguageUtils'
 import ImageUtilsOCR from '../../../utils/ImageUtilsOCR'
 import ColorUtils from '../../../utils/ColorUtils'
-
+// import swal from 'sweetalert2'
 
 class UpdateCodebook {
   constructor () {
@@ -156,6 +156,25 @@ class UpdateCodebook {
         }
       })
     })
+    $.contextMenu({
+      selector: '#' + 'newThemeButton' + dimensionName,
+      items: {
+        updateMetaConcept: {
+          name: 'Rename meta-concept',
+          callback: function () {
+            console.log('RENAMING!! ' + dimension.name)
+          }
+        },
+        removeMetaConcept: {
+          name: 'Remove meta-concept',
+          callback: function () {
+            LanguageUtils.dispatchCustomEvent(Events.removeDimension, {
+              dimension: dimension
+            })
+          }
+        }
+      }
+    })
     window.abwa.codebookManager.codebookReader.buttonContainer.append(header)
   }
 
@@ -164,7 +183,7 @@ class UpdateCodebook {
    */
   static createNewDimensionButton (dimensionName) {
     const newDimensionButton = document.createElement('button')
-    newDimensionButton.innerText = 'New THEME'
+    newDimensionButton.innerText = 'New Meta-Concept'
     newDimensionButton.id = 'newDimensionButton'
     newDimensionButton.className = 'tagButton codingElement'
     newDimensionButton.addEventListener('click', async () => {
@@ -323,35 +342,37 @@ class UpdateCodebook {
    */
   removeDimensionEventHandler () {
     return (event) => {
-      const theme = event.detail.theme
+      const dimension = event.detail.dimension
       // Ask user is sure to remove
       Alerts.confirmAlert({
-        title: 'Removing ' + Config.tags.grouped.group + theme.name,
-        text: 'Are you sure that you want to remove the ' + Config.tags.grouped.group + ' ' + theme.name + '. All dependant codes will be deleted too. You cannot undo this operation.',
+        title: 'Removing ' + dimension.name,
+        text: 'Are you sure that you want to remove the ' + dimension.name + '. All dependant concepts will be deleted too. You cannot undo this operation.',
         alertType: Alerts.alertType.warning,
         callback: () => {
-          let annotationsToDelete = [theme.id]
+          let annotationsToDelete = [dimension.id]
           // Get theme codes id to be removed too
-          const codesId = _.map(theme.codes, (code) => { return code.id })
-          if (_.every(codesId, _.isString)) {
-            annotationsToDelete = annotationsToDelete.concat(codesId)
+          const themeId = _.map(dimension.themes, (theme) => { return theme.id })
+          if (_.every(themeId, _.isString)) {
+            annotationsToDelete = annotationsToDelete.concat(themeId)
           }
           // Get linking annotions made with removed theme
           let groupLinkingAnnotations = window.abwa.annotationManagement.annotationReader.groupLinkingAnnotations
-          let linkingAnnotationToRemove = _.filter(groupLinkingAnnotations, (linkingAnnotation) => {
-            let linkingBody = linkingAnnotation.body[0]
-            return linkingBody.value.from.id === theme.id || linkingBody.value.to === theme.id
+          themeId.forEach((conceptId) => {
+            let linkingAnnotationToRemove = _.filter(groupLinkingAnnotations, (linkingAnnotation) => {
+              let linkingBody = linkingAnnotation.body[0]
+              return linkingBody.value.from.id === conceptId || linkingBody.value.to === conceptId
+            })
+            console.log(linkingAnnotationToRemove)
+            let linkingsId = _.map(linkingAnnotationToRemove, (annotation) => { return annotation.id })
+            if (_.every(linkingsId, _.isString)) {
+              annotationsToDelete = annotationsToDelete.concat(linkingsId)
+            }
           })
-          console.log(linkingAnnotationToRemove)
-          let linkingsId = _.map(linkingAnnotationToRemove, (annotation) => { return annotation.id })
-          if (_.every(linkingsId, _.isString)) {
-            annotationsToDelete = annotationsToDelete.concat(linkingsId)
-          }
           window.abwa.annotationServerManager.client.deleteAnnotations(annotationsToDelete, (err, result) => {
             if (err) {
               Alerts.errorAlert({ text: 'Unexpected error when deleting the code.' })
             } else {
-              LanguageUtils.dispatchCustomEvent(Events.themeRemoved, { theme: theme })
+              LanguageUtils.dispatchCustomEvent(Events.dimensionRemoved, { dimension: dimension })
             }
           })
         }

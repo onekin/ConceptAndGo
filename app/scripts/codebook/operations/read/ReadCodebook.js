@@ -263,98 +263,6 @@ class ReadCodebook {
     }
   }
 
-  createGroupedThemeButtonContainer (theme, codes) {
-    return Buttons.createGroupedButtons({
-      id: theme.id,
-      name: theme.name,
-      className: 'codingElement',
-      description: theme.description,
-      color: theme.color,
-      childGuideElements: codes,
-      groupHandler: (event) => {
-        const themeId = event.target.parentElement.parentElement.dataset.codeId
-        if (themeId) {
-          const theme = this.codebook.getCodeOrThemeFromId(themeId)
-          if (LanguageUtils.isInstanceOf(theme, Theme)) {
-            let id = ''
-            let tags = ''
-            // First, ask for the currently annotated code
-            const currentlyAnnotatedCode = window.abwa.annotatedContentManager.searchAnnotatedCodeForGivenThemeId(themeId)
-            // If there is already a code annotation for this theme, we have to let the tags of the code, to annotate with the current code
-            if (currentlyAnnotatedCode) {
-              tags = [Config.namespace + ':' + Config.tags.grouped.relation + ':' + theme.name, Config.namespace + ':' + Config.tags.grouped.subgroup + ':' + currentlyAnnotatedCode.code.name]
-              id = currentlyAnnotatedCode.code.id
-              // else, we annotate with the theme
-            } else {
-              tags = [Config.namespace + ':' + Config.tags.grouped.group + ':' + theme.name]
-              id = themeId
-            }
-            // Test if text is selected
-            if (document.getSelection().toString().length > 0) {
-              // If selected create annotation
-              LanguageUtils.dispatchCustomEvent(Events.createAnnotation, {
-                purpose: 'classifying',
-                tags: tags,
-                theme: theme,
-                codeId: id
-              })
-            } else {
-              // Else navigate to annotation
-              LanguageUtils.dispatchCustomEvent(Events.navigateToAnnotationByCode, {
-                codeId: theme.id
-              })
-            }
-          }
-        }
-      },
-      buttonHandler: (event) => {
-        const codeId = event.target.dataset.codeId
-        if (codeId) {
-          const code = this.codebook.getCodeOrThemeFromId(codeId)
-          if (!LanguageUtils.isInstanceOf(code, Theme)) {
-            // The rest of the annotations must be classified with this code too
-            // Get the annotatedTheme object of the code selected
-            const annotatedTheme = window.abwa.annotatedContentManager.getAnnotatedThemeOrCodeFromThemeOrCodeId(code.theme.id)
-            // retrive the annotatedTheme object of the code selected
-            const currentlyAnnotatedCode = window.abwa.annotatedContentManager.searchAnnotatedCodeForGivenThemeId(code.theme.id)
-            // We have to throw the event of codeToAll when:
-            // There are still theme annotations or there are annotations of other codes done
-            if ((annotatedTheme.hasAnnotations() || (currentlyAnnotatedCode && currentlyAnnotatedCode.code.id !== codeId))) {
-              if (currentlyAnnotatedCode) {
-                // For the case, we are annotating with a code that is not the currently annotated code
-                // In the last case we do not have to throw codeToAll event, we will do the codeToAll after the annotation is created
-                if (currentlyAnnotatedCode.code.id !== codeId) {
-                  LanguageUtils.dispatchCustomEvent(Events.codeToAll, {
-                    codeId: code.id,
-                    currentlyAnnotatedCode: currentlyAnnotatedCode
-                  })
-                }
-              } else {
-                // In the case that we have annotated with themes until now and there isn't a code annotation yet
-                LanguageUtils.dispatchCustomEvent(Events.codeToAll, {
-                  codeId: code.id,
-                  currentlyAnnotatedCode: currentlyAnnotatedCode
-                })
-              }
-            }
-            // Create new annotation if text selected
-            if (document.getSelection().toString().length > 0) {
-              // Create new annotation
-              const tags = [Config.namespace + ':' + Config.tags.grouped.relation + ':' + code.theme.name, Config.namespace + ':' + Config.tags.grouped.subgroup + ':' + code.name]
-              LanguageUtils.dispatchCustomEvent(Events.createAnnotation, {
-                purpose: 'classifying',
-                tags: tags,
-                codeId: code.id
-              })
-            }
-          }
-        }
-      }/*  */,
-      groupRightClickHandler: this.themeRightClickHandler(),
-      buttonRightClickHandler: this.codeRightClickHandler()/*  */
-    })
-  }
-
   createUndefinedHighlightTheme (theme) {
     let name = 'Highlight'
     return Buttons.createButton({
@@ -597,8 +505,8 @@ class ReadCodebook {
    */
   dimensionRemovedEventHandler () {
     return (event) => {
-      const theme = event.detail.theme
-      theme.annotationGuide.removeTheme(theme)
+      const dimension = event.detail.dimension
+      dimension.annotationGuide.removeDimension(dimension)
       // Reload button container
       this.reloadButtonContainer()
       // Dispatch codebook updated event

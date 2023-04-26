@@ -253,8 +253,14 @@ class Codebook {
     }
   }
 
-  removeDimension (theme) {
-    _.remove(this.themes, theme)
+  removeDimension (dimension) {
+    const themesToRemove = dimension.themes
+    if (themesToRemove) {
+      themesToRemove.forEach((theme) => {
+        this.removeTheme(theme)
+      })
+    }
+    _.remove(this.dimensions, dimension)
   }
 
   toObjects (name) {
