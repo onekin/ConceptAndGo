@@ -183,7 +183,7 @@ class UpdateCodebook {
    */
   static createNewDimensionButton (dimensionName) {
     const newDimensionButton = document.createElement('button')
-    newDimensionButton.innerText = 'New Meta-Concept'
+    newDimensionButton.innerText = '+ Meta-Concept'
     newDimensionButton.id = 'newDimensionButton'
     newDimensionButton.className = 'tagButton codingElement'
     newDimensionButton.addEventListener('click', async () => {
