@@ -3,6 +3,7 @@ import $ from 'jquery'
 import Alerts from '../../../utils/Alerts'
 import LanguageUtils from '../../../utils/LanguageUtils'
 import Events from '../../../Events'
+let swal = null
 
 class LinkingForm {
   /**
@@ -73,9 +74,13 @@ class LinkingForm {
       let to = document.querySelector('#categorizeDropdownTo').value
       preConfirmData.fromTheme = window.abwa.codebookManager.codebookReader.codebook.getCodeOrThemeFromId(from)
       preConfirmData.toTheme = window.abwa.codebookManager.codebookReader.codebook.getCodeOrThemeFromId(to)
-      if (from === to) {
+      if (from === to || preConfirmData.linkingWord === '') {
         const swal = require('sweetalert2')
-        swal.showValidationMessage('You have to make the relation between two different concepts.')
+        if (from === to) {
+          swal.showValidationMessage('You have to make the relation between two different concepts.')
+        } else {
+          swal.showValidationMessage('You have to provide a linking word.')
+        }
       }
     }
     // Predeny
@@ -86,9 +91,13 @@ class LinkingForm {
       let to = document.querySelector('#categorizeDropdownTo').value
       preDenyData.fromTheme = window.abwa.codebookManager.codebookReader.codebook.getCodeOrThemeFromId(from)
       preDenyData.toTheme = window.abwa.codebookManager.codebookReader.codebook.getCodeOrThemeFromId(to)
-      if (from === to) {
+      if (from === to || preConfirmData.linkingWord === '') {
         const swal = require('sweetalert2')
-        swal.showValidationMessage('You have to make the relation between two different concepts.')
+        if (from === to) {
+          swal.showValidationMessage('You have to make the relation between two different concepts.')
+        } else {
+          swal.showValidationMessage('You have to provide a linking word.')
+        }
         return false
       }
     }

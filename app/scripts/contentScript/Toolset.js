@@ -1,7 +1,5 @@
 import axios from 'axios'
 import _ from 'lodash'
-import Events from '../Events'
-import LanguageUtils from '../utils/LanguageUtils'
 import Alerts from '../utils/Alerts'
 import PreviousVersionAnnotationImporter from '../importExport/PreviousVersionAnnotationImporter'
 import { CXLExporter } from '../importExport/cmap/CXLExporter'
@@ -165,31 +163,28 @@ class Toolset {
       build: () => {
         // Create items for context menu
         let items = {}
-        items.exportWithToolURL = { name: 'Export CXL with ' + 'Concept&Go' + ' URLs' }
-        items.exportWithHypothesisURL = { name: 'Export CXL with Hypothes.is URLs' }
+        items.exportWithToolURL = { name: 'Export CXL to CmapCloud' }
+        // items.exportWithHypothesisURL = { name: 'Export CXL with Hypothes.is URLs' }
         return {
           callback: (key, opt) => {
             if (key === 'import') {
               // AnnotationImporter.importReviewAnnotations()
             }
-            chrome.runtime.sendMessage({ scope: 'cmapCloud', cmd: 'getUserData' }, (response) => {
-              if (response.data) {
-                let data = response.data
-                if (data.userData.user && data.userData.password && data.userData.uid) {
-                  if (key === 'exportWithHypothesisURL') {
-                    CXLExporter.exportCXLFile('cmapCloud', 'hypothesis', data.userData)
-                  }
-                  if (key === 'exportWithToolURL') {
+            if (key === 'exportWithToolURL') {
+              chrome.runtime.sendMessage({ scope: 'cmapCloud', cmd: 'getUserData' }, (response) => {
+                if (response.data) {
+                  let data = response.data
+                  if (data.userData.user && data.userData.password && data.userData.uid) {
                     CXLExporter.exportCXLFile('cmapCloud', 'tool', data.userData)
                   }
+                } else {
+                  let callback = () => {
+                    window.open(chrome.extension.getURL('pages/options.html#cmapCloudConfiguration'))
+                  }
+                  Alerts.infoAlert({ text: 'Please, provide us your Cmap Cloud login credentials in the configuration page of the Web extension.', title: 'We need your Cmap Cloud credentials', callback: callback() })
                 }
-              } else {
-                let callback = () => {
-                  window.open(chrome.extension.getURL('pages/options.html#cmapCloudConfiguration'))
-                }
-                Alerts.infoAlert({ text: 'Please, provide us your Cmap Cloud login credentials in the configuration page of the Web extension.', title: 'We need your Cmap Cloud credentials', callback: callback() })
-              }
-            })
+              })
+            }
           },
           items: items
         }

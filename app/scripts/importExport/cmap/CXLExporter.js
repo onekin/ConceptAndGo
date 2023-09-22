@@ -282,9 +282,9 @@ export class CXLExporter {
               let fromName = annotation.tags[0].replace('from:', '')
               let toName = annotation.tags[2].replace('to:', '')
               if (i === 0) {
-                name = LanguageUtils.camelize(fromName) + '_To_' + LanguageUtils.camelize(toName)
+                name = LanguageUtils.camelize(fromName) + '_' + linkingPhrase.linkingWord + '_' + LanguageUtils.camelize(toName)
               } else {
-                name = LanguageUtils.camelize(fromName) + '_To_' + LanguageUtils.camelize(toName)
+                name = LanguageUtils.camelize(fromName) + '_' + linkingPhrase.linkingWord + '_' + LanguageUtils.camelize(toName)
               }
               name = name.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s/g, '') + '---' + annotation.id
               let url
