@@ -3,6 +3,9 @@ import _ from 'lodash'
 import LanguageUtils from './utils/LanguageUtils'
 import Alerts from './utils/Alerts'
 
+const getURLFromSelectedAnnotation = function (selectedAnnotation) {
+  return selectedAnnotation
+}
 const kudeatzaileakHasieratu = function () {
   const checkDOM = setInterval(function () {
     window.cag = {}
@@ -56,11 +59,13 @@ const kudeatzaileakHasieratu = function () {
                           secondInput.remove()
                           // Change width
                           const noteDiv = node.querySelector('div[tabindex="0"]')
-                          noteDiv.style.height = '240px'
+                          noteDiv.style.height = '300px'
                           noteDiv.style.width = '210px'
+                          const noteChildDiv = noteDiv.querySelector('div')
+                          noteChildDiv.style.overflow = 'visible'
                           // change last img
                           const lastImg = node.querySelector('img.gwt-Image')
-                          lastImg.style.top = '240px'
+                          lastImg.style.top = '290px'
                           const canvasText = document.querySelectorAll('[CanvasType="Text"]')
                           canvasText.forEach(mapElement => {
                             let buttonItem
@@ -93,7 +98,7 @@ const kudeatzaileakHasieratu = function () {
                           //
                           // Create a select element
                           const selectElement = document.createElement('select')
-                          selectElement.className = 'selectedNames'
+                          selectElement.className = 'selectedNames gwt-TextBox'
                           selectElement.style.position = 'absolute'
                           selectElement.style.left = '2px'
                           let position = firstInput.style.top.replace('px', '')
@@ -110,8 +115,8 @@ const kudeatzaileakHasieratu = function () {
                           //
                           /// Create second select
                           const selectElementAnnotations = document.createElement('select')
-                          selectElementAnnotations.className = 'selectedAnnotations'
-                          selectElementAnnotations.style.position = 'absolute'
+                          selectElementAnnotations.className = 'selectedAnnotations gwt-TextBox'
+                          selectElementAnnotations.style.position = 'relative'
                           selectElementAnnotations.style.left = '2px'
                           let positionSelectElementConcepts = selectElement.style.top.replace('px', '')
                           positionSelectElementConcepts = parseInt(positionSelectElementConcepts) + 30
@@ -130,6 +135,7 @@ const kudeatzaileakHasieratu = function () {
                           selectElement.parentNode.insertBefore(selectElementAnnotations, selectElement.nextSibling)
 
                           selectElement.addEventListener('change', () => {
+                            selectElementAnnotations.innerHTML = ''
                             const selectedValue = selectElement.value
                             const allAnnotations = _.uniq(Array.from(document.querySelectorAll('#cmaps-and-res-view img')).map((elem) => { return elem.getAttribute('alt') }))
                             allAnnotations.forEach(elem => {
@@ -142,9 +148,27 @@ const kudeatzaileakHasieratu = function () {
                               }
                             })
                           })
+
+                          const annotationDiv = document.createElement('div')
+                          annotationDiv.contentEditable = 'true'
+                          annotationDiv.innerText = 'Annotations: '
+                          annotationDiv.style.position = 'relative'
+                          let positionSelectElementAnnotations = selectElementAnnotations.style.top.replace('px', '')
+                          positionSelectElementAnnotations = parseInt(positionSelectElementAnnotations) + 5
+                          annotationDiv.style.top = positionSelectElementAnnotations.toString() + 'px'
+                          annotationDiv.style.width = '196px'
+                          selectElementAnnotations.parentNode.insertBefore(annotationDiv, selectElementAnnotations.nextSibling)
                           // onchange selectElementAnnotations
                           selectElementAnnotations.addEventListener('change', () => {
-                            noteTextArea.value += ' ' + selectElementAnnotations.value
+                            const number = annotationDiv.children.length
+                            const newAnchor = document.createElement('a')
+                            const selectedAnnotation = selectElementAnnotations.value
+                            const annotationURL = getURLFromSelectedAnnotation(selectedAnnotation)
+                            // Set the href attribute
+                            newAnchor.href = annotationURL
+                            // Set the inner text or content of the anchor
+                            newAnchor.textContent = 'anno' + number + '; '
+                            annotationDiv.appendChild(newAnchor)
                           })
                         } else {
                           console.log("The parent div does not have a child div with class 'gwt-Label' and inner text 'Annotation'.")
