@@ -58,7 +58,6 @@ class ReadAnnotation {
     clearInterval(this.cleanInterval)
   }
 
-
   initReloadAnnotationsEvent (callback) {
     this.reloadInterval = setInterval(() => {
       this.updateAllAnnotations(() => {
@@ -69,7 +68,6 @@ class ReadAnnotation {
       callback()
     }
   }
-
 
   /**
    * Initializes annotations observer, to ensure dynamic web pages maintain highlights on the screen
@@ -193,7 +191,14 @@ class ReadAnnotation {
       } else {
         // this.annotationObjects = annotationObjects.map(annotationObject => Annotation.deserialize(annotationObject))
         let currentResourceAnnotations = _.filter(annotationObjects, (annotationObject) => {
-          return annotationObject.uri === window.abwa.targetManager.getDocumentURIToSaveInAnnotationServer()
+          let uriToCompare = window.abwa.targetManager.getDocumentURIToSaveInAnnotationServer()
+          if (uriToCompare.includes('#' + Config.urlParamName)) {
+            const pattern = new RegExp(`#${Config.urlParamName}.*$`)
+            uriToCompare = uriToCompare.replace(pattern, '')
+            return annotationObject.uri === uriToCompare
+          } else {
+            return annotationObject.uri === uriToCompare
+          }
         })
         this.allGroupAnnotations = annotationObjects.map(annotationObject => Annotation.deserialize(annotationObject))
         this.allAnnotations = currentResourceAnnotations.map(currentResourceAnnotation => Annotation.deserialize(currentResourceAnnotation))
