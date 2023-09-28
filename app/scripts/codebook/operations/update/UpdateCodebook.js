@@ -346,7 +346,7 @@ class UpdateCodebook {
       // Ask user is sure to remove
       Alerts.confirmAlert({
         title: 'Removing ' + dimension.name,
-        text: 'Are you sure that you want to remove the ' + dimension.name + '. All dependant concepts will be deleted too. You cannot undo this operation.',
+        text: 'Are you sure that you want to remove the ' + dimension.name + ' category? All dependant concepts will be deleted too. You cannot undo this operation.',
         alertType: Alerts.alertType.warning,
         callback: () => {
           let annotationsToDelete = [dimension.id]
@@ -462,7 +462,7 @@ class UpdateCodebook {
       const theme = event.detail.theme
       // Ask user is sure to remove
       Alerts.confirmAlert({
-        title: 'Removing ' + Config.tags.grouped.group + theme.name,
+        title: 'Removing the ' + Config.tags.grouped.group + ' ' + theme.name,
         text: 'Are you sure that you want to remove the ' + Config.tags.grouped.group + ' ' + theme.name + '. All dependant codes will be deleted too. You cannot undo this operation.',
         alertType: Alerts.alertType.warning,
         callback: () => {

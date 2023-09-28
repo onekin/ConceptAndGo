@@ -47,10 +47,12 @@ export class CXLExporter {
     for (let i = 0; i < relationships.length; i++) {
       let relation = relationships[i]
       let linkingPhraseToAdd = new LinkingPhrase(relation.linkingWord, relation.id)
-      linkingPhraseToAdd.fromConcepts.push(relation.fromConcept.id)
-      linkingPhraseToAdd.toConcepts.push(relation.toConcept.id)
-      linkingPhraseToAdd.evidenceAnnotations = linkingPhraseToAdd.evidenceAnnotations.concat(relation.evidenceAnnotations)
-      linkingPhrases.push(linkingPhraseToAdd)
+      if (relation.fromConcept && relation.toConcept) {
+        linkingPhraseToAdd.fromConcepts.push(relation.fromConcept.id)
+        linkingPhraseToAdd.toConcepts.push(relation.toConcept.id)
+        linkingPhraseToAdd.evidenceAnnotations = linkingPhraseToAdd.evidenceAnnotations.concat(relation.evidenceAnnotations)
+        linkingPhrases.push(linkingPhraseToAdd)
+      }
     }
 
     let urlFiles = []

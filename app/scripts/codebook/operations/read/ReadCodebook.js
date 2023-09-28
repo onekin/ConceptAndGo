@@ -239,7 +239,7 @@ class ReadCodebook {
     this.codebook.dimensions.forEach((dimension) => {
       // Create new theme button
       UpdateCodebook.createNewThemeButton(dimension)
-      let themes = this.codebook.themes.filter((theme) => {
+      const themes = this.codebook.themes.filter((theme) => {
         return theme.dimension === dimension.name
       })
       themes.sort((a, b) => a.name.localeCompare(b.name))
@@ -251,7 +251,7 @@ class ReadCodebook {
         }
       }
     })
-    let undefindedThemes = this.codebook.themes.filter((theme) => {
+    const undefindedThemes = this.codebook.themes.filter((theme) => {
       return !theme.dimension
     })
     for (let i = 0; i < undefindedThemes.length; i++) {
@@ -264,7 +264,7 @@ class ReadCodebook {
   }
 
   createUndefinedHighlightTheme (theme) {
-    let name = 'Highlight'
+    const name = 'Highlight'
     return Buttons.createButton({
       id: theme.id,
       name: name,
@@ -366,27 +366,26 @@ class ReadCodebook {
     }) !== -1
   }
 
-
   /**
    * This function gives a color to each codebook element
    */
   applyColorsToDimensions () {
     if (this.codebook && this.codebook.dimensions) {
       // const listOfColors = ColorUtils.getDifferentColors(this.codebook.dimensions.length + 1)
-      let topic = this.getTopicTheme()
+      const topic = this.getTopicTheme()
       if (topic) {
-        let topicColor = ColorUtils.getTopicColor()
+        const topicColor = ColorUtils.getTopicColor()
         topic.color = ColorUtils.setAlphaToColor(topicColor, 0.6)
       }
-      let misc = this.getMiscTheme()
+      const misc = this.getMiscTheme()
       if (misc) {
-        let miscColor = ColorUtils.getMiscColor()
+        const miscColor = ColorUtils.getMiscColor()
         misc.color = ColorUtils.setAlphaToColor(miscColor, 0.6)
       }
       this.codebook.dimensions.forEach((dimension) => {
         // const color = listOfColors.pop()
         // Set a color for each theme
-        let themesPerDimension = this.codebook.themes.filter((theme) => {
+        const themesPerDimension = this.codebook.themes.filter((theme) => {
           return theme.dimension === dimension.name
         })
         // Set color gradient for each code
@@ -405,7 +404,7 @@ class ReadCodebook {
   themeRightClickHandler () {
     return (themeId) => {
       const items = {}
-      let theme = this.codebook.getCodeOrThemeFromId(themeId)
+      const theme = this.codebook.getCodeOrThemeFromId(themeId)
       if (!theme.isTopic) {
         items.updateTheme = { name: 'Rename ' + Config.tags.grouped.group }
         items.removeTheme = { name: 'Remove ' + Config.tags.grouped.group }
@@ -431,23 +430,23 @@ class ReadCodebook {
             }
           }
           if (key === 'manageRelationships') {
-            let theme = this.codebook.getCodeOrThemeFromId(themeId)
+            const theme = this.codebook.getCodeOrThemeFromId(themeId)
             if (LanguageUtils.isInstanceOf(theme, Theme)) {
               window.abwa.mapContentManager.manageRelationships(theme)
             }
           }
           if (key === 'showAnnotations') {
-            let theme = this.codebook.getCodeOrThemeFromId(themeId)
+            const theme = this.codebook.getCodeOrThemeFromId(themeId)
             if (LanguageUtils.isInstanceOf(theme, Theme)) {
               window.abwa.annotationServerManager.client.getUserProfile((err, userProfile) => {
                 if (err) {
                   console.error('Error while retrieving user profile in hypothesis')
                 } else {
                   console.log(userProfile)
-                  let groupId = window.abwa.groupSelector.currentGroup.id
-                  let groupName = window.abwa.groupSelector.currentGroup.name.toLowerCase().replace(/ /g, '-')
-                  let query = '?q=tag:' + Config.namespace + ':' + Config.tags.grouped.group + ':' + theme.name.replace(/ /g, '+')
-                  let url = 'https://hypothes.is/groups/' + groupId + '/' + groupName + query
+                  const groupId = window.abwa.groupSelector.currentGroup.id
+                  const groupName = window.abwa.groupSelector.currentGroup.name.toLowerCase().replace(/ /g, '-')
+                  const query = '?q=tag:' + Config.namespace + ':' + Config.tags.grouped.group + ':' + theme.name.replace(/ /g, '+')
+                  const url = 'https://hypothes.is/groups/' + groupId + '/' + groupName + query
                   console.log(url)
                   window.open(url)
                 }
@@ -565,7 +564,6 @@ class ReadCodebook {
     }
   }
 
-
   /**
    * Creates event handler for event CodebookCreated
    * @returns {function(...[*]=)}
@@ -579,17 +577,19 @@ class ReadCodebook {
 
   relationshipsLoadedEventHandler () {
     return () => {
-      let relations = window.abwa.mapContentManager.relationships
+      const relations = window.abwa.mapContentManager.relationships
       for (let i = 0; i < relations.length; i++) {
-        let relation = relations[i]
+        const relation = relations[i]
         // Get button
-        let themeButton = document.querySelectorAll('.tagButton[data-code-id="' + relation.fromConcept.id + '"]')
-        // Add relation to tooltip
-        if (themeButton.length > 0) {
-          if (themeButton[0].title.includes('Relationships:')) {
-            themeButton[0].title += '\n' + relation.linkingWord + ' ' + relation.toConcept.name
-          } else {
-            themeButton[0].title += '\nRelationships:\n' + relation.linkingWord + ' ' + relation.toConcept.name
+        if (relation.fromConcept) {
+          const themeButton = document.querySelectorAll('.tagButton[data-code-id="' + relation.fromConcept.id + '"]')
+          // Add relation to tooltip
+          if (themeButton.length > 0) {
+            if (themeButton[0].title.includes('Relationships:')) {
+              themeButton[0].title += '\n' + relation.linkingWord + ' ' + relation.toConcept.name
+            } else {
+              themeButton[0].title += '\nRelationships:\n' + relation.linkingWord + ' ' + relation.toConcept.name
+            }
           }
         }
       }
@@ -598,8 +598,8 @@ class ReadCodebook {
 
   relationshipAddedEventHandler () {
     return (event) => {
-      let relation = event.detail.relation
-      let themeButton = document.querySelectorAll('.tagButton[data-code-id="' + relation.fromConcept.id + '"]')
+      const relation = event.detail.relation
+      const themeButton = document.querySelectorAll('.tagButton[data-code-id="' + relation.fromConcept.id + '"]')
       // Add relation to tooltip
       if (themeButton[0].title.includes('Relationships:')) {
         themeButton[0].title += '\n' + relation.linkingWord + ' ' + relation.toConcept.name
@@ -611,8 +611,8 @@ class ReadCodebook {
 
   relationshipDeletedEventHandler () {
     return (event) => {
-      let relation = event.detail.relation
-      let themeButton = document.querySelectorAll('.tagButton[data-code-id="' + relation.fromConcept.id + '"]')
+      const relation = event.detail.relation
+      const themeButton = document.querySelectorAll('.tagButton[data-code-id="' + relation.fromConcept.id + '"]')
       // Add relation to tooltip
       if (themeButton[0].title.includes('Relationships:')) {
         themeButton[0].title = themeButton[0].title.replace('\n' + relation.linkingWord + ' ' + relation.toConcept.name, '')
@@ -624,15 +624,14 @@ class ReadCodebook {
   }
 
   getTopicTheme () {
-    let themes = this.codebook.themes
+    const themes = this.codebook.themes
     return _.find(themes, (theme) => { return theme.isTopic === true })
   }
 
   getMiscTheme () {
-    let themes = this.codebook.themes
+    const themes = this.codebook.themes
     return _.find(themes, (theme) => { return theme.isMisc === true })
   }
-
 }
 
 export default ReadCodebook

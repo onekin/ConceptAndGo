@@ -249,6 +249,47 @@ const kudeatzaileakHasieratu = function () {
                             }
                           })
                         }
+                      } else if (node.className === 'res-meta-dialog ui-dialog-content ui-widget-content') {
+                        console.log('window opened')
+                        node.style.height = '178.3px'
+                        const backgroundDiv = document.querySelector('div.ui-widget-overlay.ui-front')
+                        backgroundDiv.style.background = 'none'
+                        const keywordLabel = node.querySelector('label[for="rmeta_keywords"]')
+                        if (keywordLabel) {
+                          keywordLabel.textContent = 'Categories'
+                        }
+                        const languageLabel = node.querySelector('label[for="rmeta_language"]')
+                        if (languageLabel) {
+                          languageLabel.style.visibility = 'hidden'
+                        }
+                        const languageInput = node.querySelector('input[name="language"]')
+                        if (languageInput) {
+                          languageInput.style.visibility = 'hidden'
+                        }
+                        const authorLabel = node.querySelector('label[for="rmeta_author"]')
+                        if (authorLabel) {
+                          authorLabel.style.visibility = 'hidden'
+                        }
+                        const authorInput = node.querySelector('input[name="author"]')
+                        if (authorInput) {
+                          authorInput.style.visibility = 'hidden'
+                        }
+                        const emailLabel = node.querySelector('label[for="rmeta_email"]')
+                        if (emailLabel) {
+                          emailLabel.style.visibility = 'hidden'
+                        }
+                        const emailInput = node.querySelector('input[name="email"]')
+                        if (emailInput) {
+                          emailInput.style.visibility = 'hidden'
+                        }
+                        const organizationLabel = node.querySelector('label[for="rmeta_organization"]')
+                        if (organizationLabel) {
+                          organizationLabel.style.visibility = 'hidden'
+                        }
+                        const organizationInput = node.querySelector('input[name="organization"]')
+                        if (organizationInput) {
+                          organizationInput.style.visibility = 'hidden'
+                        }
                       }
                     }
                   } else {
