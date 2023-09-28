@@ -408,6 +408,7 @@ class ReadCodebook {
       if (!theme.isTopic) {
         items.updateTheme = { name: 'Rename ' + Config.tags.grouped.group }
         items.removeTheme = { name: 'Remove ' + Config.tags.grouped.group }
+        items.mergeTheme = { name: 'Merge ' + Config.tags.grouped.group + ' into...' }
         items.manageRelationships = { name: 'Manage links' }
         items.showAnnotations = { name: 'Show annotations' }
       } else {
@@ -427,6 +428,12 @@ class ReadCodebook {
             const theme = this.codebook.getCodeOrThemeFromId(themeId)
             if (LanguageUtils.isInstanceOf(theme, Theme)) {
               LanguageUtils.dispatchCustomEvent(Events.removeTheme, { theme: theme })
+            }
+          }
+          if (key === 'mergeTheme') {
+            const theme = this.codebook.getCodeOrThemeFromId(themeId)
+            if (LanguageUtils.isInstanceOf(theme, Theme)) {
+              LanguageUtils.dispatchCustomEvent(Events.mergeTheme, { theme: theme })
             }
           }
           if (key === 'manageRelationships') {

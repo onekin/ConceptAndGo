@@ -10,7 +10,6 @@ import Dimension from '../../model/Dimension'
 import LanguageUtils from '../../../utils/LanguageUtils'
 import ImageUtilsOCR from '../../../utils/ImageUtilsOCR'
 import ColorUtils from '../../../utils/ColorUtils'
-// import swal from 'sweetalert2'
 
 class UpdateCodebook {
   constructor () {
@@ -22,6 +21,7 @@ class UpdateCodebook {
     this.initCreateThemeEvent()
     this.initRemoveThemeEvent()
     this.initUpdateThemeEvent()
+    this.initMergeThemeEvent()
     this.initCreateDimensionEvent()
     this.initRemoveDimensionEvent()
     this.initUpdateDimensionEvent()
@@ -53,6 +53,13 @@ class UpdateCodebook {
     }
   }
 
+  initMergeThemeEvent (callback) {
+    this.events.mergeThemeEvent = { element: document, event: Events.mergeTheme, handler: this.mergeThemeEventHandler() }
+    this.events.mergeThemeEvent.element.addEventListener(this.events.mergeThemeEvent.event, this.events.mergeThemeEvent.handler, false)
+    if (_.isFunction(callback)) {
+      callback()
+    }
+  }
 
   initCreateDimensionEvent () {
     this.events.createDimensionEvent = { element: document, event: Events.createDimension, handler: this.createNewDimensionEventHandler() }
@@ -76,7 +83,7 @@ class UpdateCodebook {
    * This function adds a button in the sidebar that allows to create new themes.
    */
   static createNewThemeButton (dimension) {
-    let dimensionName = dimension.name
+    const dimensionName = dimension.name
     const header = document.createElement('div')
     header.className = 'containerHeaderDimension'
     header.id = 'newThemeButton' + dimensionName
@@ -89,10 +96,10 @@ class UpdateCodebook {
     header.appendChild(headerText)
     header.addEventListener('click', async () => {
       let newTheme
-      let target = window.abwa.annotationManagement.annotationCreator.obtainTargetToCreateAnnotation({})
+      const target = window.abwa.annotationManagement.annotationCreator.obtainTargetToCreateAnnotation({})
       let retrievedThemeName = ''
       // Get user selected content
-      let selection = document.getSelection()
+      const selection = document.getSelection()
       // If selection is child of sidebar, return null
       if (selection.anchorNode) {
         if ($(selection.anchorNode).parents('#annotatorSidebarWrapper').toArray().length !== 0 || selection.toString().length < 1) {
@@ -103,8 +110,8 @@ class UpdateCodebook {
               retrievedThemeName = await ImageUtilsOCR.getStringFromImage(selection.anchorNode)
             } else {
               if (selection.anchorNode.childNodes) {
-                let childArray = Array.from(selection.anchorNode.childNodes)
-                let imgChild = childArray.filter((node) => {
+                const childArray = Array.from(selection.anchorNode.childNodes)
+                const imgChild = childArray.filter((node) => {
                   return node.nodeName === 'IMG'
                 })
                 if (imgChild[0]) {
@@ -189,10 +196,10 @@ class UpdateCodebook {
     newDimensionButton.addEventListener('click', async () => {
       if (window.abwa.codebookManager.codebookReader.codebook.dimensions.length < 12) {
         let newDimension
-        let target = window.abwa.annotationManagement.annotationCreator.obtainTargetToCreateAnnotation({})
+        const target = window.abwa.annotationManagement.annotationCreator.obtainTargetToCreateAnnotation({})
         let retrievedDimensionName = ''
         // Get user selected content
-        let selection = document.getSelection()
+        const selection = document.getSelection()
         // If selection is child of sidebar, return null
         if (selection.anchorNode) {
           if ($(selection.anchorNode).parents('#annotatorSidebarWrapper').toArray().length !== 0 || selection.toString().length < 1) {
@@ -203,8 +210,8 @@ class UpdateCodebook {
                 retrievedDimensionName = await ImageUtilsOCR.getStringFromImage(selection.anchorNode)
               } else {
                 if (selection.anchorNode.childNodes) {
-                  let childArray = Array.from(selection.anchorNode.childNodes)
-                  let imgChild = childArray.filter((node) => {
+                  const childArray = Array.from(selection.anchorNode.childNodes)
+                  const imgChild = childArray.filter((node) => {
                     return node.nodeName === 'IMG'
                   })
                   if (imgChild[0]) {
@@ -234,7 +241,7 @@ class UpdateCodebook {
                 if (_.isElement(dimensionDescriptionElement)) {
                   dimensionDescription = dimensionDescriptionElement.value
                 }
-                let dimensionColor = ColorUtils.getDimensionColor(window.abwa.codebookManager.codebookReader.codebook.dimensions)
+                const dimensionColor = ColorUtils.getDimensionColor(window.abwa.codebookManager.codebookReader.codebook.dimensions)
                 newDimension = new Dimension({
                   name: dimensionName,
                   description: dimensionDescription,
@@ -268,8 +275,8 @@ class UpdateCodebook {
   }
 
   static dimensionNameExist (newDimensionName) {
-    let dimensions = window.abwa.codebookManager.codebookReader.codebook.dimensions
-    let dimension = _.find(dimensions, (dimension) => {
+    const dimensions = window.abwa.codebookManager.codebookReader.codebook.dimensions
+    const dimension = _.find(dimensions, (dimension) => {
       return dimension.name === newDimensionName
     })
     if (dimension) {
@@ -356,14 +363,14 @@ class UpdateCodebook {
             annotationsToDelete = annotationsToDelete.concat(themeId)
           }
           // Get linking annotions made with removed theme
-          let groupLinkingAnnotations = window.abwa.annotationManagement.annotationReader.groupLinkingAnnotations
+          const groupLinkingAnnotations = window.abwa.annotationManagement.annotationReader.groupLinkingAnnotations
           themeId.forEach((conceptId) => {
-            let linkingAnnotationToRemove = _.filter(groupLinkingAnnotations, (linkingAnnotation) => {
-              let linkingBody = linkingAnnotation.body[0]
+            const linkingAnnotationToRemove = _.filter(groupLinkingAnnotations, (linkingAnnotation) => {
+              const linkingBody = linkingAnnotation.body[0]
               return linkingBody.value.from.id === conceptId || linkingBody.value.to === conceptId
             })
             console.log(linkingAnnotationToRemove)
-            let linkingsId = _.map(linkingAnnotationToRemove, (annotation) => { return annotation.id })
+            const linkingsId = _.map(linkingAnnotationToRemove, (annotation) => { return annotation.id })
             if (_.every(linkingsId, _.isString)) {
               annotationsToDelete = annotationsToDelete.concat(linkingsId)
             }
@@ -381,8 +388,8 @@ class UpdateCodebook {
   }
 
   static themeNameExist (newThemeName) {
-    let themes = window.abwa.codebookManager.codebookReader.codebook.themes
-    let theme = _.find(themes, (theme) => {
+    const themes = window.abwa.codebookManager.codebookReader.codebook.themes
+    const theme = _.find(themes, (theme) => {
       return theme.name === newThemeName
     })
     if (theme) {
@@ -473,13 +480,13 @@ class UpdateCodebook {
             annotationsToDelete = annotationsToDelete.concat(codesId)
           }
           // Get linking annotions made with removed theme
-          let groupLinkingAnnotations = window.abwa.annotationManagement.annotationReader.groupLinkingAnnotations
-          let linkingAnnotationToRemove = _.filter(groupLinkingAnnotations, (linkingAnnotation) => {
-            let linkingBody = linkingAnnotation.body[0]
+          const groupLinkingAnnotations = window.abwa.annotationManagement.annotationReader.groupLinkingAnnotations
+          const linkingAnnotationToRemove = _.filter(groupLinkingAnnotations, (linkingAnnotation) => {
+            const linkingBody = linkingAnnotation.body[0]
             return linkingBody.value.from.id === theme.id || linkingBody.value.to === theme.id
           })
           console.log(linkingAnnotationToRemove)
-          let linkingsId = _.map(linkingAnnotationToRemove, (annotation) => { return annotation.id })
+          const linkingsId = _.map(linkingAnnotationToRemove, (annotation) => { return annotation.id })
           if (_.every(linkingsId, _.isString)) {
             annotationsToDelete = annotationsToDelete.concat(linkingsId)
           }
@@ -491,6 +498,58 @@ class UpdateCodebook {
             }
           })
         }
+      })
+    }
+  }
+
+  /**
+   * This function creates a handler to merge a theme with another one.
+   * @return Event
+   */
+  mergeThemeEventHandler () {
+    return (event) => {
+      const theme = event.detail.theme
+      const concepts = window.abwa.mapContentManager.concepts
+      let html = '<span>Please select into which concept do you want to merge the current one</span></br>'
+      // Create input
+      const mergeConceptSelect = document.createElement('select')
+      mergeConceptSelect.id = 'mergeDropdown'
+      mergeConceptSelect.placeholder = 'Select a concept'
+      concepts.forEach(concept => {
+        if (concept.theme.id !== theme.id && !concept.theme.isMisc && !concept.theme.isTopic) {
+          const option = document.createElement('option')
+          option.value = concept.theme.id
+          option.text = concept.theme.name
+          mergeConceptSelect.add(option)
+        }
+      })
+      // RENDER
+      html += mergeConceptSelect.outerHTML
+      const form = {}
+      const preConfirmData = {}
+      form.preConfirm = () => {
+        const mergeConceptId = document.querySelector('#mergeDropdown').value
+        if (mergeConceptId) {
+          preConfirmData.mergeConcept = window.abwa.codebookManager.codebookReader.codebook.getCodeOrThemeFromId(mergeConceptId)
+        }
+      }
+      form.callback = () => {
+        const conceptWhereMerge = preConfirmData.mergeConcept
+        Alerts.confirmAlert({
+          title: 'Merging',
+          text: 'All the annotations from ' + theme.name + ' are going to be included for concept ' + conceptWhereMerge.name + '. Are you sure?',
+          callback: () => {
+            console.log('TODO: DELETE ' + theme.name + ' and UPDATE ' + conceptWhereMerge.name)
+          }
+        })
+      }
+      // Ask user is sure to remove
+      Alerts.multipleInputAlert({
+        title: 'You are going to merge the ' + Config.tags.grouped.group + ' ' + theme.name + '.',
+        html: html,
+        showCancelButton: true,
+        preConfirm: form.preConfirm,
+        callback: form.callback
       })
     }
   }

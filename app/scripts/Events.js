@@ -31,6 +31,7 @@ const Events = {
   createTheme: 'createTheme',
   themeCreated: 'themeCreated',
   removeTheme: 'removeTheme',
+  mergeTheme: 'mergeTheme',
   themeRemoved: 'themeRemoved',
   updateTheme: 'updateTheme',
   themeUpdated: 'themeUpdated',
