@@ -3,7 +3,7 @@ import $ from 'jquery'
 import Alerts from '../../../utils/Alerts'
 import LanguageUtils from '../../../utils/LanguageUtils'
 import Events from '../../../Events'
-let swal = null
+const swal = null
 
 class LinkingForm {
   /**
@@ -17,12 +17,12 @@ class LinkingForm {
     return new Promise(() => {
       // Close sidebar if opened
       window.abwa.sidebar.closeSidebar()
-      let title = 'Creating new relationship'
+      const title = 'Creating new relationship'
       // Get body for classifying
-      let showForm = () => {
+      const showForm = () => {
         // Create form
-        let html = LinkingForm.generateLinkingFormHTML()
-        let form = LinkingForm.generateLinkingForm(previousRelationshipData)
+        const html = LinkingForm.generateLinkingFormHTML()
+        const form = LinkingForm.generateLinkingForm(previousRelationshipData)
         Alerts.threeOptionsAlert({
           title: title || '',
           html: html,
@@ -43,14 +43,13 @@ class LinkingForm {
   }
 
   static generateLinkingForm (previousRelationshipData) {
-
     // On before open
     let onBeforeOpen
     onBeforeOpen = () => {
       if (!previousRelationshipData) {
         let retrievedLW
         // Get user selected content
-        let selection = document.getSelection()
+        const selection = document.getSelection()
         // If selection is child of sidebar, return null
         if ($(selection.anchorNode).parents('#annotatorSidebarWrapper').toArray().length !== 0 || selection.toString().length < 1) {
           retrievedLW = ''
@@ -67,11 +66,11 @@ class LinkingForm {
       }
     }
     // Preconfirm
-    let preConfirmData = {}
-    let preConfirm = () => {
-      let from = document.querySelector('#categorizeDropdownFrom').value
+    const preConfirmData = {}
+    const preConfirm = () => {
+      const from = document.querySelector('#categorizeDropdownFrom').value
       preConfirmData.linkingWord = document.querySelector('#inputLinkingWord').value
-      let to = document.querySelector('#categorizeDropdownTo').value
+      const to = document.querySelector('#categorizeDropdownTo').value
       preConfirmData.fromTheme = window.abwa.codebookManager.codebookReader.codebook.getCodeOrThemeFromId(from)
       preConfirmData.toTheme = window.abwa.codebookManager.codebookReader.codebook.getCodeOrThemeFromId(to)
       if (from === to || preConfirmData.linkingWord === '') {
@@ -84,11 +83,11 @@ class LinkingForm {
       }
     }
     // Predeny
-    let preDenyData = {}
-    let preDeny = () => {
-      let from = document.querySelector('#categorizeDropdownFrom').value
+    const preDenyData = {}
+    const preDeny = () => {
+      const from = document.querySelector('#categorizeDropdownFrom').value
       preDenyData.linkingWord = document.querySelector('#inputLinkingWord').value
-      let to = document.querySelector('#categorizeDropdownTo').value
+      const to = document.querySelector('#categorizeDropdownTo').value
       preDenyData.fromTheme = window.abwa.codebookManager.codebookReader.codebook.getCodeOrThemeFromId(from)
       preDenyData.toTheme = window.abwa.codebookManager.codebookReader.codebook.getCodeOrThemeFromId(to)
       if (from === to || preConfirmData.linkingWord === '') {
@@ -102,9 +101,9 @@ class LinkingForm {
       }
     }
     // Callback
-    let callback = () => {
+    const callback = () => {
       // TODO comprobar que no existe
-      let tags = ['from' + ':' + preConfirmData.fromTheme.name]
+      const tags = ['from' + ':' + preConfirmData.fromTheme.name]
       tags.push('linkingWord:' + preConfirmData.linkingWord)
       tags.push('to:' + preConfirmData.toTheme.name)
       LanguageUtils.dispatchCustomEvent(Events.createAnnotation, {
@@ -117,8 +116,8 @@ class LinkingForm {
       })
       Alerts.simpleSuccessAlert({ text: 'Saved' })
     }
-    let denyCallback = () => {
-      let tags = ['from' + ':' + preDenyData.fromTheme.name]
+    const denyCallback = () => {
+      const tags = ['from' + ':' + preDenyData.fromTheme.name]
       tags.push('linkingWord:' + preDenyData.linkingWord)
       tags.push('to:' + preDenyData.toTheme.name)
       LanguageUtils.dispatchCustomEvent(Events.createAnnotation, {
@@ -129,17 +128,17 @@ class LinkingForm {
         linkingWord: preDenyData.linkingWord,
         target: onBeforeOpen.target
       })
-      let returnToLinkingForm = () => {
+      const returnToLinkingForm = () => {
         LinkingForm.showLinkingForm(relationshipData)
       }
-      let relationshipData = {}
+      const relationshipData = {}
       relationshipData.target = onBeforeOpen.target
       relationshipData.from = preDenyData.fromTheme.id
       relationshipData.to = preDenyData.toTheme.id
       relationshipData.linkingWord = preDenyData.linkingWord
       Alerts.simpleSuccessAlert({ text: 'Saved', callback: returnToLinkingForm })
     }
-    let cancelCallback = () => {
+    const cancelCallback = () => {
       console.log('new link canceled')
     }
     return { onBeforeOpen: onBeforeOpen, preConfirm: preConfirm, preDeny: preDeny, callback: callback, denyCallback: denyCallback, cancelCallback: cancelCallback }
@@ -149,23 +148,23 @@ class LinkingForm {
     let html = ''
 
     // Create row
-    let divRow = document.createElement('div')
+    const divRow = document.createElement('div')
     divRow.id = 'divFirstRow'
     divRow.id = 'divRow'
 
     /** FROM **/
     // Create div
-    let divFrom = document.createElement('div')
+    const divFrom = document.createElement('div')
     divFrom.id = 'divFrom'
     divFrom.className = 'rowElement'
 
     // Create span
-    let fromSpan = document.createElement('span')
+    const fromSpan = document.createElement('span')
     fromSpan.className = 'linkingFormLabel'
     fromSpan.textContent = 'From: '
 
     // Create input
-    let inputFrom = document.createElement('select')
+    const inputFrom = document.createElement('select')
     inputFrom.id = 'categorizeDropdownFrom'
     inputFrom.className = 'linkingConceptInput'
     inputFrom.placeholder = 'Select a concept'
@@ -179,17 +178,17 @@ class LinkingForm {
 
     /** LINKING WORD **/
     // Create div
-    let divLinkingWord = document.createElement('div')
+    const divLinkingWord = document.createElement('div')
     divLinkingWord.id = 'divLinkingWord'
     divLinkingWord.className = 'rowElement'
 
     // Create span
-    let linkingWordSpan = document.createElement('span')
+    const linkingWordSpan = document.createElement('span')
     linkingWordSpan.className = 'linkingFormLabel'
     linkingWordSpan.textContent = ' Linking word: '
 
     // Create input
-    let inputLinkingWord = document.createElement('input')
+    const inputLinkingWord = document.createElement('input')
     inputLinkingWord.id = 'inputLinkingWord'
 
     divLinkingWord.appendChild(linkingWordSpan)
@@ -197,17 +196,17 @@ class LinkingForm {
 
     /** TO **/
     // Create Div
-    let divTo = document.createElement('div')
+    const divTo = document.createElement('div')
     divTo.id = 'divTo'
     divTo.className = 'rowElement'
 
     // Create span
-    let toSpan = document.createElement('span')
+    const toSpan = document.createElement('span')
     toSpan.className = 'linkingFormLabel'
     toSpan.textContent = ' To: '
 
     // Create input
-    let inputTo = document.createElement('select')
+    const inputTo = document.createElement('select')
     inputTo.id = 'categorizeDropdownTo'
     inputTo.className = 'linkingConceptInput'
     inputTo.placeholder = 'Select a concept'
@@ -219,14 +218,16 @@ class LinkingForm {
     divTo.appendChild(toSpan)
     divTo.appendChild(inputTo)
 
-    window.abwa.codebookManager.codebookReader.codebook.themes.forEach(theme => {
+    const themes = window.abwa.codebookManager.codebookReader.codebook.themes
+    const flipThemes = themes.reverse()
+    flipThemes.forEach(theme => {
       if (!theme.isMisc) {
-        let fromOption = document.createElement('option')
+        const fromOption = document.createElement('option')
         fromOption.value = theme.id
         fromOption.text = theme.name
         inputFrom.add(fromOption)
         if (!theme.isTopic) {
-          let toOption = document.createElement('option')
+          const toOption = document.createElement('option')
           toOption.value = theme.id
           toOption.text = theme.name
           inputTo.add(toOption)
@@ -243,7 +244,6 @@ class LinkingForm {
 
     return html
   }
-
 }
 
 export default LinkingForm

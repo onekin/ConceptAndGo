@@ -48,24 +48,16 @@ export class MapContentManager {
       }
     })
     // Init event handlers
-    // PVSCL:IFCOND(CodebookUpdate,LINE)
     this.initThemeCreatedEvent()
     this.initThemeUpdatedEvent()
     this.initThemeRemovedEvent()
-    // PVSCL:ENDCOND
-    // PVSCL:IFCOND(Linking,LINE)
     this.initLinkAnnotationCreatedEvent()
     this.initLinkAnnotationDeletedEvent()
     this.initLinkAnnotationUpdatedEvent()
-    // PVSCL:ENDCOND
-    // PVSCL:IFCOND(EvidenceAnnotations,LINE)
     this.initEvidenceAnnotationAddedEvent()
     this.initEvidenceAnnotationRemovedEvent()
-    // PVSCL:ENDCOND
   }
 
-  // EVENTS
-  // PVSCL:IFCOND(CodebookUpdate,LINE)
   initThemeCreatedEvent () {
     this.events.themeCreatedEvent = { element: document, event: Events.themeCreated, handler: this.themeCreatedEventHandler() }
     this.events.themeCreatedEvent.element.addEventListener(this.events.themeCreatedEvent.event, this.events.themeCreatedEvent.handler, false)
@@ -351,5 +343,3 @@ export class MapContentManager {
   }
   // PVSCL:ENDCOND
 }
-
-

@@ -250,6 +250,10 @@ export class AnnotatedContentManager {
     // Create event listener for updated all annotations
     this.events.annotationCreated = { element: document, event: Events.annotationCreated, handler: this.createAnnotationCreatedEventHandler() }
     this.events.annotationCreated.element.addEventListener(this.events.annotationCreated.event, this.events.annotationCreated.handler, false)
+    // Create event listener for merged annotations
+    // Create event listener for updated all annotations
+    this.events.themeMerged = { element: document, event: Events.themeMerged, handler: this.themeMergedEventHandler() }
+    this.events.themeMerged.element.addEventListener(this.events.themeMerged.event, this.events.themeMerged.handler, false)
     // Create event listener for updated all annotations
     this.events.annotationDeleted = { element: document, event: Events.annotationDeleted, handler: this.createDeletedAnnotationEventHandler() }
     this.events.annotationDeleted.element.addEventListener(this.events.annotationDeleted.event, this.events.annotationDeleted.handler, false)
@@ -272,7 +276,6 @@ export class AnnotatedContentManager {
       })
     }
   }
-
 
   createCodeToAllEventHandler () {
     return (event) => {
@@ -313,6 +316,24 @@ export class AnnotatedContentManager {
           LanguageUtils.dispatchCustomEvent(Events.annotatedContentManagerUpdated, { annotatedThemes: this.annotatedThemes })
           this.reloadTagsChosen()
         }
+      }
+    }
+  }
+
+  themeMergedEventHandler () {
+    return (event) => {
+      // Add event to the codings list
+      if (event.detail.theme || event.detail.newThemeAnnotations) {
+        // const theme = event.detail.theme
+        const newThemeAnnotations = event.detail.newThemeAnnotations
+        newThemeAnnotations.forEach(newThemeAnnotation => {
+          this.annotatedThemes = this.addAnnotationToAnnotatedThemesOrCode(newThemeAnnotation)
+        })
+        // Dispatch updated content manager event
+        // LanguageUtils.dispatchCustomEvent(Events.codebookUpdated, { codebook: this.codebook })
+        window.abwa.codebookManager.codebookReader.reloadButtonContainer(() => {
+          this.reloadTagsChosen()
+        })
       }
     }
   }

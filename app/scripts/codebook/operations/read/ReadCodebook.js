@@ -25,6 +25,7 @@ class ReadCodebook {
     this.initThemeCreatedEvent()
     this.initThemeUpdatedEvent()
     this.initThemeRemovedEvent()
+    this.initThemeMergedEvent()
     this.initDimensionCreatedEvent()
     this.initDimensionUpdatedEvent()
     this.initDimensionRemovedEvent()
@@ -58,6 +59,11 @@ class ReadCodebook {
   initRelationshipAddedEvent () {
     this.events.relationshipAddedEvent = { element: document, event: Events.relationshipAdded, handler: this.relationshipAddedEventHandler() }
     this.events.relationshipAddedEvent.element.addEventListener(this.events.relationshipAddedEvent.event, this.events.relationshipAddedEvent.handler, false)
+  }
+
+  initThemeMergedEvent () {
+    this.events.themeMergedEvent = { element: document, event: Events.themeMerged, handler: this.themeMergedEventHandler() }
+    this.events.themeMergedEvent.element.addEventListener(this.events.themeMergedEvent.event, this.events.themeMergedEvent.handler, false)
   }
 
   initRelationshipDeletedEvent () {
@@ -223,7 +229,7 @@ class ReadCodebook {
   /**
    * This function adds the buttons that must appear in the sidebar to be able to annotate
    */
-  createButtons () {
+  createButtons (callback) {
     let themeButtonContainer
     const miscTheme = this.getMiscTheme()
     if (miscTheme) {
@@ -260,6 +266,9 @@ class ReadCodebook {
       if (_.isElement(themeButtonContainer)) {
         this.buttonContainer.append(themeButtonContainer)
       }
+    }
+    if (_.isFunction(callback)) {
+      callback()
     }
   }
 
@@ -341,9 +350,13 @@ class ReadCodebook {
   /**
    * Reloads the button if a new button has been added or deleted
    */
-  reloadButtonContainer () {
+  reloadButtonContainer (callback) {
     this.buttonContainer.innerHTML = ''
-    this.createButtons()
+    this.createButtons(() => {
+      if (_.isFunction(callback)) {
+        callback()
+      }
+    })
   }
 
   /**
@@ -554,6 +567,19 @@ class ReadCodebook {
       LanguageUtils.dispatchCustomEvent(Events.codebookUpdated, { codebook: this.codebook })
       // Open the sidebar
       window.abwa.sidebar.openSidebar()
+    }
+  }
+
+  themeMergedEventHandler () {
+    return (event) => {
+      // Update model
+      // this.codebook.updateTheme(event.detail.updatedTheme)
+      // Reload button container
+      // this.reloadButtonContainer()
+      // Dispatch codebook updated event
+      // LanguageUtils.dispatchCustomEvent(Events.codebookUpdated, { codebook: this.codebook })
+      // Open the sidebar
+      // window.abwa.sidebar.openSidebar()
     }
   }
 

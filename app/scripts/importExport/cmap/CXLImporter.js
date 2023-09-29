@@ -385,9 +385,10 @@ class CXLImporter {
                 console.log(themesToUpdate)
                 if (themesToUpdate[0]) {
                   themesToUpdate.forEach(themeToUpdate => {
+                    const oldTheme = previousCodebook.themes.find(theme => { return theme.id === themesToUpdate.id })
                     window.abwa.codebookManager.codebookUpdater.updateCodebookTheme(themeToUpdate)
                     // Update all annotations done with this theme
-                    window.abwa.codebookManager.codebookUpdater.updateAnnotationsWithTheme(themeToUpdate)
+                    window.abwa.codebookManager.codebookUpdater.updateAnnotationsWithTheme(oldTheme, themeToUpdate)
                   })
                 }
               }

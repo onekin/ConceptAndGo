@@ -30,6 +30,7 @@ const Events = {
   codebookUpdated: 'codebookUpdated',
   createTheme: 'createTheme',
   themeCreated: 'themeCreated',
+  themeMerged: '',
   removeTheme: 'removeTheme',
   mergeTheme: 'mergeTheme',
   themeRemoved: 'themeRemoved',

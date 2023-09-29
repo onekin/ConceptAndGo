@@ -441,9 +441,9 @@ class UpdateCodebook {
             themeDescription = themeDescriptionElement.value
           }
           if (theme.isTopic) {
-            themeToUpdate = new Theme({ name: themeName, description: themeDescription, isTopic: true, annotationGuide: window.abwa.codebookManager.codebookReader.codebook })
+            themeToUpdate = new Theme({ name: themeName, dimension: theme.dimension, description: themeDescription, isTopic: true, annotationGuide: window.abwa.codebookManager.codebookReader.codebook })
           } else {
-            themeToUpdate = new Theme({ name: themeName, description: themeDescription, annotationGuide: window.abwa.codebookManager.codebookReader.codebook })
+            themeToUpdate = new Theme({ name: themeName, dimension: theme.dimension, description: themeDescription, annotationGuide: window.abwa.codebookManager.codebookReader.codebook })
           }
           themeToUpdate.id = theme.id
         },
@@ -451,7 +451,49 @@ class UpdateCodebook {
           // Update codebook
           this.updateCodebookTheme(themeToUpdate)
           // Update all annotations done with this theme
-          this.updateAnnotationsWithTheme(themeToUpdate)
+          this.updateAnnotationsWithTheme(theme, themeToUpdate)
+          // Linking annotations
+          const relationships = window.abwa.mapContentManager.relationships
+          const linkingAnnotations = relationships.filter((relationship) => {
+            return (relationship.fromConcept.id === theme.id) || (relationship.toConcept.id === theme.id)
+          }).map(elem => elem.evidenceAnnotations).reduce((acc, val) => acc.concat(val), [])
+          linkingAnnotations.forEach(linkingAnnotation => {
+            for (let i = 0; i < linkingAnnotation.tags.length; i++) {
+              const tag = linkingAnnotation.tags[i]
+              if (tag === 'from:' + theme.name) {
+                linkingAnnotation.tags[i] = 'from:' + themeToUpdate.name
+              } else if (tag === 'to:' + theme.name) {
+                linkingAnnotation.tags[i] = 'to:' + themeToUpdate.name
+              }
+            }
+            const body = linkingAnnotation.body[0].value
+            if (body.from === theme.id) {
+              linkingAnnotation.body[0].value.from = themeToUpdate.id
+            } else if (body.to === theme.id) {
+              linkingAnnotation.body[0].value.to = themeToUpdate.id
+            }
+          })
+          const updatePromises = linkingAnnotations.map((annotation) => {
+            return new Promise((resolve, reject) => {
+              window.abwa.annotationServerManager.client.updateAnnotation(annotation.id, annotation.serialize(), (err, annotation) => {
+                if (err) {
+                  reject(err)
+                } else {
+                  const deserializedAnnotation = Annotation.deserialize(annotation)
+                  LanguageUtils.dispatchCustomEvent(Events.annotationUpdated, { annotation: deserializedAnnotation })
+                  if (annotation.body[0].purpose === 'linking') {
+                    LanguageUtils.dispatchCustomEvent(Events.linkAnnotationUpdated, { annotation: deserializedAnnotation })
+                  }
+                  resolve()
+                }
+              })
+            })
+          })
+          Promise
+            .all(updatePromises)
+            .catch((rejects) => {
+              Alerts.errorAlert({ text: 'Unable to create the new code. Error: ' + rejects[0].toString() })
+            })
         },
         cancelCallback: () => {
           // showForm(preConfirmData)
@@ -509,12 +551,23 @@ class UpdateCodebook {
   mergeThemeEventHandler () {
     return (event) => {
       const theme = event.detail.theme
-      const concepts = window.abwa.mapContentManager.concepts
+      let concepts = window.abwa.mapContentManager.concepts
+      let relationships = window.abwa.mapContentManager.relationships
       let html = '<span>Please select into which concept do you want to merge the current one</span></br>'
       // Create input
       const mergeConceptSelect = document.createElement('select')
       mergeConceptSelect.id = 'mergeDropdown'
       mergeConceptSelect.placeholder = 'Select a concept'
+      concepts = concepts.filter(concept => {
+        const hasRelationship = relationships.filter(relationship => {
+          return ((relationship.fromConcept.id === concept.theme.id && relationship.toConcept.id === theme.id) || (relationship.fromConcept.id === theme.id && relationship.toConcept.id === concept.theme.id))
+        })
+        if (hasRelationship.length > 0) {
+          return false
+        } else {
+          return true
+        }
+      })
       concepts.forEach(concept => {
         if (concept.theme.id !== theme.id && !concept.theme.isMisc && !concept.theme.isTopic) {
           const option = document.createElement('option')
@@ -540,6 +593,72 @@ class UpdateCodebook {
           text: 'All the annotations from ' + theme.name + ' are going to be included for concept ' + conceptWhereMerge.name + '. Are you sure?',
           callback: () => {
             console.log('TODO: DELETE ' + theme.name + ' and UPDATE ' + conceptWhereMerge.name)
+            // Find concept annotations
+            const themeAnnotations = window.abwa.mapContentManager.concepts.find((concept) => {
+              return concept.theme.id === theme.id
+            }).evidenceAnnotations
+            themeAnnotations.forEach((themeAnnotation) => {
+              themeAnnotation.tags = [Config.namespace + ':' + Config.tags.grouped.group + ':' + conceptWhereMerge.name]
+              const classifyingBody = new Classifying({ code: conceptWhereMerge })
+              themeAnnotation.body[0] = classifyingBody.serialize()
+            })
+            // Linking annotations
+            const linkingAnnotations = relationships.filter((relationship) => {
+              return (relationship.fromConcept.id === theme.id) || (relationship.toConcept.id === theme.id)
+            }).map(elem => elem.evidenceAnnotations).reduce((acc, val) => acc.concat(val), [])
+            console.log(linkingAnnotations)
+            linkingAnnotations.forEach(linkingAnnotation => {
+              for (let i = 0; i < linkingAnnotation.tags.length; i++) {
+                let tag = linkingAnnotation.tags[i]
+                if (tag === 'from:' + theme.name) {
+                  linkingAnnotation.tags[i] = 'from:' + conceptWhereMerge.name
+                } else if (tag === 'to:' + theme.name) {
+                  linkingAnnotation.tags[i] = 'to:' + conceptWhereMerge.name
+                }
+              }
+              const body = linkingAnnotation.body[0].value
+              if (body.from === theme.id) {
+                linkingAnnotation.body[0].value.from = conceptWhereMerge.id
+              } else if (body.to === theme.id) {
+                linkingAnnotation.body[0].value.to = conceptWhereMerge.id
+              }
+            })
+            const annotationsToUpdate = themeAnnotations.concat(linkingAnnotations)
+            const newThemeAnnotations = []
+            const updatePromises = annotationsToUpdate.map((annotation) => {
+              return new Promise((resolve, reject) => {
+                window.abwa.annotationServerManager.client.updateAnnotation(annotation.id, annotation.serialize(), (err, annotation) => {
+                  if (err) {
+                    reject(err)
+                  } else {
+                    const deserializedAnnotation = Annotation.deserialize(annotation)
+                    LanguageUtils.dispatchCustomEvent(Events.annotationUpdated, { annotation: deserializedAnnotation })
+                    if (annotation.body[0].purpose === 'linking') {
+                      LanguageUtils.dispatchCustomEvent(Events.linkAnnotationUpdated, { annotation: deserializedAnnotation })
+                    } else if (annotation.body[0].purpose === 'classifying') {
+                      newThemeAnnotations.push(deserializedAnnotation)
+                      LanguageUtils.dispatchCustomEvent(Events.evidenceAnnotationAdded, { annotation: deserializedAnnotation })
+                    }
+                    resolve()
+                  }
+                })
+              })
+            })
+            Promise
+              .all(updatePromises)
+              .catch((rejects) => {
+                Alerts.errorAlert({ text: 'Unable to create the new code. Error: ' + rejects[0].toString() })
+              }).then(() => {
+                window.abwa.annotationServerManager.client.deleteAnnotations([theme.id], (err, result) => {
+                  if (err) {
+                    Alerts.errorAlert({ text: 'Unexpected error when deleting the code.' })
+                  } else {
+                    theme.annotationGuide.removeTheme(theme)
+                    // LanguageUtils.dispatchCustomEvent(Events.codebookUpdated, { codebook: window.abwa.codebookManager.codebookReader.codebook })
+                    LanguageUtils.dispatchCustomEvent(Events.themeMerged, { theme: conceptWhereMerge, newThemeAnnotations: newThemeAnnotations })
+                  }
+                })
+              })
           }
         })
       }
@@ -579,7 +698,7 @@ class UpdateCodebook {
       })
   }
 
-  updateAnnotationsWithTheme (theme) {
+  updateAnnotationsWithTheme (theme, themeToUpdate) {
     // Get all the annotations done in the group with this theme
     const searchByTagPromise = (tag) => {
       return new Promise((resolve, reject) => {
@@ -610,10 +729,11 @@ class UpdateCodebook {
       annotations = _.compact(annotations)
       // Update all the codes with the new name of the theme
       annotations = annotations.map(annotation => {
+        annotation.tags = [Config.namespace + ':' + Config.tags.grouped.group + ':' + themeToUpdate.name]
         const classifyingBody = annotation.getBodyForPurpose(Classifying.purpose)
         if (classifyingBody) {
-          if (classifyingBody.value.id === theme.id) {
-            classifyingBody.value = theme.toObject()
+          if (classifyingBody.value.id === themeToUpdate.id) {
+            classifyingBody.value = themeToUpdate.toObject()
             return annotation
           } else {
             return null
