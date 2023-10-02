@@ -50,10 +50,12 @@ class Toolset {
       this.cxlCloudImage.src = cxlCloudImageUrl
       this.cxlCloudImage.id = 'cxlCloudButton'
       this.cxlCloudImage.title = 'Export map to CmapCloud' // TODO i18n
+      this.cxlCloudImage.style.position = 'relative'
+      this.cxlCloudImage.style.top = '-4px'
       this.toolsetBody.appendChild(this.cxlCloudImage)
       // Add menu when clicking on the button
       this.CXLCloudButtonHandler()
-      const seroImageUrl = chrome.extension.getURL('/images/sero.png')
+      /* const seroImageUrl = chrome.extension.getURL('/images/sero.png')
       this.seroImage = $(toolsetButtonTemplate.content.firstElementChild).clone().get(0)
       this.seroImage.src = seroImageUrl
       this.seroImage.id = 'seroButton'
@@ -75,7 +77,7 @@ class Toolset {
         } else {
           Alerts.infoAlert({ text: 'You have not annotated documents.', title: 'Problem' })
         }
-      })
+      }) */
       // Check if exist any element in the tools and show it
       if (!_.isEmpty(this.toolsetBody.innerHTML)) {
         this.show()
@@ -163,17 +165,19 @@ class Toolset {
       build: () => {
         // Create items for context menu
         let items = {}
-        items.exportWithToolURL = { name: 'Export CXL to CmapCloud' }
+        items.import = { name: 'Import CXL to CmapCloud' }
+        items.export = { name: 'Export CXL to CmapCloud' }
         // items.exportWithHypothesisURL = { name: 'Export CXL with Hypothes.is URLs' }
         return {
           callback: (key, opt) => {
             if (key === 'import') {
               // AnnotationImporter.importReviewAnnotations()
+              console.log('Implementame Xabier')
             }
-            if (key === 'exportWithToolURL') {
+            if (key === 'export') {
               chrome.runtime.sendMessage({ scope: 'cmapCloud', cmd: 'getUserData' }, (response) => {
                 if (response.data) {
-                  let data = response.data
+                  const data = response.data
                   if (data.userData.user && data.userData.password && data.userData.uid) {
                     CXLExporter.exportCXLFile('cmapCloud', 'tool', data.userData)
                   }
@@ -199,7 +203,7 @@ class Toolset {
       trigger: 'left',
       build: () => {
         // Create items for context menu
-        let items = {}
+        const items = {}
         items.importFromSero = { name: 'Import from Sero' }
         items.exportToSero = { name: 'Export to Sero' }
         return {

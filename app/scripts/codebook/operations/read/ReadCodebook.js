@@ -239,7 +239,7 @@ class ReadCodebook {
       }
     }
     // Create new theme button
-    UpdateCodebook.createNewDimensionButton()
+    // UpdateCodebook.createNewDimensionButton()
     // Create new relation button
     LinkingButton.createNewLinkButton()
     this.codebook.dimensions.forEach((dimension) => {
