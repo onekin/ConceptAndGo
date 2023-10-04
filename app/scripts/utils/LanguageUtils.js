@@ -148,6 +148,22 @@ class LanguageUtils {
       return index === 0 ? word.toLowerCase() : word.toUpperCase()
     }).replace(/\s+/g, '')
   }
+
+  static getMapIdFromArray (list) {
+    for (let i = 0; i < list.length; i++) {
+      const tag = list[i]
+      if (tag.nodeName === 'dc:identifier') {
+        const pattern = /id=([\w-]+)/
+        const match = tag.innerHTML.match(pattern)
+        // Check if a match was found and extract the desired string
+        if (match) {
+          return match[1]
+        } else {
+          return null
+        }
+      }
+    }
+  }
 }
 
 export default LanguageUtils

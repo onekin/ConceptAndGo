@@ -200,6 +200,13 @@ class ReadAnnotation {
             return annotationObject.uri === uriToCompare
           }
         })
+        this.mappingAnnotation = annotationObjects.find((annotationObject) => {
+          if (annotationObject.name) {
+            return annotationObject.name === 'mappingAnnotation'
+          } else {
+            return false
+          }
+        })
         this.allGroupAnnotations = annotationObjects.map(annotationObject => Annotation.deserialize(annotationObject))
         this.allAnnotations = currentResourceAnnotations.map(currentResourceAnnotation => Annotation.deserialize(currentResourceAnnotation))
         this.groupLinkingAnnotations = _.filter(this.allGroupAnnotations, (annotation) => {
@@ -375,7 +382,7 @@ class ReadAnnotation {
             }/*  *//*  */
             if (key === 'update') {
               let showForm = () => {
-                let previousTheme = annotation.body[0].value
+                const previousTheme = annotation.body[0].value
                 // let previousTheme = window.abwa.codebookManager.codebookReader.codebook.getCodeOrThemeFromId(previousThemeId)
                 let themes = window.abwa.codebookManager.codebookReader.codebook.themes
                 themes = themes.filter((theme) => {
@@ -425,7 +432,6 @@ class ReadAnnotation {
     })
   }
 
-
   redrawAnnotations (callback) {
     if (document.querySelector('.swal2-container') === null) { // TODO Look for a better solution...
       // Unhighlight all annotations
@@ -450,7 +456,6 @@ class ReadAnnotation {
       })
     }
   }
-
 
   initCodebookUpdatedEventListener (callback) {
     this.events.codebookUpdated = { element: document, event: Events.codebookUpdated, handler: this.createCodebookUpdatedEventHandler() }

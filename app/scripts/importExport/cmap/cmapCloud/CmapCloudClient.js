@@ -1,13 +1,14 @@
 import _ from 'lodash'
 import LanguageUtils from '../../../utils/LanguageUtils'
 import $ from 'jquery'
+import Alerts from '../../../utils/Alerts'
 
 class CmapCloudClient {
   constructor (user, password, uid) {
     this.user = user
     this.password = password
     this.uid = uid
-    let auth = user + ':' + password
+    const auth = user + ':' + password
     this.basicAuth = btoa(auth)
   }
 
@@ -30,7 +31,7 @@ class CmapCloudClient {
   }
 
   createFolder (folderName, callback) {
-    let settings = {
+    const settings = {
       url: 'https://cmapscloud.ihmc.us:443/resources/id=uid=' + this.uid + ',ou=users,dc=cmapcloud,dc=ihmc,dc=us/?cmd=create.folder.with.name&name=' + folderName + '&userDN=uid=' + this.uid + ',ou=users,dc=cmapcloud,dc=ihmc,dc=us',
       method: 'POST',
       timeout: 0,
@@ -63,7 +64,7 @@ class CmapCloudClient {
   }
 
   uploadWebResource (folderID, resource, callback) {
-    let settings = {
+    const settings = {
       url: 'https://cmapscloud.ihmc.us:443/resources/rid=' + folderID + '/?cmd=begin.creating.resource',
       method: 'POST',
       timeout: 0,
@@ -84,7 +85,7 @@ class CmapCloudClient {
   }
 
   uploadWebResourceBody (token, resource, callback) {
-    let settings = {
+    const settings = {
       url: 'https://cmapscloud.ihmc.us:443/resources/rid=' + token + '/?cmd=write.resource.part&partname=url&mimetype=text/x-url',
       method: 'POST',
       timeout: 0,
@@ -105,7 +106,7 @@ class CmapCloudClient {
   }
 
   uploadConfirm (token, callback) {
-    let settings = {
+    const settings = {
       url: 'https://cmapscloud.ihmc.us:443/resources/rid=' + token + '/?cmd=done.saving.resource',
       method: 'POST',
       timeout: 0
@@ -118,8 +119,14 @@ class CmapCloudClient {
     })
   }
 
-  uploadMap (folderID, map, callback) {
-    let settings = {
+  uploadMap (folderID, map, callback, group, dimensions) {
+    let title = ''
+    if (group) {
+      title = LanguageUtils.camelize(group.name) + '(' + group.id + ')'
+    } else {
+      title = LanguageUtils.camelize(window.abwa.groupSelector.currentGroup.name) + '(' + window.abwa.groupSelector.currentGroup.id + ')'
+    }
+    const settings = {
       url: 'https://cmapscloud.ihmc.us:443/resources/rid=' + folderID + '/?cmd=begin.creating.resource',
       method: 'POST',
       timeout: 0,
@@ -127,10 +134,13 @@ class CmapCloudClient {
         Authorization: 'Basic ' + this.basicAuth,
         'Content-Type': 'application/xml'
       },
-      data: '<res-meta xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/">\n' +
-        '<dc:title>' + LanguageUtils.camelize(window.abwa.groupSelector.currentGroup.name) + '</dc:title>\n' +
-        '<dc:description>No description</dc:description>\n' +
+      data: '<res-meta xmlns:dcterms="http://purl.org/dc/terms/" xmlns="http://cmap.ihmc.us/xml/cmap/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:vcard="http://www.w3.org/2001/vcard-rdf/3.0#"> ' + '\n' +
+        '<dc:title>' + title + '</dc:title>\n' +
+        '<dc:description>' + group.name + '</dc:description>\n' +
+        '<dc:subject>' + dimensions + '</dc:subject>\n' +
         '<dc:format>x-cmap/x-storable</dc:format>\n' +
+        '<dc:contributor><vcard:FN>' + group.id + '</vcard:FN></dc:contributor>' +
+        '<dc:creator><vcard:FN>' + group.id + '</vcard:FN></dc:creator>' +
         '</res-meta>'
     }
 
@@ -140,7 +150,7 @@ class CmapCloudClient {
   }
 
   uploadMapBody (token, map, callback) {
-    let settings = {
+    const settings = {
       url: 'https://cmapscloud.ihmc.us:443/resources/rid=' + token + '/?cmd=write.resource.part&partname=cmap&mimetype=XML',
       method: 'POST',
       timeout: 0,
@@ -154,6 +164,29 @@ class CmapCloudClient {
     $.ajax(settings).done((response) => {
       this.uploadConfirm(token, callback)
     })
+  }
+
+  removeResource (id, callback) {
+    const settings = {
+      url: 'https://cmapscloud.ihmc.us:443/resources/rid=' + id + '/?cmd=delete.resource',
+      method: 'GET',
+      timeout: 0,
+      headers: {
+        Authorization: 'Basic ' + this.basicAuth,
+        'Content-Type': 'text/plain'
+      }
+    }
+    $.ajax(settings).done((response) => {
+      if (_.isFunction(callback)) {
+        callback(response)
+      }
+    })
+      .fail((jqXHR, textStatus, errorThrown) => {
+        // Handle the error here
+        console.error('AJAX request failed:', errorThrown)
+        Alerts.errorAlert({ title: 'Error updating concept map', text: 'Please, close the concept map you want to update in CmapCloud' })
+        // You can also call a separate error handling function here if needed
+      })
   }
 }
 

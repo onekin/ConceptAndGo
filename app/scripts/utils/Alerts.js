@@ -98,7 +98,7 @@ class Alerts {
       }
     } else {
       swal.fire({
-        type: Alerts.alertType.error,
+        icon: Alerts.alertType.error,
         title: title,
         html: text
       }).then(() => {

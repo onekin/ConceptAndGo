@@ -3,7 +3,10 @@ import _ from 'lodash'
 import LanguageUtils from './utils/LanguageUtils'
 import Alerts from './utils/Alerts'
 import Config from './Config'
-
+import CXLImporter from './importExport/cmap/CXLImporter'
+// import swal from 'sweetalert2'
+import Codebook from './codebook/model/Codebook'
+import { CXLExporter } from './importExport/cmap/CXLExporter'
 let noteOpened = false
 
 const kudeatzaileakHasieratu = function () {
@@ -22,6 +25,18 @@ const kudeatzaileakHasieratu = function () {
               window.open(chrome.extension.getURL('pages/options.html#cmapCloudConfiguration'))
             }
           } else {
+            let listElement = document.querySelector('li > a#create-url-res')
+            if (listElement) {
+              let newListElement = document.createElement('li')
+              let aElement = document.createElement('a')
+              aElement.innerText = 'Create Concept&Go task'
+              aElement.addEventListener('click', () => {
+                console.log('exportMap')
+                createTask()
+              })
+              newListElement.appendChild(aElement)
+              listElement.parentNode.parentNode.insertBefore(newListElement, listElement.parentNode.nextSibling)
+            }
             // Options for the observer (which mutations to observe)
             const config = { attributes: true, childList: true, subtree: true }
             // Callback function to execute when mutations are observed
@@ -47,6 +62,19 @@ const kudeatzaileakHasieratu = function () {
                         addToolTipToAnnotations(node)
                       } else if (node.innerText === 'Change Properties...') {
                         loadAnnotations()
+                      } else if (node.innerText === 'New Cmap') {
+                        let listElement = document.querySelector('li > a#create-url-res')
+                        if (listElement) {
+                          let newListElement = document.createElement('li')
+                          let aElement = document.createElement('a')
+                          aElement.innerText = 'Create Concept&Go task'
+                          aElement.addEventListener('click', () => {
+                            console.log('createTask')
+                            createTask()
+                          })
+                          newListElement.appendChild(aElement)
+                          listElement.parentNode.parentNode.insertBefore(newListElement, listElement.parentNode.nextSibling)
+                        }
                       } else if (node.className === 'res-meta-dialog ui-dialog-content ui-widget-content') {
                         updateProperties(node)
                       }
@@ -76,6 +104,105 @@ const kudeatzaileakHasieratu = function () {
     })
     clearInterval(checkDOM)
   }, 1000)
+}
+
+const createTask = function () {
+  let title = 'What is the topic or the focus question?'
+  let inputPlaceholder = 'What is the topic or the focus question?'
+  Alerts.inputTextAlert({
+    title: title,
+    allowOutsideClick: false,
+    inputPlaceholder: inputPlaceholder,
+    showCancelButton: false,
+    preConfirm: (groupName) => {
+      if (_.isString(groupName)) {
+        if (groupName.length <= 0) {
+          const swal = require('sweetalert2').default
+          swal.showValidationMessage('Name cannot be empty.')
+        } else {
+          return groupName
+        }
+      }
+    },
+    callback: (err, groupName) => {
+      if (err) {
+        window.alert('Unable to load swal. Please contact developer.')
+      } else {
+        groupName = LanguageUtils.normalizeString(groupName)
+        const focusQuestion = groupName
+        if (groupName.length > 25) {
+          groupName = groupName.substring(0, 24)
+        }
+        window.cag.annotationServerManager.client.createNewGroup({ name: groupName, description: 'A group created using annotation tool ' + chrome.runtime.getManifest().name }, (err, newGroup) => {
+          if (err) {
+            window.alert('Unable to load swal. Please contact developer.')
+          } else {
+            Alerts.inputTextAlert({
+              title: 'Introduce the meta-concepts. Separate each meta-concept with a ;',
+              allowOutsideClick: false,
+              inputPlaceholder: 'meta-concept1;meta-concept2...',
+              showCancelButton: false,
+              preConfirm: (dimensionString) => {
+                if (_.isString(dimensionString)) {
+                  const dimensionsList = dimensionString.split(';')
+                  dimensionsList.forEach(element => console.log(element.trim))
+                  if (dimensionsList.length <= 0) {
+                    const swal = require('sweetalert2').default
+                    swal.showValidationMessage('Meta-concepts not found.')
+                  } else {
+                    return dimensionsList
+                  }
+                }
+              },
+              callback: (err, dimensionsList) => {
+                if (err) {
+                  window.alert('Unable to load swal. Please contact developer.')
+                } else {
+                  groupName = LanguageUtils.normalizeString(groupName)
+                  const tempCodebook = Codebook.fromCXLFile(null, dimensionsList, groupName, focusQuestion, [])
+                  // window.abwa.groupSelector.groups.push(newGroup)
+                  Codebook.setAnnotationServer(newGroup.id, (annotationServer) => {
+                    tempCodebook.annotationServer = annotationServer
+                    let topicThemeObject
+                    topicThemeObject = _.filter(tempCodebook.themes, (theme) => {
+                      return theme.topic === groupName || theme.name === groupName
+                    })
+                    topicThemeObject[0].isTopic = true
+                    let annotations = tempCodebook.toAnnotations()
+                    // Send create highlighter
+                    window.cag.annotationServerManager.client.createNewAnnotations(annotations, (err, codebookAnnotations) => {
+                      if (err) {
+                        Alerts.errorAlert({ text: 'Unable to create new group.' })
+                      } else {
+                        Codebook.fromAnnotations(codebookAnnotations, (err, codebook) => {
+                          if (err) {
+                            Alerts.errorAlert({ text: 'Unable to create codebook.' })
+                          } else {
+                            chrome.runtime.sendMessage({ scope: 'cmapCloud', cmd: 'getUserData' }, (response) => {
+                              if (response.data) {
+                                const data = response.data
+                                if (data.userData.user && data.userData.password && data.userData.uid) {
+                                  CXLExporter.createCmapFromCmapCloud(newGroup, codebook, groupName, data.userData)
+                                }
+                              } else {
+                                window.open(chrome.extension.getURL('pages/options.html#cmapCloudConfiguration'))
+                                Alerts.infoAlert({ text: 'Please, provide us your Cmap Cloud login credentials in the configuration page of the Web extension.', title: 'We need your Cmap Cloud credentials' })
+                              }
+                            })
+                            Alerts.successAlert({ text: 'Group Created!.' })
+                          }
+                        })
+                      }
+                    })
+                  })
+                }
+              }
+            })
+          }
+        })
+      }
+    }
+  })
 }
 
 const getURLFromSelectedAnnotation = function (selectedAnnotation) {
@@ -139,6 +266,40 @@ const loadAnnotations = function () {
       }
     })
   }
+}
+
+const exportCmap = function () {
+  const resourceURL = decodeURIComponent(document.querySelector('img[alt="Cmap-0"]').src.toString())
+  const regex = /id=([^&?]+)/
+  const match = regex.exec(resourceURL)
+  if (match) {
+    const id = match[1] // Extracted id
+    console.log(id)
+    getCXLInfo(id, (xmlDoc) => {
+      console.log(xmlDoc)
+      CXLImporter.importCXLfileFromCmapCloud(xmlDoc)
+    })
+  } else {
+    console.log('No id found in the URL')
+  }
+}
+
+const getCXLInfo = function (id, callback) {
+  chrome.runtime.sendMessage({
+    scope: 'cmapCloud',
+    cmd: 'getCXL',
+    data: { id: id }
+  }, (response) => {
+    if (response.info) {
+      const parser = new DOMParser()
+      const xmlDoc = parser.parseFromString(response.info, 'text/xml')
+      callback(xmlDoc)
+      // validated
+    } else if (response.err) {
+      // Not validated
+      callback(null)
+    }
+  })
 }
 
 const getGroupId = function (list) {

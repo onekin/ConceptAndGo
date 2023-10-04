@@ -1,4 +1,5 @@
 import _ from 'lodash'
+import Config from '../Config'
 
 class AnnotationUtils {
   static getTagFromAnnotation (annotation, prefix) {
@@ -65,6 +66,11 @@ class AnnotationUtils {
     }
     // Check by uri
     return a.uri === b.uri
+  }
+
+  static getFolderIDFromAnnotation (mappingAnnotation) {
+    const folderIDTag = AnnotationUtils.getTagFromAnnotation(mappingAnnotation, Config.namespace + ':' + 'folder')
+    return folderIDTag.replace(Config.namespace + ':' + 'folder:', '')
   }
 
   /**

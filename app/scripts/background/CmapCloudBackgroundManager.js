@@ -50,6 +50,30 @@ class CmapCloudBackgroundManager {
               }
             })
           }
+        } else if (request.cmd === 'getCXL') {
+          if (_.isString(request.data.id)) {
+            let cmapId = request.data.id
+            this.getCXLFile(cmapId, (err, cxlFile) => {
+              if (err) {
+                sendResponse({ err: err })
+              } else {
+                cxlFile = new XMLSerializer().serializeToString(cxlFile)
+                sendResponse({ info: cxlFile })
+              }
+            })
+          }
+        } else if (request.cmd === 'getFolderList') {
+          if (_.isString(request.data)) {
+            const folderId = request.data
+            this.getFolderList(folderId, (err, response) => {
+              if (err) {
+                sendResponse({ err: err })
+              } else {
+                const result = new XMLSerializer().serializeToString(response)
+                sendResponse({ info: result })
+              }
+            })
+          }
         }
         return true // Async response
       }
@@ -119,6 +143,37 @@ class CmapCloudBackgroundManager {
     })
 
     xhr.open('GET', 'https://cmapscloud.ihmc.us:443/resources/id=uid=' + uid + ',ou=users,dc=cmapcloud,dc=ihmc,dc=us?cmd=get.compact.resmeta.list')
+
+    xhr.send()
+  }
+
+  getCXLFile (id, callback) {
+    let xhr = new XMLHttpRequest()
+
+    xhr.addEventListener('readystatechange', function () {
+      if (this.readyState === 4) {
+        if (_.isFunction(callback)) {
+          callback(null, this.responseXML)
+        }
+      }
+    })
+
+    xhr.open('GET', 'https://cmapscloud.ihmc.us:443/resources/rid=' + id)
+
+    xhr.send()
+  }
+
+  getFolderList (folderId, callback) {
+    let xhr = new XMLHttpRequest()
+    xhr.addEventListener('readystatechange', function () {
+      if (this.readyState === 4) {
+        if (_.isFunction(callback)) {
+          callback(null, this.responseXML)
+        }
+      }
+    })
+
+    xhr.open('GET', 'https://cmapscloud.ihmc.us:443/resources/rid=' + folderId + '/?cmd=get.resmeta.list')
 
     xhr.send()
   }

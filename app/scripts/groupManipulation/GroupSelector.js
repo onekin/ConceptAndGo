@@ -8,8 +8,7 @@ import HypothesisClientManager from '../annotationServer/hypothesis/HypothesisCl
 import Config from '../Config'
 import CXLImporter from '../importExport/cmap/CXLImporter'
 import Codebook from '../codebook/model/Codebook'
-
-const GroupName = Config.groupName
+import { CXLExporter } from '../importExport/cmap/CXLExporter'
 
 class GroupSelector {
   constructor () {
@@ -99,7 +98,7 @@ class GroupSelector {
                   this.currentGroup = _.first(window.abwa.groupSelector.groups)
                   callback(null)
                 } else {
-                  let options = {}
+                  const options = {}
                   options.importCXLFile = () => {
                     CXLImporter.importCXLfile()
                   }
@@ -123,9 +122,9 @@ class GroupSelector {
                       }
                     })
                   }
-                  let showForm = () => {
+                  const showForm = () => {
                     // Create form
-                    let html = ''
+                    const html = ''
                     Alerts.twoOptionsAlert({
                       title: 'How do you want to start concept mapping?',
                       html: html,
@@ -369,8 +368,8 @@ class GroupSelector {
   }
 
   createNewGroup (loadingCallback) {
-    let title = 'What is the topic or the focus question?'
-    let inputPlaceholder = 'What is the topic or the focus question?'
+    const title = 'What is the topic or the focus question?'
+    const inputPlaceholder = 'What is the topic or the focus question?'
     Alerts.inputTextAlert({
       title: title,
       allowOutsideClick: false,
@@ -381,12 +380,6 @@ class GroupSelector {
           if (groupName.length <= 0) {
             const swal = require('sweetalert2').default
             swal.showValidationMessage('Name cannot be empty.')
-          } else if (groupName.length > 25) {
-            console.log(groupName)
-            this.groupFullName = groupName
-            groupName = groupName.substring(0, 24)
-            console.log(groupName)
-            return groupName
           } else {
             this.groupFullName = groupName
             return groupName
@@ -394,6 +387,11 @@ class GroupSelector {
         }
       },
       callback: (err, groupName) => {
+        groupName = LanguageUtils.normalizeString(groupName)
+        const focusQuestion = groupName
+        if (groupName.length > 25) {
+          groupName = groupName.substring(0, 24)
+        }
         if (err) {
           window.alert('Unable to load swal. Please contact developer.')
         } else {
@@ -409,7 +407,7 @@ class GroupSelector {
                 showCancelButton: false,
                 preConfirm: (dimensionString) => {
                   if (_.isString(dimensionString)) {
-                    let dimensionsList = dimensionString.split(';')
+                    const dimensionsList = dimensionString.split(';')
                     dimensionsList.forEach(element => console.log(element.trim))
                     if (dimensionsList.length <= 0) {
                       const swal = require('sweetalert2').default
@@ -418,29 +416,45 @@ class GroupSelector {
                       return dimensionsList
                     }
                   }
-
                 },
                 callback: (err, dimensionsList) => {
                   if (err) {
                     window.alert('Unable to load swal. Please contact developer.')
                   } else {
                     groupName = LanguageUtils.normalizeString(groupName)
-                    let tempCodebook = Codebook.fromCXLFile(null, dimensionsList, groupName, groupName, [])
+                    const tempCodebook = Codebook.fromCXLFile(null, dimensionsList, groupName, focusQuestion, [])
                     window.abwa.groupSelector.groups.push(newGroup)
                     Codebook.setAnnotationServer(newGroup.id, (annotationServer) => {
                       tempCodebook.annotationServer = annotationServer
-                      let topicThemeObject
-                      topicThemeObject = _.filter(tempCodebook.themes, (theme) => {
+                      const topicThemeObject = _.filter(tempCodebook.themes, (theme) => {
                         return theme.topic === groupName || theme.name === groupName
                       })
                       topicThemeObject[0].isTopic = true
-                      let annotations = tempCodebook.toAnnotations()
+                      const annotations = tempCodebook.toAnnotations()
                       // Send create highlighter
                       window.abwa.annotationServerManager.client.createNewAnnotations(annotations, (err, codebookAnnotations) => {
                         if (err) {
-                          Alerts.errorAlert({ text: 'Unable to create new group.' })
+                          Alerts.errorAlert({ text: 'Unable to create codebook annotations.' })
                         } else {
-                          loadingCallback(null, newGroup)
+                          Codebook.fromAnnotations(codebookAnnotations, (err, codebook) => {
+                            if (err) {
+                              Alerts.errorAlert({ text: 'Unable to create codebook from annotations.' })
+                            } else {
+                              chrome.runtime.sendMessage({ scope: 'cmapCloud', cmd: 'getUserData' }, (response) => {
+                                if (response.data) {
+                                  const data = response.data
+                                  if (data.userData.user && data.userData.password && data.userData.uid) {
+                                    CXLExporter.createCmapFromCmapCloud(newGroup, codebook, groupName, data.userData)
+                                  }
+                                } else {
+                                  window.open(chrome.extension.getURL('pages/options.html#cmapCloudConfiguration'))
+                                  Alerts.infoAlert({ text: 'Please, provide us your Cmap Cloud login credentials in the configuration page of the Web extension.', title: 'We need your Cmap Cloud credentials' })
+                                }
+                              })
+                              Alerts.successAlert({ text: 'Group Created!.' })
+                              loadingCallback(null, newGroup)
+                            }
+                          })
                         }
                       })
                     })

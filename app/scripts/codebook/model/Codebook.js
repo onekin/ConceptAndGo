@@ -99,7 +99,7 @@ class Codebook {
         }
         for (let i = 0; i < dimensionsAnnotations.length; i++) {
           const dimension = Dimension.fromAnnotation(dimensionsAnnotations[i], guide)
-          let themes = guide.themes.filter((theme) => {
+          const themes = guide.themes.filter((theme) => {
             return theme.dimension === dimension.name
           })
           if (themes) {
@@ -151,36 +151,42 @@ class Codebook {
   }
 
   static fromTopic (topicName) {
-    let annotationGuide = new Codebook({ name: topicName + 'concept map' })
-    let theme = new Theme({ name: topicName, description: 'Topic of the concept map', isTopic: true, annotationGuide })
+    const annotationGuide = new Codebook({ name: topicName + 'concept map' })
+    const theme = new Theme({ name: topicName, description: 'Topic of the concept map', isTopic: true, annotationGuide })
     annotationGuide.themes.push(theme)
     return annotationGuide
   }
 
   static fromCXLFile (conceptList, dimensionsList, name, topic, conceptAppearanceList) {
-    let annotationGuide = new Codebook({ name: name })
+    const annotationGuide = new Codebook({ name: name })
     if (dimensionsList.length > 0) {
       for (let i = 0; i < dimensionsList.length; i++) {
-        let dimension = new Dimension({ name: dimensionsList[i], annotationGuide })
-        let color = ColorUtils.getDimensionColor(annotationGuide.dimensions)
+        const dimension = new Dimension({ name: dimensionsList[i], annotationGuide })
+        const color = ColorUtils.getDimensionColor(annotationGuide.dimensions)
         dimension.color = ColorUtils.setAlphaToColor(color, 0.6)
         annotationGuide.dimensions.push(dimension)
       }
     }
-    if (conceptList && conceptList.childNodes && conceptList.childNodes.length > 0) {
-      for (let i = 0; i < conceptList.childNodes.length; i++) {
-        let concept = conceptList.childNodes[i]
-        let conceptName = concept.getAttribute('label')
-        let conceptID = concept.getAttribute('id')
+    if (conceptList && conceptList.children) {
+      conceptList = Array.from(conceptList.children)
+    }
+    if (conceptList && conceptList.length > 0) {
+      for (let i = 0; i < conceptList.length; i++) {
+        const concept = conceptList[i]
+        const conceptName = concept.getAttribute('label')
+        const conceptID = concept.getAttribute('id')
+        if (conceptAppearanceList.children) {
+          conceptAppearanceList = Array.from(conceptAppearanceList.children)
+        }
         if (!CXLImporter.isDimension(conceptAppearanceList, conceptID)) {
-          let theme = new Theme({ id: conceptID, name: conceptName, annotationGuide })
+          const theme = new Theme({ id: conceptID, name: conceptName, annotationGuide })
           annotationGuide.themes.push(theme)
         }
       }
     } else {
-      let theme = new Theme({ name: name, annotationGuide, topic })
+      const theme = new Theme({ name: name, annotationGuide, topic })
       annotationGuide.themes.push(theme)
-      let miscTheme = new Theme({ name: 'misc', annotationGuide, isMisc: true })
+      const miscTheme = new Theme({ name: 'misc', annotationGuide, isMisc: true })
       annotationGuide.themes.push(miscTheme)
     }
 
@@ -210,7 +216,7 @@ class Codebook {
   addTheme (theme) {
     if (LanguageUtils.isInstanceOf(theme, Theme)) {
       this.themes.push(theme)
-      let dimension = this.getDimensionByName(theme.dimension)
+      const dimension = this.getDimensionByName(theme.dimension)
       theme.color = dimension.color
       dimension.addTheme(theme)
     }

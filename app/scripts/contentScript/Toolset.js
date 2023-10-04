@@ -1,10 +1,11 @@
 import axios from 'axios'
 import _ from 'lodash'
 import Alerts from '../utils/Alerts'
-import PreviousVersionAnnotationImporter from '../importExport/PreviousVersionAnnotationImporter'
+// import PreviousVersionAnnotationImporter from '../importExport/PreviousVersionAnnotationImporter'
 import { CXLExporter } from '../importExport/cmap/CXLExporter'
 import CXLImporter from '../importExport/cmap/CXLImporter'
 import $ from 'jquery'
+import MergeFromCmapCloud from '../importExport/cmap/cmapCloud/MergeFromCmapCloud'
 
 class Toolset {
   constructor () {
@@ -89,7 +90,6 @@ class Toolset {
     })
   }
 
-
   /**
    * Show toolset in sidebar
    */
@@ -165,30 +165,40 @@ class Toolset {
       build: () => {
         // Create items for context menu
         let items = {}
-        items.import = { name: 'Import CXL to CmapCloud' }
+        items.merge = { name: 'Merge from CmapCloud' }
         items.export = { name: 'Export CXL to CmapCloud' }
         // items.exportWithHypothesisURL = { name: 'Export CXL with Hypothes.is URLs' }
         return {
           callback: (key, opt) => {
-            if (key === 'import') {
-              // AnnotationImporter.importReviewAnnotations()
-              console.log('Implementame Xabier')
-            }
-            if (key === 'export') {
-              chrome.runtime.sendMessage({ scope: 'cmapCloud', cmd: 'getUserData' }, (response) => {
-                if (response.data) {
-                  const data = response.data
-                  if (data.userData.user && data.userData.password && data.userData.uid) {
-                    CXLExporter.exportCXLFile('cmapCloud', 'tool', data.userData)
+            chrome.runtime.sendMessage({ scope: 'cmapCloud', cmd: 'getUserData' }, (response) => {
+              if (response.data) {
+                const data = response.data
+                if (data.userData.user && data.userData.password && data.userData.uid) {
+                  const mappingAnnotation = window.abwa.annotationManagement.annotationReader.mappingAnnotation
+                  if (key === 'export') {
+                    if (mappingAnnotation) {
+                      CXLExporter.exportCXLFile('cmapCloud', data.userData, mappingAnnotation)
+                    } else {
+                      CXLExporter.exportCXLFile('cmapCloud', data.userData, mappingAnnotation)
+                    }
+                  } else if (key === 'merge') {
+                    // AnnotationImporter.importReviewAnnotations()
+                    if (mappingAnnotation) {
+                      MergeFromCmapCloud.mergeFromCmapCloud(data.userData, mappingAnnotation)
+                    }
                   }
                 } else {
                   let callback = () => {
                     window.open(chrome.extension.getURL('pages/options.html#cmapCloudConfiguration'))
                   }
-                  Alerts.infoAlert({ text: 'Please, provide us your Cmap Cloud login credentials in the configuration page of the Web extension.', title: 'We need your Cmap Cloud credentials', callback: callback() })
+                  Alerts.infoAlert({
+                    text: 'Please, provide us your Cmap Cloud login credentials in the configuration page of the Web extension.',
+                    title: 'We need your Cmap Cloud credentials',
+                    callback: callback()
+                  })
                 }
-              })
-            }
+              }
+            })
           },
           items: items
         }
