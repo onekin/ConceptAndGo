@@ -16,7 +16,7 @@ class Alerts {
       swal.fire({
         title: title,
         html: text,
-        type: alertType,
+        icon: alertType,
         confirmButtonText,
         cancelButtonText,
         reverseButtons,
@@ -46,7 +46,7 @@ class Alerts {
       }
     } else {
       swal.fire({
-        type: Alerts.alertType.info,
+        icon: Alerts.alertType.info,
         title: title,
         html: text
       })
@@ -63,7 +63,7 @@ class Alerts {
       let fire = () => {
         let timerInterval
         swal.fire({
-          type: Alerts.alertType.info,
+          icon: Alerts.alertType.info,
           title: title,
           html: text,
           allowOutsideClick,
@@ -117,7 +117,7 @@ class Alerts {
       }
     } else {
       swal.fire({
-        type: Alerts.alertType.success,
+        icon: Alerts.alertType.success,
         title: title,
         html: text
       })

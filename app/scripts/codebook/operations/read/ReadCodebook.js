@@ -540,7 +540,10 @@ class ReadCodebook {
     return (event) => {
       const theme = Theme.fromAnnotation(event.detail.newThemeAnnotation, this.codebook)
       // Add to the model the new theme
-      this.codebook.addTheme(theme)
+      const checkTheme = this.codebook.getCodeOrThemeFromId(theme.id)
+      if (!checkTheme) {
+        this.codebook.addTheme(theme)
+      }
       // Create theme annotation
       LanguageUtils.dispatchCustomEvent(Events.createAnnotation, {
         purpose: 'classifying',
@@ -634,10 +637,12 @@ class ReadCodebook {
       const relation = event.detail.relation
       const themeButton = document.querySelectorAll('.tagButton[data-code-id="' + relation.fromConcept.id + '"]')
       // Add relation to tooltip
-      if (themeButton[0].title.includes('Relationships:')) {
-        themeButton[0].title += '\n' + relation.linkingWord + ' ' + relation.toConcept.name
-      } else {
-        themeButton[0].title += '\nRelationships:\n' + relation.linkingWord + ' ' + relation.toConcept.name
+      if (themeButton) {
+        if (themeButton[0].title.includes('Relationships:')) {
+          themeButton[0].title += '\n' + relation.linkingWord + ' ' + relation.toConcept.name
+        } else {
+          themeButton[0].title += '\nRelationships:\n' + relation.linkingWord + ' ' + relation.toConcept.name
+        }
       }
     }
   }

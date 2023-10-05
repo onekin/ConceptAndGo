@@ -8,13 +8,13 @@ import Config from '../../../Config'
 import jsYaml from 'js-yaml'
 
 class ExportCmapCloud {
-  static export (xmlDoc, urlFiles, userData, mappingAnnotation) {
+  static export (xmlDoc, urlFiles, userData, dimensions, mappingAnnotation) {
     const user = userData.user
     const pass = userData.password
     const uid = userData.uid
     const cmapCloudClient = new CmapCloudClient(user, pass, uid)
     if (mappingAnnotation) {
-      this.exportToExistingFolder(cmapCloudClient, xmlDoc, urlFiles, userData, mappingAnnotation)
+      this.exportToExistingFolder(cmapCloudClient, xmlDoc, urlFiles, userData, dimensions, mappingAnnotation)
     } else {
       this.exportWithVersions(cmapCloudClient, xmlDoc, urlFiles, userData)
     }
@@ -130,13 +130,15 @@ class ExportCmapCloud {
             } else {
               annotationServer = window.abwa.annotationServerManager
             }
-            const annotation = this.createAnnotation(folderID, mapId, group)
+            const annotation = this.createMappingAnnotation(folderID, mapId, group)
             annotationServer.client.createNewAnnotation(annotation, (err, newAnnotation) => {
               if (err) {
                 Alerts.errorAlert({ text: 'Unexpected error, unable to create annotation' })
               } else {
-                window.location.reload()
-                Alerts.infoAlert({ text: 'You have available your resource in CmapCloud in ' + name + ' folder.\n Please move to the corresponding CmapCloud folder.', title: 'Completed' })
+                if (window.location.href.startsWith('https://cmapcloud.ihmc.us/cmaps')) {
+                  window.location.reload()
+                }
+                Alerts.infoAlert({ text: 'You have available your resource in CmapCloud in ' + name + ' folder.\n', title: 'Completed' })
               }
             })
           } else {
@@ -150,7 +152,7 @@ class ExportCmapCloud {
     })
   }
 
-  static createAnnotation (folderId, mapId, group) {
+  static createMappingAnnotation (folderId, mapId, group) {
     const motivationTag = 'motivation:mapping'
     const folderTag = Config.namespace + ':folder:' + folderId
     const mapTag = Config.namespace + ':map:' + mapId
@@ -184,7 +186,7 @@ class ExportCmapCloud {
     })
   }
 
-  static exportToExistingFolder (cmapCloudClient, xmlDoc, urlFiles, userData, mappingAnnotation) {
+  static exportToExistingFolder (cmapCloudClient, xmlDoc, urlFiles, userData, dimensions, mappingAnnotation) {
     const folderId = AnnotationUtils.getFolderIDFromAnnotation(mappingAnnotation)
     console.log(folderId)
     this.removeFolderResources(cmapCloudClient, folderId, () => {
@@ -216,14 +218,14 @@ class ExportCmapCloud {
           if (identifiers.length > 0) {
             Alerts.infoAlert({ text: 'Folder is not empty', title: 'Error' })
           } else {
-            this.uploadAll(cmapCloudClient, xmlDoc, urlFiles, folderId)
+            this.uploadAll(cmapCloudClient, xmlDoc, urlFiles, folderId, dimensions)
           }
         }
       })
     })
   }
 
-  static uploadAll (cmapCloudClient, xmlDoc, urlFiles, folderId, folderName) {
+  static uploadAll (cmapCloudClient, xmlDoc, urlFiles, folderId, dimensions, folderName) {
     const beginPromises = []
     for (let i = 0; i < urlFiles.length; i++) {
       const urlFile = urlFiles[i]
@@ -243,7 +245,8 @@ class ExportCmapCloud {
       })
       for (let j = 0; j < createdResourcesID.length; j++) {
         const id = createdResourcesID[j].split('/')[0]
-        const name = createdResourcesID[j].split('/')[1]
+        let name = createdResourcesID[j].split('/')[1]
+        name = decodeURIComponent(name)
         const urlFile = _.find(urlFiles, (file) => {
           return file.name === name
         })
@@ -261,7 +264,11 @@ class ExportCmapCloud {
       folderName ? name = folderName : name = window.abwa.groupSelector.currentGroup.name
       FileSaver.saveAs(blob, LanguageUtils.camelize(window.abwa.groupSelector.currentGroup.name) + '(' + window.abwa.groupSelector.currentGroup.id + ')' + '.cxl')
       Alerts.infoAlert({ text: 'You have available your resource in CmapCloud in ' + name + ' folder.\n Please move the downloaded map to the corresponding CmapCloud folder.', title: 'Completed' })
-      // })
+      /* cmapCloudClient.uploadMap(folderId, mapString, (data) => {
+        console.log(data)
+        Alerts.infoAlert({ text: 'You have available your resource in CmapCloud ' + name + ' folder.' })
+      }, window.abwa.groupSelector.currentGroup, dimensions)
+      // }) */
     }, reason => {
     })
   }

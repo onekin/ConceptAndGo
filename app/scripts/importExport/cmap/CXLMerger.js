@@ -71,13 +71,13 @@ class CXLMerger {
               // construct relationships
               let linkingPhraseList = cxlObject.getElementsByTagName('linking-phrase-list')[0]
               let connectionList = cxlObject.getElementsByTagName('connection-list')[0]
-              if (linkingPhraseList.children) {
+              if (linkingPhraseList && linkingPhraseList.children) {
                 linkingPhraseList = Array.from(linkingPhraseList.children)
               }
-              if (connectionList.children) {
+              if (connectionList && connectionList.children) {
                 connectionList = Array.from(connectionList.children)
               }
-              if (linkingPhraseList) {
+              if (linkingPhraseList && connectionList) {
                 for (let i = 0; i < linkingPhraseList.length; i++) {
                   const linkingPhrase = linkingPhraseList[i]
                   const linkingPhraseName = linkingPhrase.getAttribute('label')
@@ -183,6 +183,7 @@ class CXLMerger {
                 console.log(themesToInclude)
                 if (themesToInclude[0]) {
                   themesToInclude.forEach(themeToInclude => {
+                    window.abwa.codebookManager.codebookReader.codebook.addTheme(themeToInclude)
                     const newThemeAnnotation = themeToInclude.toAnnotation()
                     window.abwa.annotationServerManager.client.createNewAnnotation(newThemeAnnotation, (err, annotation) => {
                       if (err) {

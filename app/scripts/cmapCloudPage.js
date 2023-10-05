@@ -25,11 +25,11 @@ const kudeatzaileakHasieratu = function () {
               window.open(chrome.extension.getURL('pages/options.html#cmapCloudConfiguration'))
             }
           } else {
-            let listElement = document.querySelector('li > a#create-url-res')
+            const listElement = document.querySelector('li > a#create-url-res')
             if (listElement) {
-              let newListElement = document.createElement('li')
-              let aElement = document.createElement('a')
-              aElement.innerText = 'Create Concept&Go task'
+              const newListElement = document.createElement('li')
+              const aElement = document.createElement('a')
+              aElement.innerText = 'New annotation-drive Cmap'
               aElement.addEventListener('click', () => {
                 console.log('exportMap')
                 createTask()
@@ -63,11 +63,13 @@ const kudeatzaileakHasieratu = function () {
                       } else if (node.innerText === 'Change Properties...') {
                         loadAnnotations()
                       } else if (node.innerText === 'New Cmap') {
-                        let listElement = document.querySelector('li > a#create-url-res')
-                        if (listElement) {
-                          let newListElement = document.createElement('li')
-                          let aElement = document.createElement('a')
-                          aElement.innerText = 'Create Concept&Go task'
+                        const listElement = document.querySelector('li > a#create-url-res')
+                        const conceptGoLabel = document.querySelector('li > a.conceptGoLabel')
+                        if (listElement && !conceptGoLabel) {
+                          const newListElement = document.createElement('li')
+                          const aElement = document.createElement('a')
+                          aElement.className = 'conceptGoLabel'
+                          aElement.innerText = 'New annotation-driven Cmap'
                           aElement.addEventListener('click', () => {
                             console.log('createTask')
                             createTask()
@@ -107,8 +109,8 @@ const kudeatzaileakHasieratu = function () {
 }
 
 const createTask = function () {
-  let title = 'What is the topic or the focus question?'
-  let inputPlaceholder = 'What is the topic or the focus question?'
+  const title = 'What is the topic or the focus question?'
+  const inputPlaceholder = 'What is the topic or the focus question?'
   Alerts.inputTextAlert({
     title: title,
     allowOutsideClick: false,
@@ -163,12 +165,11 @@ const createTask = function () {
                   // window.abwa.groupSelector.groups.push(newGroup)
                   Codebook.setAnnotationServer(newGroup.id, (annotationServer) => {
                     tempCodebook.annotationServer = annotationServer
-                    let topicThemeObject
-                    topicThemeObject = _.filter(tempCodebook.themes, (theme) => {
+                    const topicThemeObject = _.filter(tempCodebook.themes, (theme) => {
                       return theme.topic === groupName || theme.name === groupName
                     })
                     topicThemeObject[0].isTopic = true
-                    let annotations = tempCodebook.toAnnotations()
+                    const annotations = tempCodebook.toAnnotations()
                     // Send create highlighter
                     window.cag.annotationServerManager.client.createNewAnnotations(annotations, (err, codebookAnnotations) => {
                       if (err) {
@@ -217,6 +218,27 @@ const getURLFromSelectedAnnotation = function (selectedAnnotation) {
     url = annotation.target[0].source + '#' + Config.urlParamName + ':' + annotation.id
   }
   return url
+}
+
+const getTextFromSelectedAnnotation = function (selectedAnnotation) {
+  let text
+  console.log(window.cag.annotations)
+  const id = selectedAnnotation.slice(-22)
+  console.log(id)
+  if (window.cag.annotations.length > 0) {
+    const annotation = window.cag.annotations.find((anno) => {
+      return anno.id === id
+    })
+    if (annotation && annotation.target[0] && annotation.target[0].selector) {
+      const textQuote = annotation.target[0].selector.find((sel) => {
+        return sel.type === 'TextQuoteSelector'
+      })
+      if (textQuote) {
+        text = textQuote.exact
+      }
+    }
+  }
+  return text
 }
 
 const addToolTipToAnnotations = function (node) {
@@ -363,9 +385,10 @@ const updateProperties = function (node) {
 const showFeedbackNote = function (targetNode) {
   console.log('Visibility attribute changed to Feedback note')
   const textArea = targetNode.querySelector('textarea.gwt-TextArea')
-  textArea.style.width = '196px'
+  textArea.style.width = '206px'
   textArea.style.height = '83px'
   const firstInput = targetNode.querySelectorAll('input.gwt-TextBox')[0]
+  firstInput.style.width = textArea.style.width
   // Change width
   const noteDiv = targetNode.querySelector('div[tabindex="0"]')
   noteDiv.style.height = '320px'
@@ -387,8 +410,8 @@ const showFeedbackNote = function (targetNode) {
   let position = firstInput.style.top.replace('px', '')
   position = parseInt(position) + 40
   selectElement.style.top = position.toString() + 'px'
-  selectElement.style.width = firstInput.style.width
-  /// restore second select
+  selectElement.style.width = textArea.style.width
+  /// Restore second select
   const selectElementAnnotations = noteDiv.querySelector('select.selectedAnnotations')
   selectElementAnnotations.style.position = 'relative'
   selectElementAnnotations.style.left = '2px'
@@ -396,7 +419,6 @@ const showFeedbackNote = function (targetNode) {
   positionSelectElementConcepts = parseInt(positionSelectElementConcepts) + 30
   selectElementAnnotations.style.top = positionSelectElementConcepts.toString() + 'px'
   selectElementAnnotations.style.width = selectElement.style.width
-  // restore add button
   // Add button
   const addButton = noteDiv.querySelector('button.addButton')
   addButton.style.position = 'relative'
@@ -409,7 +431,7 @@ const showFeedbackNote = function (targetNode) {
   let positionAddButton = addButton.style.top.replace('px', '')
   positionAddButton = parseInt(positionAddButton) + 5
   annotationDiv.style.top = positionAddButton.toString() + 'px'
-  annotationDiv.style.width = selectElementAnnotations.style.width
+  annotationDiv.style.width = addButton.style.width
 }
 
 const showFeedbackNoteFirstTime = function (node) {
@@ -420,19 +442,26 @@ const showFeedbackNoteFirstTime = function (node) {
     // This function will be executed when the div is clicked
     console.log('Close annotation')
   })
-  // const noteTextArea = node.querySelector('textarea.gwt-TextArea')
-  // noteTextArea.value = 'Comment'
+  const textArea = node.querySelector('textarea.gwt-TextArea')
+  textArea.style.width = '206px'
+  textArea.style.height = '83px'
   const selectedElements = []
   const firstInput = node.querySelectorAll('input.gwt-TextBox')[0]
+  firstInput.style.width = textArea.style.width
   const secondInput = node.querySelectorAll('input.gwt-TextBox')[1]
-  // Get the current date and time
-  const currentDate = new Date()
-  // Add an hour to the current date
-  currentDate.setHours(currentDate.getHours())
+  if (!secondInput.value.startsWith('id:')) {
+    secondInput.value = 'id:'
+  }
   // Format the date as a string
-  const formattedDate = currentDate.toLocaleString()
-  firstInput.value = formattedDate
-  secondInput.remove()
+  if (!isValidDateFormat(firstInput.value)) {
+    // Get the current date and time
+    const currentDate = new Date()
+    // Add an hour to the current date
+    currentDate.setHours(currentDate.getHours())
+    const formattedDate = currentDate.toLocaleString()
+    firstInput.value = formattedDate
+  }
+  secondInput.style.visibility = 'hidden'
   // Change width
   const noteDiv = node.querySelector('div[tabindex="0"]')
   noteDiv.style.height = '310px'
@@ -481,7 +510,7 @@ const showFeedbackNoteFirstTime = function (node) {
   let position = firstInput.style.top.replace('px', '')
   position = parseInt(position) + 40
   selectElement.style.top = position.toString() + 'px'
-  selectElement.style.width = '196px'
+  selectElement.style.width = firstInput.style.width
   selectedElementsNames.forEach(name => {
     const option1 = document.createElement('option')
     option1.value = name
@@ -498,16 +527,17 @@ const showFeedbackNoteFirstTime = function (node) {
   let positionSelectElementConcepts = selectElement.style.top.replace('px', '')
   positionSelectElementConcepts = parseInt(positionSelectElementConcepts) + 30
   selectElementAnnotations.style.top = positionSelectElementConcepts.toString() + 'px'
-  selectElementAnnotations.style.width = '196px'
+  selectElementAnnotations.style.width = selectElement.style.width
   const allAnnotations = _.uniq(Array.from(document.querySelectorAll('#cmaps-and-res-view img')).map((elem) => { return elem.getAttribute('alt') }))
   allAnnotations.forEach(elem => {
     const camelized = camelize(selectElement.value)
     if (elem.includes('---' && camelized)) {
       const optionAnnotation = document.createElement('option')
+      const highlightedText = getTextFromSelectedAnnotation(elem)
       const url = getURLFromSelectedAnnotation(elem)
       const id = elem.slice(-22)
       optionAnnotation.value = elem
-      optionAnnotation.text = elem.slice(0, -22) + ' SOURCE:' + url.slice(0, -22).replace('#cag:', '') + ' --- ID: ' + id
+      optionAnnotation.text = 'TEXT: ' + highlightedText + ' --- FROM:' + url.slice(0, -22).replace('#cag:', '') + ' --- ID: ' + id
       // onchange selectElementAnnotations
       selectElementAnnotations.appendChild(optionAnnotation)
     }
@@ -520,12 +550,14 @@ const showFeedbackNoteFirstTime = function (node) {
   addButton.style.position = 'relative'
   addButton.style.left = '2px'
   addButton.style.top = selectElementAnnotations.style.top
-  addButton.style.width = '196px'
+  addButton.style.width = selectElementAnnotations.style.width
   addButton.addEventListener('click', () => {
     const number = annotationDiv.children.length
     const newAnchor = document.createElement('a')
     const selectedAnnotation = selectElementAnnotations.value
     const annotationURL = getURLFromSelectedAnnotation(selectedAnnotation)
+    const id = selectedAnnotation.slice(-22)
+    secondInput.value = secondInput.value + id + ';'
     // Set the href attribute
     newAnchor.href = annotationURL
     // Set the inner text or content of the anchor
@@ -542,13 +574,27 @@ const showFeedbackNoteFirstTime = function (node) {
     allAnnotations.forEach(elem => {
       const camelized = camelize(selectElement.value)
       if (elem.includes('---' && camelized)) {
-        const optionAnnotation = document.createElement('option')
-        const url = getURLFromSelectedAnnotation(elem)
-        const id = elem.slice(-22)
-        optionAnnotation.value = elem
-        optionAnnotation.text = elem.slice(0, -22) + ' SOURCE:' + url.slice(0, -22).replace('#cag:', '') + ' --- ID: ' + id
-        // onchange selectElementAnnotations
-        selectElementAnnotations.appendChild(optionAnnotation)
+        if (elem.includes('->')) {
+          if (elem.includes('->' + camelized + '->')) {
+            const optionAnnotation = document.createElement('option')
+            const highlightedText = getTextFromSelectedAnnotation(elem)
+            const url = getURLFromSelectedAnnotation(elem)
+            const id = elem.slice(-22)
+            optionAnnotation.value = elem
+            optionAnnotation.text = 'TEXT: ' + highlightedText + ' --- FROM:' + url.slice(0, -22).replace('#cag:', '') + ' --- ID: ' + id
+            // onchange selectElementAnnotations
+            selectElementAnnotations.appendChild(optionAnnotation)
+          }
+        } else {
+          const optionAnnotation = document.createElement('option')
+          const highlightedText = getTextFromSelectedAnnotation(elem)
+          const url = getURLFromSelectedAnnotation(elem)
+          const id = elem.slice(-22)
+          optionAnnotation.value = elem
+          optionAnnotation.text = 'TEXT: ' + highlightedText + ' --- FROM:' + url.slice(0, -22).replace('#cag:', '') + ' --- ID: ' + id
+          // onchange selectElementAnnotations
+          selectElementAnnotations.appendChild(optionAnnotation)
+        }
       }
     })
   })
@@ -559,8 +605,30 @@ const showFeedbackNoteFirstTime = function (node) {
   annotationDiv.innerText = 'Annotations: '
   annotationDiv.style.position = 'relative'
   annotationDiv.style.top = addButton.style.top
-  annotationDiv.style.width = '196px'
+  annotationDiv.style.width = addButton.style.width
+  const savedIDs = secondInput.value.replace('id:', '')
+  if (savedIDs !== '') {
+    const annotationIDs = savedIDs.split(';').filter(Boolean)
+    annotationIDs.forEach(id => {
+      const number = annotationDiv.children.length
+      const newAnchor = document.createElement('a')
+      const annotationURL = getURLFromAnnotationID(id)
+      // Set the href attribute
+      newAnchor.href = annotationURL
+      // Set the inner text or content of the anchor
+      newAnchor.textContent = 'anno' + number + '; '
+      newAnchor.addEventListener('click', () => {
+        window.open(annotationURL)
+      })
+      annotationDiv.appendChild(newAnchor)
+    })
+  }
   addButton.parentNode.insertBefore(annotationDiv, addButton.nextSibling)
+}
+
+function isValidDateFormat (inputString) {
+  const dateFormatRegex = /^\d{2}\/\d{2}\/\d{4}, \d{2}:\d{2}:\d{2}$/
+  return dateFormatRegex.test(inputString)
 }
 
 function camelize (str) {
@@ -575,6 +643,17 @@ function changeNoteOpenedValue () {
     noteOpened = false // Change the variable value after 1 second
     console.log('Variable value changed to true after 1 second')
   }, 1000) // 1000 milliseconds (1 second)
+}
+
+const getURLFromAnnotationID = function (id) {
+  let url
+  if (window.cag.annotations.length > 0) {
+    const annotation = window.cag.annotations.find((anno) => {
+      return anno.id === id
+    })
+    url = annotation.target[0].source + '#' + Config.urlParamName + ':' + annotation.id
+  }
+  return url
 }
 
 window.onload = kudeatzaileakHasieratu

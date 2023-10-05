@@ -23,25 +23,7 @@ export class CXLExporter {
     const relationships = window.abwa.mapContentManager.relationships
     // Prepare linking phrases for doing conections
     const linkingPhrases = []
-    /* for (let i = 0; i < relationships.length; i++) {
-      let relation = relationships[i]
-      let linkingPhrase = this.findLinkingPhrase(linkingPhrases, relation)
-      if (linkingPhrase) {
-        if (!linkingPhrase.fromConcepts.includes(relation.fromConcept.id)) {
-          linkingPhrase.fromConcepts.push(relation.fromConcept.id)
-        }
-        if (!linkingPhrase.toConcepts.includes(relation.toConcept.id)) {
-          linkingPhrase.toConcepts.push(relation.toConcept.id)
-        }
-        linkingPhrase.evidenceAnnotations = linkingPhrase.evidenceAnnotations.concat(relation.evidenceAnnotations)
-      } else {
-        let linkingPhraseToAdd = new LinkingPhrase(relation.linkingWord, relation.id)
-        linkingPhraseToAdd.fromConcepts.push(relation.fromConcept.id)
-        linkingPhraseToAdd.toConcepts.push(relation.toConcept.id)
-        linkingPhraseToAdd.evidenceAnnotations = linkingPhraseToAdd.evidenceAnnotations.concat(relation.evidenceAnnotations)
-        linkingPhrases.push(linkingPhraseToAdd)
-      }
-    } */
+    // linkingPhrases = this.mergeLinkingPhrases(linkingPhrases, relationships)
     for (let i = 0; i < relationships.length; i++) {
       const relation = relationships[i]
       const linkingPhraseToAdd = new LinkingPhrase(relation.linkingWord, relation.id)
@@ -52,13 +34,9 @@ export class CXLExporter {
         linkingPhrases.push(linkingPhraseToAdd)
       }
     }
-
     const urlFiles = []
     const xmlDoc = document.implementation.createDocument(null, 'cmap', null)
     const cmapElement = xmlDoc.firstChild
-    // Create processing instruction
-    // let pi = xmlDoc.createProcessingInstruction('xml', 'version="1.0" encoding="UTF-8"')
-    // xmlDoc.insertBefore(pi, xmlDoc.firstChild)
 
     // Create map xmlns:dcterms attribute
     const att = document.createAttribute('xmlns:dcterms')
@@ -369,9 +347,9 @@ export class CXLExporter {
       ExportCXLArchiveFile.export(xmlDoc, urlFiles)
     } else if (exportType === 'cmapCloud') {
       if (mappingAnnotation) {
-        ExportCmapCloud.export(xmlDoc, urlFiles, userData, mappingAnnotation)
+        ExportCmapCloud.export(xmlDoc, urlFiles, userData, window.abwa.codebookManager.codebookReader.codebook.getDimensionsForCmapCloud(), mappingAnnotation)
       } else {
-        ExportCmapCloud.export(xmlDoc, urlFiles, userData)
+        ExportCmapCloud.export(xmlDoc, urlFiles, userData, window.abwa.codebookManager.codebookReader.codebook.getDimensionsForCmapCloud())
       }
     }
   }
@@ -573,7 +551,7 @@ export class CXLExporter {
     cmapPartsList.appendChild(annotation)
     cmapElement.appendChild(cmapPartsList)
     // Export Cmap
-    ExportCmapCloud.exportFirstMap(groupName, xmlDoc, userData, dimensionsString)
+    ExportCmapCloud.exportFirstMap(groupName, xmlDoc, userData, group, dimensionsString)
   }
 
   static findLinkingPhrase (linkingPhrases, relation) {
@@ -581,5 +559,28 @@ export class CXLExporter {
       return (linkingPhrase.linkingWord === relation.linkingWord) && (linkingPhrase.fromConcepts.includes(relation.fromConcept.id) || linkingPhrase.toConcepts.includes(relation.toConcept.id))
     })
     return foundLinkingPhrase
+  }
+
+  static mergeLinkingPhrases (linkingPhrases, relationships) {
+    for (let i = 0; i < relationships.length; i++) {
+      let relation = relationships[i]
+      let linkingPhrase = this.findLinkingPhrase(linkingPhrases, relation)
+      if (linkingPhrase) {
+        if (!linkingPhrase.fromConcepts.includes(relation.fromConcept.id)) {
+          linkingPhrase.fromConcepts.push(relation.fromConcept.id)
+        }
+        if (!linkingPhrase.toConcepts.includes(relation.toConcept.id)) {
+          linkingPhrase.toConcepts.push(relation.toConcept.id)
+        }
+        linkingPhrase.evidenceAnnotations = linkingPhrase.evidenceAnnotations.concat(relation.evidenceAnnotations)
+      } else {
+        const linkingPhraseToAdd = new LinkingPhrase(relation.linkingWord, relation.id)
+        linkingPhraseToAdd.fromConcepts.push(relation.fromConcept.id)
+        linkingPhraseToAdd.toConcepts.push(relation.toConcept.id)
+        linkingPhraseToAdd.evidenceAnnotations = linkingPhraseToAdd.evidenceAnnotations.concat(relation.evidenceAnnotations)
+        linkingPhrases.push(linkingPhraseToAdd)
+      }
+    }
+    return linkingPhrases
   }
 }

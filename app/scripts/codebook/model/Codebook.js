@@ -7,24 +7,28 @@ import Dimension from './Dimension'
 import CXLImporter from '../../importExport/cmap/CXLImporter'
 import Hypothesis from '../../annotationServer/hypothesis/Hypothesis'
 import ColorUtils from '../../utils/ColorUtils'
+import AnnotationUtils from '../../utils/AnnotationUtils'
 
 class Codebook {
   constructor ({
     id = null,
     name = '',
-    annotationServer = null/*  *//*  */
+    annotationServer = null,
+    focusQuestion = ''
   }) {
     this.id = id
     this.name = name
     this.themes = []
     this.dimensions = []
     this.annotationServer = annotationServer
+    this.focusQuestion = focusQuestion
   }
 
   toAnnotation () {
     const motivationTag = 'motivation:defining'
     const guideTag = Config.namespace + ':guide'
-    const tags = [motivationTag, guideTag]
+    const focusQuestion = 'focusQuestion:' + this.focusQuestion
+    const tags = [motivationTag, guideTag, focusQuestion]
     // Construct text attribute of the annotation
     let textObject
     // Return the constructed annotation
@@ -63,9 +67,15 @@ class Codebook {
 
   static fromAnnotation (annotation, callback) {
     this.setAnnotationServer(null, (annotationServer) => {
-      const annotationGuideOpts = { id: annotation.id, name: annotation.name, annotationServer: annotationServer }
-      let guide
-      guide = new Codebook(annotationGuideOpts)
+      const tag = AnnotationUtils.getTagFromAnnotation(annotation, 'focusQuestion')
+      let annotationGuideOpts
+      if (tag) {
+        const focusQuestion = tag.replace('focusQuestion:', '')
+        annotationGuideOpts = { id: annotation.id, name: annotation.name, annotationServer: annotationServer, focusQuestion: focusQuestion }
+      } else {
+        annotationGuideOpts = { id: annotation.id, name: annotation.name, annotationServer: annotationServer }
+      }
+      const guide = new Codebook(annotationGuideOpts)
       if (_.isFunction(callback)) {
         callback(guide)
       }
@@ -151,14 +161,14 @@ class Codebook {
   }
 
   static fromTopic (topicName) {
-    const annotationGuide = new Codebook({ name: topicName + 'concept map' })
+    const annotationGuide = new Codebook({ name: topicName + 'concept map', focusQuestion: topicName })
     const theme = new Theme({ name: topicName, description: 'Topic of the concept map', isTopic: true, annotationGuide })
     annotationGuide.themes.push(theme)
     return annotationGuide
   }
 
   static fromCXLFile (conceptList, dimensionsList, name, topic, conceptAppearanceList) {
-    const annotationGuide = new Codebook({ name: name })
+    const annotationGuide = new Codebook({ name: name, focusQuestion: topic })
     if (dimensionsList.length > 0) {
       for (let i = 0; i < dimensionsList.length; i++) {
         const dimension = new Dimension({ name: dimensionsList[i], annotationGuide })

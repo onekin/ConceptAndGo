@@ -9,6 +9,7 @@ import Config from '../Config'
 import CXLImporter from '../importExport/cmap/CXLImporter'
 import Codebook from '../codebook/model/Codebook'
 import { CXLExporter } from '../importExport/cmap/CXLExporter'
+import AnnotationUtils from '../utils/AnnotationUtils'
 
 class GroupSelector {
   constructor () {
@@ -18,7 +19,6 @@ class GroupSelector {
     this.user = {}
     this.events = {}
     this.groupFullName = null
-    this.loginWindow = null
     this.loggedInInterval = null
   }
 
@@ -215,10 +215,6 @@ class GroupSelector {
     })
   }
 
-  createApplicationBasedGroupForUser (callback) {
-    window.abwa.annotationServerManager.client.createNewGroup({ name: Config.groupName }, callback)
-  }
-
   reloadGroupsContainer (callback) {
     this.retrieveGroups(() => {
       this.container = document.querySelector('#groupSelector')
@@ -231,51 +227,73 @@ class GroupSelector {
   }
 
   renderGroupsContainer () {
-    // Current group element rendering
+    const tags = ['motivation:defining']
+    tags.push('oa:guide')
     const currentGroupNameElement = document.querySelector('#groupSelectorName')
-    if (this.currentGroup) {
-      currentGroupNameElement.innerText = this.currentGroup.name
-      currentGroupNameElement.title = this.currentGroup.name
-    }
-    // Toggle functionality
-    const toggleElement = document.querySelector('#groupSelectorToggle')
-    if (this.groupSelectorToggleClickEvent) {
-      currentGroupNameElement.removeEventListener('click', this.groupSelectorToggleClickEvent)
-      toggleElement.removeEventListener('click', this.groupSelectorToggleClickEvent)
-    }
-    this.groupSelectorToggleClickEvent = this.createGroupSelectorToggleEvent()
-    currentGroupNameElement.addEventListener('click', this.groupSelectorToggleClickEvent)
-    toggleElement.addEventListener('click', this.groupSelectorToggleClickEvent)
-    // Groups container
-    const groupsContainer = document.querySelector('#groupSelectorContainerSelector')
-    groupsContainer.innerText = ''
-    // For each group
-    const groupSelectorItemTemplate = document.querySelector('#groupSelectorItem')
-    for (let i = 0; i < this.groups.length; i++) {
-      const group = this.groups[i]
-      const groupSelectorItem = $(groupSelectorItemTemplate.content.firstElementChild).clone().get(0)
-      // Container
-      groupsContainer.appendChild(groupSelectorItem)
-      groupSelectorItem.id = 'groupSelectorItemContainer_' + group.id
-      // Name
-      const nameElement = groupSelectorItem.querySelector('.groupSelectorItemName')
-      nameElement.innerText = group.name
-      nameElement.title = 'Move to annotation group ' + group.name
-      nameElement.addEventListener('click', this.createGroupChangeEventHandler(group.id))
-      // Toggle
-      groupSelectorItem.querySelector('.groupSelectorItemToggle').addEventListener('click', this.createGroupSelectorItemToggleEventHandler(group.id))
-      // Options
-      groupSelectorItem.querySelector('.renameGroup').addEventListener('click', this.createGroupSelectorRenameOptionEventHandler(group))
-      groupSelectorItem.querySelector('.deleteGroup').addEventListener('click', this.createGroupSelectorDeleteOptionEventHandler(group))
-    }
-    // New group button
-    const newGroupButton = document.createElement('div')
-    newGroupButton.innerText = 'Create ' + Config.codebook
-    newGroupButton.id = 'createNewModelButton'
-    newGroupButton.className = 'groupSelectorButton'
-    newGroupButton.title = 'Create a new codebook'
-    newGroupButton.addEventListener('click', this.createNewReviewModelEventHandler())
-    groupsContainer.appendChild(newGroupButton)
+    currentGroupNameElement.innerText = this.currentGroup.name
+    currentGroupNameElement.title = this.currentGroup.name
+    window.abwa.annotationServerManager.client.searchAnnotations({
+      group: this.currentGroup.id,
+      order: 'desc',
+      tags: tags
+    }, (err, annotations) => {
+      if (err) {
+        Alerts.errorAlert({ title: '', text: 'Error retrieving focus question' })
+      } else {
+        if (annotations) {
+          const annotation = annotations[0]
+          const tag = AnnotationUtils.getTagFromAnnotation(annotation, 'focusQuestion')
+          if (tag) {
+            const focusQuestion = tag.replace('focusQuestion:', '')
+            if (this.currentGroup) {
+              if (focusQuestion) {
+                currentGroupNameElement.innerText = focusQuestion
+                currentGroupNameElement.title = focusQuestion
+              }
+            }
+          }
+        }
+        // Toggle functionality
+        const toggleElement = document.querySelector('#groupSelectorToggle')
+        if (this.groupSelectorToggleClickEvent) {
+          currentGroupNameElement.removeEventListener('click', this.groupSelectorToggleClickEvent)
+          toggleElement.removeEventListener('click', this.groupSelectorToggleClickEvent)
+        }
+        this.groupSelectorToggleClickEvent = this.createGroupSelectorToggleEvent()
+        currentGroupNameElement.addEventListener('click', this.groupSelectorToggleClickEvent)
+        toggleElement.addEventListener('click', this.groupSelectorToggleClickEvent)
+        // Groups container
+        const groupsContainer = document.querySelector('#groupSelectorContainerSelector')
+        groupsContainer.innerText = ''
+        // For each group
+        const groupSelectorItemTemplate = document.querySelector('#groupSelectorItem')
+        for (let i = 0; i < this.groups.length; i++) {
+          const group = this.groups[i]
+          const groupSelectorItem = $(groupSelectorItemTemplate.content.firstElementChild).clone().get(0)
+          // Container
+          groupsContainer.appendChild(groupSelectorItem)
+          groupSelectorItem.id = 'groupSelectorItemContainer_' + group.id
+          // Name
+          const nameElement = groupSelectorItem.querySelector('.groupSelectorItemName')
+          nameElement.innerText = group.name
+          nameElement.title = 'Move to annotation group ' + group.name
+          nameElement.addEventListener('click', this.createGroupChangeEventHandler(group.id))
+          // Toggle
+          groupSelectorItem.querySelector('.groupSelectorItemToggle').addEventListener('click', this.createGroupSelectorItemToggleEventHandler(group.id))
+          // Options
+          groupSelectorItem.querySelector('.renameGroup').addEventListener('click', this.createGroupSelectorRenameOptionEventHandler(group))
+          groupSelectorItem.querySelector('.deleteGroup').addEventListener('click', this.createGroupSelectorDeleteOptionEventHandler(group))
+        }
+        // New group button
+        const newGroupButton = document.createElement('div')
+        newGroupButton.innerText = 'Create ' + Config.codebook
+        newGroupButton.id = 'createNewModelButton'
+        newGroupButton.className = 'groupSelectorButton'
+        newGroupButton.title = 'Create a new codebook'
+        newGroupButton.addEventListener('click', this.createNewReviewModelEventHandler())
+        groupsContainer.appendChild(newGroupButton)
+      }
+    })
   }
 
   createGroupSelectorToggleEvent () {
@@ -451,7 +469,7 @@ class GroupSelector {
                                   Alerts.infoAlert({ text: 'Please, provide us your Cmap Cloud login credentials in the configuration page of the Web extension.', title: 'We need your Cmap Cloud credentials' })
                                 }
                               })
-                              Alerts.successAlert({ text: 'Group Created!.' })
+                              Alerts.successAlert({ text: 'Highlighter created!' })
                               loadingCallback(null, newGroup)
                             }
                           })
