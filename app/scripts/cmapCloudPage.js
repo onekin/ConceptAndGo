@@ -29,13 +29,27 @@ const kudeatzaileakHasieratu = function () {
             if (listElement) {
               const newListElement = document.createElement('li')
               const aElement = document.createElement('a')
-              aElement.innerText = 'New annotation-drive Cmap'
+              aElement.style.fontSize = '12px'
+              aElement.style.lineHeight = '14px'
+              aElement.style.color = '#4682b4'
+              aElement.id = 'conceptGoLabel'
+              aElement.innerText = 'New annotation-driven Cmap'
+              aElement.style.fontWeight = 'normal'
               aElement.addEventListener('click', () => {
                 console.log('exportMap')
                 createTask()
               })
+              aElement.addEventListener('mouseenter', () => {
+                aElement.style.fontWeight = 'bold'
+              })
+              aElement.addEventListener('mouseleave', () => {
+                aElement.style.fontSize = '12px'
+                aElement.style.lineHeight = '14px'
+                aElement.id = 'conceptGoLabel'
+                aElement.style.fontWeight = 'normal'
+              })
               newListElement.appendChild(aElement)
-              listElement.parentNode.parentNode.insertBefore(newListElement, listElement.parentNode.nextSibling)
+              listElement.parentNode.parentNode.insertBefore(newListElement, listElement.parentNode.parentNode.firstChild)
             }
             // Options for the observer (which mutations to observe)
             const config = { attributes: true, childList: true, subtree: true }
@@ -64,18 +78,31 @@ const kudeatzaileakHasieratu = function () {
                         loadAnnotations()
                       } else if (node.innerText === 'New Cmap') {
                         const listElement = document.querySelector('li > a#create-url-res')
-                        const conceptGoLabel = document.querySelector('li > a.conceptGoLabel')
+                        const conceptGoLabel = document.querySelector('li > a#conceptGoLabel')
                         if (listElement && !conceptGoLabel) {
                           const newListElement = document.createElement('li')
                           const aElement = document.createElement('a')
-                          aElement.className = 'conceptGoLabel'
+                          aElement.style.fontSize = '12px'
+                          aElement.style.lineHeight = '14px'
+                          aElement.style.color = '#4682b4'
+                          aElement.id = 'conceptGoLabel'
                           aElement.innerText = 'New annotation-driven Cmap'
                           aElement.addEventListener('click', () => {
                             console.log('createTask')
                             createTask()
                           })
+                          aElement.addEventListener('mouseenter', () => {
+                            aElement.style.fontWeight = 'bold'
+                          })
+                          aElement.addEventListener('mouseleave', () => {
+                            aElement.style.fontSize = '12px'
+                            aElement.style.lineHeight = '14px'
+                            aElement.id = 'conceptGoLabel'
+                            aElement.innerText = 'New annotation-driven Cmap'
+                            aElement.style.fontWeight = 'normal'
+                          })
                           newListElement.appendChild(aElement)
-                          listElement.parentNode.parentNode.insertBefore(newListElement, listElement.parentNode.nextSibling)
+                          listElement.parentNode.parentNode.insertBefore(newListElement, listElement.parentNode.parentNode.firstChild)
                         }
                       } else if (node.className === 'res-meta-dialog ui-dialog-content ui-widget-content') {
                         updateProperties(node)
@@ -140,7 +167,7 @@ const createTask = function () {
             window.alert('Unable to load swal. Please contact developer.')
           } else {
             Alerts.inputTextAlert({
-              title: 'Introduce the meta-concepts. Separate each meta-concept with a ;',
+              title: 'Introduce the meta-concepts. Separate each meta-concept with a semicolon(;)',
               allowOutsideClick: false,
               inputPlaceholder: 'meta-concept1;meta-concept2...',
               showCancelButton: false,
@@ -346,7 +373,7 @@ const updateProperties = function (node) {
   backgroundDiv.style.background = 'none'
   const keywordLabel = node.querySelector('label[for="rmeta_keywords"]')
   if (keywordLabel) {
-    keywordLabel.textContent = 'Categories (separate using ;)'
+    keywordLabel.textContent = 'Categories (separate using semicolons(;))'
   }
   const languageLabel = node.querySelector('label[for="rmeta_language"]')
   if (languageLabel) {
@@ -537,7 +564,7 @@ const showFeedbackNoteFirstTime = function (node) {
       const url = getURLFromSelectedAnnotation(elem)
       const id = elem.slice(-22)
       optionAnnotation.value = elem
-      optionAnnotation.text = 'TEXT: ' + highlightedText + ' --- FROM:' + url.slice(0, -22).replace('#cag:', '') + ' --- ID: ' + id
+      optionAnnotation.text = 'TEXT: ' + highlightedText + ' --- FROM:' + url.slice(0, -22).replace('#cag:', '')
       // onchange selectElementAnnotations
       selectElementAnnotations.appendChild(optionAnnotation)
     }
@@ -581,7 +608,7 @@ const showFeedbackNoteFirstTime = function (node) {
             const url = getURLFromSelectedAnnotation(elem)
             const id = elem.slice(-22)
             optionAnnotation.value = elem
-            optionAnnotation.text = 'TEXT: ' + highlightedText + ' --- FROM:' + url.slice(0, -22).replace('#cag:', '') + ' --- ID: ' + id
+            optionAnnotation.text = 'TEXT: ' + highlightedText + ' --- FROM:' + url.slice(0, -22).replace('#cag:', '')
             // onchange selectElementAnnotations
             selectElementAnnotations.appendChild(optionAnnotation)
           }
@@ -591,7 +618,7 @@ const showFeedbackNoteFirstTime = function (node) {
           const url = getURLFromSelectedAnnotation(elem)
           const id = elem.slice(-22)
           optionAnnotation.value = elem
-          optionAnnotation.text = 'TEXT: ' + highlightedText + ' --- FROM:' + url.slice(0, -22).replace('#cag:', '') + ' --- ID: ' + id
+          optionAnnotation.text = 'TEXT: ' + highlightedText + ' --- FROM:' + url.slice(0, -22).replace('#cag:', '')
           // onchange selectElementAnnotations
           selectElementAnnotations.appendChild(optionAnnotation)
         }

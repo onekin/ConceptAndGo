@@ -45,7 +45,7 @@ class Toolset {
       this.cxlCloudHomeImage.addEventListener('click', () => {
         this.CXLCloudHomeButtonHandler()
       })
-      // Export to CmapCloud
+      /* Export to CmapCloud
       const cxlCloudImageUrl = chrome.extension.getURL('/images/cmapCloud.png')
       this.cxlCloudImage = $(toolsetButtonTemplate.content.firstElementChild).clone().get(0)
       this.cxlCloudImage.src = cxlCloudImageUrl
@@ -55,7 +55,35 @@ class Toolset {
       this.cxlCloudImage.style.top = '-4px'
       this.toolsetBody.appendChild(this.cxlCloudImage)
       // Add menu when clicking on the button
-      this.CXLCloudButtonHandler()
+      this.CXLCloudButtonHandler() */
+      // Export to CmapCloud Pull
+      const cxlCloudPushImageUrl = chrome.extension.getURL('/images/cmapCloudPull.png')
+      this.cxlCloudImagePull = $(toolsetButtonTemplate.content.firstElementChild).clone().get(0)
+      this.cxlCloudImagePull.src = cxlCloudPushImageUrl
+      this.cxlCloudImagePull.id = 'cxlCloudButtonPull'
+      this.cxlCloudImagePull.title = 'Pull Cmap from CmapCloud' // TODO i18n
+      this.cxlCloudImagePull.style.position = 'relative'
+      this.cxlCloudImagePull.style.bottom = '-4px'
+      this.cxlCloudImagePull.style.width = '43px'
+      this.toolsetBody.appendChild(this.cxlCloudImagePull)
+      // Add menu when clicking on the button
+      this.cxlCloudImagePull.addEventListener('click', () => {
+        this.CXLCloudPullButtonHandler()
+      })
+      // Export to CmapCloud Push
+      const cxlCloudPullImageUrl = chrome.extension.getURL('/images/cmapCloudPush.png')
+      this.cxlCloudImagePush = $(toolsetButtonTemplate.content.firstElementChild).clone().get(0)
+      this.cxlCloudImagePush.src = cxlCloudPullImageUrl
+      this.cxlCloudImagePush.id = 'cxlCloudButtonPush'
+      this.cxlCloudImagePush.title = 'Push Cmap to CmapCloud' // TODO i18n
+      this.cxlCloudImagePush.style.position = 'relative'
+      this.cxlCloudImagePush.style.bottom = '-4px'
+      this.cxlCloudImagePush.style.width = '43px'
+      this.toolsetBody.appendChild(this.cxlCloudImagePush)
+      // Add menu when clicking on the button
+      this.cxlCloudImagePush.addEventListener('click', () => {
+        this.CXLCloudPushButtonHandler()
+      })
       /* const seroImageUrl = chrome.extension.getURL('/images/sero.png')
       this.seroImage = $(toolsetButtonTemplate.content.firstElementChild).clone().get(0)
       this.seroImage.src = seroImageUrl
@@ -157,7 +185,7 @@ class Toolset {
     })
   }
 
-  CXLCloudButtonHandler () {
+  /* CXLCloudButtonHandler () {
     // Create context menu for import export
     $.contextMenu({
       selector: '#cxlCloudButton',
@@ -204,9 +232,70 @@ class Toolset {
         }
       }
     })
+  } */
+
+  CXLCloudPullButtonHandler () {
+    Alerts.confirmAlert({
+      text: "You are going to merge the content of CmapCloud's map into current highlighter. Are you sure?",
+      title: 'Merging from Cmap Cloud',
+      callback: () => {
+        chrome.runtime.sendMessage({ scope: 'cmapCloud', cmd: 'getUserData' }, (response) => {
+          if (response.data) {
+            const data = response.data
+            if (data.userData.user && data.userData.password && data.userData.uid) {
+              const mappingAnnotation = window.abwa.annotationManagement.annotationReader.mappingAnnotation
+              // AnnotationImporter.importReviewAnnotations()
+              if (mappingAnnotation) {
+                MergeFromCmapCloud.mergeFromCmapCloud(data.userData, mappingAnnotation)
+              }
+            }
+          } else {
+            let callback = () => {
+              window.open(chrome.extension.getURL('pages/options.html#cmapCloudConfiguration'))
+            }
+            Alerts.infoAlert({
+              text: 'Please, provide us your Cmap Cloud login credentials in the configuration page of the Web extension.',
+              title: 'We need your Cmap Cloud credentials',
+              callback: callback()
+            })
+          }
+        })
+      }
+    })
   }
 
-  seroButtonHandler () {
+  CXLCloudPushButtonHandler () {
+    Alerts.confirmAlert({
+      text: 'You are going to export all the contents to CmapCloud. Are you sure?',
+      title: 'Exporting to Cmap Cloud',
+      callback: () => {
+        chrome.runtime.sendMessage({ scope: 'cmapCloud', cmd: 'getUserData' }, (response) => {
+          if (response.data) {
+            const data = response.data
+            if (data.userData.user && data.userData.password && data.userData.uid) {
+              const mappingAnnotation = window.abwa.annotationManagement.annotationReader.mappingAnnotation
+              if (mappingAnnotation) {
+                CXLExporter.exportCXLFile('cmapCloud', data.userData, mappingAnnotation)
+              } else {
+                CXLExporter.exportCXLFile('cmapCloud', data.userData, mappingAnnotation)
+              }
+            } else {
+              let callback = () => {
+                window.open(chrome.extension.getURL('pages/options.html#cmapCloudConfiguration'))
+              }
+              Alerts.infoAlert({
+                text: 'Please, provide us your Cmap Cloud login credentials in the configuration page of the Web extension.',
+                title: 'We need your Cmap Cloud credentials',
+                callback: callback()
+              })
+            }
+          }
+        })
+      }
+    })
+  }
+
+  /* seroButtonHandler () {
     // Create context menu for import export
     $.contextMenu({
       selector: '#seroButton',
@@ -229,7 +318,7 @@ class Toolset {
         }
       }
     })
-  }
+  } */
 }
 
 export default Toolset

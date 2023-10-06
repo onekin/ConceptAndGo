@@ -13,6 +13,7 @@ const tags = {
 }
 const Config = {
   groupName: 'DefaultReviewModel',
+  miscDimensionName: 'Catch-all',
   codebook: 'concept map',
   cmapCloudConfiguration: {
     user: 'highlight01x@gmail.com',

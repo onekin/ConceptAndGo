@@ -60,6 +60,9 @@ class CXLMerger {
               const miscThemeObject = _.filter(previousCodebook.themes, (theme) => {
                 return theme.isMisc === true
               })
+              const miscDimensionObject = _.filter(previousCodebook.dimensions, (dimension) => {
+                return dimension.isMisc === true
+              })
               importedCodebook.themes.push(miscThemeObject[0])
               const previousCodebookIDs = previousCodebook.themes.map(previousCodebookTheme => previousCodebookTheme.id)
               const previousCodebookNames = previousCodebook.themes.map(previousCodebookTheme => previousCodebookTheme.name)
@@ -157,6 +160,8 @@ class CXLMerger {
                     })
                     if (dimension) {
                       theme.dimension = dimension.name
+                    } else {
+                      theme.dimension = 'misc'
                     }
                   }
                 })

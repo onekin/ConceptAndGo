@@ -419,7 +419,7 @@ class GroupSelector {
               window.alert('Unable to load swal. Please contact developer.')
             } else {
               Alerts.inputTextAlert({
-                title: 'Introduce the meta-concepts. Separate each meta-concept with a ;',
+                title: 'Introduce the meta-concepts. Separate each meta-concept with a semicolon(;)',
                 allowOutsideClick: false,
                 inputPlaceholder: 'meta-concept1;meta-concept2...',
                 showCancelButton: false,

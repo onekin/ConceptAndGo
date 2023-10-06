@@ -1,9 +1,6 @@
 import jsYaml from 'js-yaml'
 import _ from 'lodash'
 import Config from '../../Config'
-// PVSCL:IFCOND(CodebookUpdate, LINE)
-import ColorUtils from '../../utils/ColorUtils'
-// PVSCL:ENDCOND
 import LanguageUtils from '../../utils/LanguageUtils'
 import Theme from './Theme'
 
@@ -14,7 +11,8 @@ class Dimension {
     color,
     description,
     annotationGuide,
-    createdDate = new Date()
+    createdDate = new Date(),
+    isMisc = false
   }) {
     this.id = id
     this.name = name
@@ -22,6 +20,7 @@ class Dimension {
     this.themes = []
     this.description = description
     this.annotationGuide = annotationGuide
+    this.isMisc = isMisc
     if (LanguageUtils.isInstanceOf(createdDate, Date)) {
       this.createdDate = createdDate
     } else {
@@ -43,13 +42,15 @@ class Dimension {
         const description = config.description
         const color = config.color
         const id = annotation.id
+        const isMisc = config.isMisc
         return new Dimension({
           id,
           name,
           description,
           color,
           createdDate: annotation.updated,
-          annotationGuide
+          annotationGuide,
+          isMisc
         })
       } else {
         console.error('Unable to retrieve configuration for annotation')
@@ -76,7 +77,8 @@ class Dimension {
       text: jsYaml.dump({
         id: this.id,
         description: this.description,
-        color: this.color
+        color: this.color,
+        isMisc: this.isMisc
       }),
       uri: this.annotationGuide.annotationServer.getGroupUrl()
     }

@@ -243,23 +243,29 @@ class ReadCodebook {
     // Create new relation button
     LinkingButton.createNewLinkButton()
     this.codebook.dimensions.forEach((dimension) => {
-      // Create new theme button
-      UpdateCodebook.createNewThemeButton(dimension)
-      const themes = this.codebook.themes.filter((theme) => {
-        return theme.dimension === dimension.name
-      })
-      themes.sort((a, b) => a.name.localeCompare(b.name))
-      for (let i = 0; i < themes.length; i++) {
-        const theme = themes[i]
-        themeButtonContainer = this.createThemeButtonContainer(theme)
-        if (_.isElement(themeButtonContainer)) {
-          this.buttonContainer.append(themeButtonContainer)
+      if (dimension.name !== 'misc') {
+        // Create new theme button
+        UpdateCodebook.createNewThemeButton(dimension)
+        const themes = this.codebook.themes.filter((theme) => {
+          return theme.dimension === dimension.name
+        })
+        themes.sort((a, b) => a.name.localeCompare(b.name))
+        for (let i = 0; i < themes.length; i++) {
+          const theme = themes[i]
+          themeButtonContainer = this.createThemeButtonContainer(theme)
+          if (_.isElement(themeButtonContainer)) {
+            this.buttonContainer.append(themeButtonContainer)
+          }
         }
       }
     })
     const undefindedThemes = this.codebook.themes.filter((theme) => {
       return !theme.dimension
     })
+    const miscDimension = this.getMiscDimension()
+    if (miscDimension) {
+      UpdateCodebook.createNewThemeButton(miscDimension, 'Catch-all')
+    }
     for (let i = 0; i < undefindedThemes.length; i++) {
       const theme = undefindedThemes[i]
       themeButtonContainer = this.createThemeButtonContainer(theme)
@@ -394,6 +400,11 @@ class ReadCodebook {
       if (misc) {
         const miscColor = ColorUtils.getMiscColor()
         misc.color = ColorUtils.setAlphaToColor(miscColor, 0.6)
+      }
+      const miscDimension = this.getMiscDimension()
+      if (miscDimension) {
+        const miscDimensionColor = ColorUtils.getMiscColor()
+        miscDimension.color = ColorUtils.setAlphaToColor(miscDimensionColor, 0.6)
       }
       this.codebook.dimensions.forEach((dimension) => {
         // const color = listOfColors.pop()
@@ -669,6 +680,11 @@ class ReadCodebook {
   getMiscTheme () {
     const themes = this.codebook.themes
     return _.find(themes, (theme) => { return theme.isMisc === true })
+  }
+
+  getMiscDimension () {
+    const dimensions = this.codebook.dimensions
+    return _.find(dimensions, (dimension) => { return dimension.isMisc === true })
   }
 }
 

@@ -4,6 +4,7 @@ import ToolURL from './evidenceAnnotation/ToolURL'
 import LanguageUtils from '../../utils/LanguageUtils'
 import _ from 'lodash'
 import ColorUtils from '../../utils/ColorUtils'
+import Config from '../../Config'
 
 export class LinkingPhrase {
   constructor (linkingWord, id) {
@@ -170,8 +171,11 @@ export class CXLExporter {
       const font = document.createAttribute('font-style')
       font.value = 'italic|bold'
       dimensionAppearance.setAttributeNode(font)
+      const border = document.createAttribute('border-style')
+      border.value = 'dashed'
+      dimensionAppearance.setAttributeNode(border)
       const fontSize = document.createAttribute('font-size')
-      fontSize.value = '14'
+      fontSize.value = '18'
       dimensionAppearance.setAttributeNode(fontSize)
       conceptAppearanceList.appendChild(dimensionAppearance)
     }
@@ -478,7 +482,11 @@ export class CXLExporter {
       id.value = dimension.id
       dimensionElement.setAttributeNode(id)
       const label = document.createAttribute('label')
-      label.value = dimension.name
+      if (dimension.isMisc) {
+        label.value = Config.miscDimensionName
+      } else {
+        label.value = dimension.name
+      }
       dimensionElement.setAttributeNode(label)
       conceptList.appendChild(dimensionElement)
       const dimensionAppearance = xmlDoc.createElement('concept-appearance')
@@ -492,8 +500,11 @@ export class CXLExporter {
       const font = document.createAttribute('font-style')
       font.value = 'italic|bold'
       dimensionAppearance.setAttributeNode(font)
+      const border = document.createAttribute('border-style')
+      border.value = 'dashed'
+      dimensionAppearance.setAttributeNode(border)
       const fontSize = document.createAttribute('font-size')
-      fontSize.value = '14'
+      fontSize.value = '18'
       dimensionAppearance.setAttributeNode(fontSize)
       conceptAppearanceList.appendChild(dimensionAppearance)
     }

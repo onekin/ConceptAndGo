@@ -115,9 +115,14 @@
   min-width: calc( #{$sideBarWidth} - 0.5rem - 0.2rem);
   font-size: 14px;
   font-weight: bold;
-  text-align: center;
-  margin-bottom: 5px;
+  border-style: dashed;
+  text-align: left;  margin-bottom: 5px;
   margin-top: 5px;
+}
+
+.containerHeaderDimensionText {
+  margin-left: 10px;
+  font-size: 18px;
 }
 
 .bodyContainer {

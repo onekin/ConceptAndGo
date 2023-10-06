@@ -131,7 +131,6 @@ class Codebook {
   }
 
   static setAnnotationServer (newGroupId, callback) {
-    let annotationServerInstance
     let group
     if (_.has(window.abwa, 'groupSelector')) {
       if (newGroupId === null) {
@@ -144,7 +143,7 @@ class Codebook {
     } else {
       group = { id: newGroupId } // Faking group object only with ID property, currently this is the only property used, but in case in any future feature is required to be used with more, this line must be taken into account for further modification
     }
-    annotationServerInstance = new Hypothesis({ group: group })
+    const annotationServerInstance = new Hypothesis({ group: group })
     if (_.isFunction(callback)) {
       callback(annotationServerInstance)
     }
@@ -177,6 +176,10 @@ class Codebook {
         annotationGuide.dimensions.push(dimension)
       }
     }
+    const miscDimension = new Dimension({ name: 'misc', annotationGuide, isMisc: true })
+    const miscColor = ColorUtils.getMiscColor()
+    miscDimension.color = ColorUtils.setAlphaToColor(miscColor, 0.6)
+    annotationGuide.dimensions.push(miscDimension)
     if (conceptList && conceptList.children) {
       conceptList = Array.from(conceptList.children)
     }

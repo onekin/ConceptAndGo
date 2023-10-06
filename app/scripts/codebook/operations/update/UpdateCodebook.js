@@ -82,17 +82,21 @@ class UpdateCodebook {
   /**
    * This function adds a button in the sidebar that allows to create new themes.
    */
-  static createNewThemeButton (dimension) {
+  static createNewThemeButton (dimension, alternativeName) {
     const dimensionName = dimension.name
     const header = document.createElement('div')
     header.className = 'containerHeaderDimension'
     header.id = 'newThemeButton' + dimensionName
     header.style.backgroundColor = ColorUtils.setAlphaToColor(dimension.color, 0.9)
-    header.style.border = '1px solid'
+    // header.style.border = '2px black'
     const headerText = document.createElement('a')
-    headerText.innerText = '+ ' + dimensionName
+    headerText.className = 'containerHeaderDimensionText'
+    if (alternativeName) {
+      headerText.innerText = '+ ' + alternativeName
+    } else {
+      headerText.innerText = '+ ' + dimensionName
+    }
     headerText.style.color = 'black'
-    headerText.style.fontSize = '15px'
     header.appendChild(headerText)
     header.addEventListener('click', async () => {
       let newTheme

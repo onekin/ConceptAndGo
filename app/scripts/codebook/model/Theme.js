@@ -117,7 +117,6 @@ class Theme {
     })
   }
 
-
   toObject () {
     return {
       name: this.name,
@@ -132,7 +131,6 @@ class Theme {
   getTags () {
     return [Config.namespace + ':' + Config.tags.grouped.group + ':' + this.name]
   }
-
 
   maxCode () {
     try {
