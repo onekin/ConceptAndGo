@@ -43,7 +43,7 @@ class CXLMerger {
     Codebook.setAnnotationServer(restoredGroup.id, (annotationServer) => {
       importedCodebook.annotationServer = annotationServer
       const title = 'Concept&Go has detected a version of this map. What was the topic or focus question?'
-      CXLImporter.askUserRootTheme(importedCodebook.themes, title, (topicConceptName) => {
+      CXLImporter.askUserRootTheme(importedCodebook.themes, title, focusQuestion, (topicConceptName) => {
         const topicThemeObject = _.filter(importedCodebook.themes, (theme) => {
           return theme.topic === topicConceptName || theme.name === topicConceptName
         })
@@ -162,6 +162,7 @@ class CXLMerger {
                       theme.dimension = dimension.name
                     } else {
                       theme.dimension = 'misc'
+                      // const annotation = theme.toAnnotation
                     }
                   }
                 })
@@ -188,18 +189,25 @@ class CXLMerger {
                 console.log(themesToInclude)
                 if (themesToInclude[0]) {
                   themesToInclude.forEach(themeToInclude => {
-                    window.abwa.codebookManager.codebookReader.codebook.addTheme(themeToInclude)
-                    const newThemeAnnotation = themeToInclude.toAnnotation()
-                    window.abwa.annotationServerManager.client.createNewAnnotation(newThemeAnnotation, (err, annotation) => {
-                      if (err) {
-                        Alerts.errorAlert({ text: 'Unable to create the new code. Error: ' + err.toString() })
-                      } else {
-                        LanguageUtils.dispatchCustomEvent(Events.themeCreated, {
-                          newThemeAnnotation: annotation,
-                          target: event.detail.target
-                        })
-                      }
-                    })
+                    if (themeToInclude.name !== focusQuestion) {
+                      window.abwa.codebookManager.codebookReader.codebook.addTheme(themeToInclude)
+                      const newThemeAnnotation = themeToInclude.toAnnotation()
+                      window.abwa.annotationServerManager.client.createNewAnnotation(newThemeAnnotation, (err, annotation) => {
+                        if (err) {
+                          Alerts.errorAlert({ text: 'Unable to create the new code. Error: ' + err.toString() })
+                        } else {
+                          const target = [{}]
+                          const source = {}
+                          // Get document title
+                          source.title = 'https://cmapcloud.ihmc.us/cmaps/myCmaps.html'
+                          target[0].source = source // Add source to the target
+                          LanguageUtils.dispatchCustomEvent(Events.themeCreated, {
+                            newThemeAnnotation: annotation,
+                            target: target
+                          })
+                        }
+                      })
+                    }
                   })
                 }
               }
@@ -237,13 +245,17 @@ class CXLMerger {
                   const tags = ['from' + ':' + relationshipToInclude.fromConcept.name]
                   tags.push('linkingWord:' + relationshipToInclude.linkingWord)
                   tags.push('to:' + relationshipToInclude.toConcept.name)
-                  LanguageUtils.dispatchCustomEvent(Events.createAnnotation, {
-                    purpose: 'linking',
-                    tags: tags,
-                    from: relationshipToInclude.fromConcept.id,
-                    to: relationshipToInclude.toConcept.id,
-                    linkingWord: relationshipToInclude.linkingWord
-                  })
+                  const fromConcept = window.abwa.codebookManager.codebookReader.codebook.themes(theme => theme.id === relationshipToInclude.fromConcept.id)
+                  const toConcept = window.abwa.codebookManager.codebookReader.codebook.themes(theme => theme.id === relationshipToInclude.toConcept.id)
+                  if (fromConcept && toConcept) {
+                    LanguageUtils.dispatchCustomEvent(Events.createAnnotation, {
+                      purpose: 'linking',
+                      tags: tags,
+                      from: relationshipToInclude.fromConcept.id,
+                      to: relationshipToInclude.toConcept.id,
+                      linkingWord: relationshipToInclude.linkingWord
+                    })
+                  }
                 })
               }
               // REMOVE OLD RELATIONSHIPS

@@ -273,6 +273,17 @@ class ReadCodebook {
         this.buttonContainer.append(themeButtonContainer)
       }
     }
+    const miscThemes = this.codebook.themes.filter((theme) => {
+      return theme.dimension === miscDimension.name
+    })
+    miscThemes.sort((a, b) => a.name.localeCompare(b.name))
+    for (let i = 0; i < miscThemes.length; i++) {
+      const miscTheme = miscThemes[i]
+      themeButtonContainer = this.createThemeButtonContainer(miscTheme)
+      if (_.isElement(themeButtonContainer)) {
+        this.buttonContainer.append(themeButtonContainer)
+      }
+    }
     if (_.isFunction(callback)) {
       callback()
     }

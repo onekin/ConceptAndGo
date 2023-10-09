@@ -222,8 +222,10 @@ export class AnnotatedContentManager {
     const themeOrCode = this.getAnnotatedThemeOrCodeFromThemeOrCodeId(themeOrCodeId)
     if (LanguageUtils.isInstanceOf(themeOrCode, AnnotatedTheme)) {
       // If it is the theme, we need to retrieve all the annotations with corresponding theme and annotations done with its children codes
-      let annotations = _.filter(themeOrCode.annotations, (annotation) => {
-        return _.intersection(window.abwa.targetManager.getDocumentLink(), _.values(annotation.target[0].source))
+      const annotations = _.filter(themeOrCode.annotations, (annotation) => {
+        if (annotation.target[0].source.title !== 'https://cmapcloud.ihmc.us/cmaps/myCmaps.html') {
+          return _.intersection(window.abwa.targetManager.getDocumentLink(), _.values(annotation.target[0].source))
+        }
       })
       return annotations
     } /*  */ else {

@@ -34,42 +34,47 @@ class CXLImporter {
     })
   }
 
-  static askUserRootTheme (themes, title, callback) {
-    const showForm = () => {
-      // Create form
-      let html = ''
-      const selectFrom = document.createElement('select')
-      selectFrom.id = 'topicConcept'
-      themes.forEach(theme => {
-        const option = document.createElement('option')
-        if (theme.topic !== '') {
-          option.text = theme.topic
-          option.value = theme.topic
-        } else {
-          option.text = theme.name
-          option.value = theme.name
-        }
-        selectFrom.add(option)
-      })
-      html += 'Topic:' + selectFrom.outerHTML + '<br>'
-      let topicConcept
-      Alerts.multipleInputAlert({
-        title: title || '',
-        html: html,
-        // position: Alerts.position.bottom, // TODO Must be check if it is better to show in bottom or not
-        preConfirm: () => {
-          topicConcept = document.querySelector('#topicConcept').value
-        },
-        callback: (err) => {
-          if (err) {
-            window.alert('An unexpected error happened when trying to load the alert.')
+  static askUserRootTheme (themes, title, focusQuestion, callback) {
+    const focusQuestionTheme = themes.filter(theme => theme.name === focusQuestion)
+    if (focusQuestionTheme) {
+      callback(focusQuestion)
+    } else {
+      const showForm = () => {
+        // Create form
+        let html = ''
+        const selectFrom = document.createElement('select')
+        selectFrom.id = 'topicConcept'
+        themes.forEach(theme => {
+          const option = document.createElement('option')
+          if (theme.topic !== '') {
+            option.text = theme.topic
+            option.value = theme.topic
           } else {
-            callback(topicConcept)
+            option.text = theme.name
+            option.value = theme.name
           }
-        }
-      })
+          selectFrom.add(option)
+        })
+        html += 'Topic:' + selectFrom.outerHTML + '<br>'
+        let topicConcept
+        Alerts.multipleInputAlert({
+          title: title || '',
+          html: html,
+          // position: Alerts.position.bottom, // TODO Must be check if it is better to show in bottom or not
+          preConfirm: () => {
+            topicConcept = document.querySelector('#topicConcept').value
+          },
+          callback: (err) => {
+            if (err) {
+              window.alert('An unexpected error happened when trying to load the alert.')
+            } else {
+              callback(topicConcept)
+            }
+          }
+        })
+      }
+      showForm()
     }
-    showForm()
   }
 
   static importCXLfile () {
@@ -210,7 +215,7 @@ class CXLImporter {
               Codebook.setAnnotationServer(newGroup.id, (annotationServer) => {
                 tempCodebook.annotationServer = annotationServer
                 const title = 'Which is the topic or focus question?'
-                CXLImporter.askUserRootTheme(tempCodebook.themes, title, (topicConceptName) => {
+                CXLImporter.askUserRootTheme(tempCodebook.themes, title, focusQuestion, (topicConceptName) => {
                   let topicThemeObject
                   topicThemeObject = _.filter(tempCodebook.themes, (theme) => {
                     return theme.topic === topicConceptName || theme.name === topicConceptName
@@ -326,7 +331,7 @@ class CXLImporter {
     Codebook.setAnnotationServer(restoredGroup.id, (annotationServer) => {
       importedCodebook.annotationServer = annotationServer
       const title = 'Concept&Go has detected a version of this map. What was the topic or focus question?'
-      CXLImporter.askUserRootTheme(importedCodebook.themes, title, (topicConceptName) => {
+      CXLImporter.askUserRootTheme(importedCodebook.themes, title, focusQuestion, (topicConceptName) => {
         let topicThemeObject
         topicThemeObject = _.filter(importedCodebook.themes, (theme) => {
           return theme.topic === topicConceptName || theme.name === topicConceptName
@@ -623,7 +628,7 @@ class CXLImporter {
               Codebook.setAnnotationServer(newGroup.id, (annotationServer) => {
                 tempCodebook.annotationServer = annotationServer
                 const title = 'Which is the topic or focus question?'
-                CXLImporter.askUserRootTheme(tempCodebook.themes, title, (topicConceptName) => {
+                CXLImporter.askUserRootTheme(tempCodebook.themes, title, focusQuestion, (topicConceptName) => {
                   let topicThemeObject
                   topicThemeObject = _.filter(tempCodebook.themes, (theme) => {
                     return theme.topic === topicConceptName || theme.name === topicConceptName
@@ -727,7 +732,7 @@ class CXLImporter {
     Codebook.setAnnotationServer(restoredGroup.id, (annotationServer) => {
       importedCodebook.annotationServer = annotationServer
       const title = 'Concept&Go has detected a version of this map. What was the topic or focus question?'
-      CXLImporter.askUserRootTheme(importedCodebook.themes, title, (topicConceptName) => {
+      CXLImporter.askUserRootTheme(importedCodebook.themes, title, focusQuestion, (topicConceptName) => {
         let topicThemeObject
         topicThemeObject = _.filter(importedCodebook.themes, (theme) => {
           return theme.topic === topicConceptName || theme.name === topicConceptName
