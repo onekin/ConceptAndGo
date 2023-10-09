@@ -37,7 +37,8 @@ const kudeatzaileakHasieratu = function () {
               aElement.style.fontWeight = 'normal'
               aElement.addEventListener('click', () => {
                 console.log('exportMap')
-                createTask()
+                // createTask()
+                createWindow()
               })
               aElement.addEventListener('mouseenter', () => {
                 aElement.style.fontWeight = 'bold'
@@ -89,7 +90,8 @@ const kudeatzaileakHasieratu = function () {
                           aElement.innerText = 'New annotation-driven Cmap'
                           aElement.addEventListener('click', () => {
                             console.log('createTask')
-                            createTask()
+                            // createTask()
+                            createWindow()
                           })
                           aElement.addEventListener('mouseenter', () => {
                             aElement.style.fontWeight = 'bold'
@@ -135,102 +137,112 @@ const kudeatzaileakHasieratu = function () {
   }, 1000)
 }
 
-const createTask = function () {
-  const title = 'What is the topic or the focus question?'
-  const inputPlaceholder = 'What is the topic or the focus question?'
-  Alerts.inputTextAlert({
-    title: title,
-    allowOutsideClick: false,
-    inputPlaceholder: inputPlaceholder,
-    showCancelButton: false,
-    preConfirm: (groupName) => {
-      if (_.isString(groupName)) {
-        if (groupName.length <= 0) {
-          const swal = require('sweetalert2').default
-          swal.showValidationMessage('Name cannot be empty.')
-        } else {
-          return groupName
-        }
-      }
-    },
-    callback: (err, groupName) => {
-      if (err) {
-        window.alert('Unable to load swal. Please contact developer.')
-      } else {
+const createTask = function (groupName, focusQuestion, dimensionString) {
+  groupName = LanguageUtils.normalizeString(groupName)
+  if (groupName.length > 25) {
+    groupName = groupName.substring(0, 24)
+  }
+  window.cag.annotationServerManager.client.createNewGroup({ name: groupName, description: 'A group created using Concept&Go' + chrome.runtime.getManifest().name }, (err, newGroup) => {
+    if (err) {
+      window.alert('Unable to load swal. Please contact developer.')
+    } else {
+      if (_.isString(dimensionString)) {
+        const dimensionsList = dimensionString.split(';')
+        dimensionsList.forEach(element => element.trim)
         groupName = LanguageUtils.normalizeString(groupName)
-        const focusQuestion = groupName
-        if (groupName.length > 25) {
-          groupName = groupName.substring(0, 24)
-        }
-        window.cag.annotationServerManager.client.createNewGroup({ name: groupName, description: 'A group created using annotation tool ' + chrome.runtime.getManifest().name }, (err, newGroup) => {
-          if (err) {
-            window.alert('Unable to load swal. Please contact developer.')
-          } else {
-            Alerts.inputTextAlert({
-              title: 'Introduce the meta-concepts. Separate each meta-concept with a semicolon(;)',
-              allowOutsideClick: false,
-              inputPlaceholder: 'meta-concept1;meta-concept2...',
-              showCancelButton: false,
-              preConfirm: (dimensionString) => {
-                if (_.isString(dimensionString)) {
-                  const dimensionsList = dimensionString.split(';')
-                  dimensionsList.forEach(element => console.log(element.trim))
-                  if (dimensionsList.length <= 0) {
-                    const swal = require('sweetalert2').default
-                    swal.showValidationMessage('Meta-concepts not found.')
-                  } else {
-                    return dimensionsList
-                  }
-                }
-              },
-              callback: (err, dimensionsList) => {
+        const tempCodebook = Codebook.fromCXLFile(null, dimensionsList, groupName, focusQuestion, [])
+        Codebook.setAnnotationServer(newGroup.id, (annotationServer) => {
+          tempCodebook.annotationServer = annotationServer
+          const topicThemeObject = _.filter(tempCodebook.themes, (theme) => {
+            return theme.topic === groupName || theme.name === groupName
+          })
+          topicThemeObject[0].isTopic = true
+          const annotations = tempCodebook.toAnnotations()
+          // Send create highlighter
+          window.cag.annotationServerManager.client.createNewAnnotations(annotations, (err, codebookAnnotations) => {
+            if (err) {
+              Alerts.errorAlert({ text: 'Unable to create new group.' })
+            } else {
+              Codebook.fromAnnotations(codebookAnnotations, (err, codebook) => {
                 if (err) {
-                  window.alert('Unable to load swal. Please contact developer.')
+                  Alerts.errorAlert({ text: 'Unable to create codebook.' })
                 } else {
-                  groupName = LanguageUtils.normalizeString(groupName)
-                  const tempCodebook = Codebook.fromCXLFile(null, dimensionsList, groupName, focusQuestion, [])
-                  // window.abwa.groupSelector.groups.push(newGroup)
-                  Codebook.setAnnotationServer(newGroup.id, (annotationServer) => {
-                    tempCodebook.annotationServer = annotationServer
-                    const topicThemeObject = _.filter(tempCodebook.themes, (theme) => {
-                      return theme.topic === groupName || theme.name === groupName
-                    })
-                    topicThemeObject[0].isTopic = true
-                    const annotations = tempCodebook.toAnnotations()
-                    // Send create highlighter
-                    window.cag.annotationServerManager.client.createNewAnnotations(annotations, (err, codebookAnnotations) => {
-                      if (err) {
-                        Alerts.errorAlert({ text: 'Unable to create new group.' })
-                      } else {
-                        Codebook.fromAnnotations(codebookAnnotations, (err, codebook) => {
-                          if (err) {
-                            Alerts.errorAlert({ text: 'Unable to create codebook.' })
-                          } else {
-                            chrome.runtime.sendMessage({ scope: 'cmapCloud', cmd: 'getUserData' }, (response) => {
-                              if (response.data) {
-                                const data = response.data
-                                if (data.userData.user && data.userData.password && data.userData.uid) {
-                                  CXLExporter.createCmapFromCmapCloud(newGroup, codebook, groupName, data.userData)
-                                }
-                              } else {
-                                window.open(chrome.extension.getURL('pages/options.html#cmapCloudConfiguration'))
-                                Alerts.infoAlert({ text: 'Please, provide us your Cmap Cloud login credentials in the configuration page of the Web extension.', title: 'We need your Cmap Cloud credentials' })
-                              }
-                            })
-                            Alerts.successAlert({ text: 'Group Created!.' })
-                          }
-                        })
+                  chrome.runtime.sendMessage({ scope: 'cmapCloud', cmd: 'getUserData' }, (response) => {
+                    if (response.data) {
+                      const data = response.data
+                      if (data.userData.user && data.userData.password && data.userData.uid) {
+                        CXLExporter.createCmapFromCmapCloud(newGroup, codebook, groupName, data.userData)
                       }
-                    })
+                    } else {
+                      window.open(chrome.extension.getURL('pages/options.html#cmapCloudConfiguration'))
+                      Alerts.infoAlert({ text: 'Please, provide us your Cmap Cloud login credentials in the configuration page of the Web extension.', title: 'We need your Cmap Cloud credentials' })
+                    }
                   })
+                  Alerts.successAlert({ text: 'Annotation Group successfully created!' })
+                  const errorMessage = document.getElementById('windowErrorMessage')
+                  errorMessage.style.color = '#006400'
+                  errorMessage.textContent = 'Creating Cmap folder...'
                 }
-              }
-            })
-          }
+              })
+            }
+          })
         })
       }
     }
   })
+}
+
+const createWindow = function () {
+  const htmlString = '<div id="windowDialog" tabIndex="-1" role="dialog" style="position: absolute; height: auto; width: 450px; top: 425px; left: 332px; display: block;" aria-describedby="ui-id-36" aria-labelledby="ui-id-37"> ' +
+    '<div id="windowHeader">' +
+    '<span id="windowDialogTitle">Creating new annotation driven concept map</span> ' +
+    '</div> ' +
+    '<div id="windowMetadata" style="display: block; width: auto; min-height: 0px; max-height: none; height: 195px;">' +
+    '<form>' +
+    '<label htmlFor="rmeta_name" class="windowLabel">What is the name of your Cmap?</label><input placeholder="Cmap name.." type="text" name="name" id="rmeta_name" class="windowInput">' +
+    '<label class="windowLabel" htmlFor="rmeta_focus_question">What is the focus question?</label><input placeholder="Focus question..." type="text" name="focus_question" id="rmeta_focus_question" class="windowInput">' +
+    '<label class="windowLabel" htmlFor="rmeta_keywords">Which are the Categories? (separate them using semicolons;)</label><input placeholder="Category1;Category2..." type="text" name="keywords" id="rmeta_keywords" class="windowInput">' +
+    '</form> </div> ' +
+    '<div id="windowButtonPane"> ' +
+    '<div id="windowButtonSet""> ' +
+    '<span id="windowErrorMessage" style="margin-left: 10px;"></span>' +
+    '<button class="windowButton" type="button" id="cancelBtn" role="button"><span class="windowButtonSpan">Cancel</span></button> ' +
+    '<button class="windowButton" type="button" id="createMapBtn" role="button"><span class="windowButtonSpan">Create Cmap</span></button> ' +
+    '</div></div></div>'
+  const parser = new DOMParser()
+  const html = parser.parseFromString(htmlString, 'text/html')
+  let window = html.querySelector('div')
+  document.body.appendChild(window)
+  window = document.getElementById('windowDialog')
+  window.style.zIndex = '5000'
+  const backgroundHTMLDiv = document.createElement('div')
+  backgroundHTMLDiv.id = 'windowBackground'
+  backgroundHTMLDiv.style.zIndex = '4999'
+  window.parentNode.insertBefore(backgroundHTMLDiv, window.nextSibling)
+  const background = document.getElementById('windowBackground')
+  // Define buttons
+  const createMapBtn = document.getElementById('createMapBtn')
+  createMapBtn.onclick = () => {
+    const errorMessage = document.getElementById('windowErrorMessage')
+    const message = checkFormData()
+    if (message === 'OK') {
+      const nameInput = document.getElementById('rmeta_name')
+      const focusQuestionInput = document.getElementById('rmeta_focus_question')
+      const categoriesInput = document.getElementById('rmeta_keywords')
+      errorMessage.style.color = '#006400'
+      errorMessage.textContent = 'Creating annotation group...'
+      createTask(nameInput.value, focusQuestionInput.value, categoriesInput.value)
+    } else {
+      errorMessage.style.color = '#8B0000'
+      errorMessage.textContent = message
+    }
+  }
+  const cancelBtn = document.getElementById('cancelBtn')
+  cancelBtn.onclick = () => {
+    console.log('cancelBtn')
+    window.remove()
+    background.remove()
+  }
 }
 
 const getURLFromSelectedAnnotation = function (selectedAnnotation) {
@@ -317,20 +329,25 @@ const loadAnnotations = function () {
   }
 }
 
-const exportCmap = function () {
-  const resourceURL = decodeURIComponent(document.querySelector('img[alt="Cmap-0"]').src.toString())
-  const regex = /id=([^&?]+)/
-  const match = regex.exec(resourceURL)
-  if (match) {
-    const id = match[1] // Extracted id
-    console.log(id)
-    getCXLInfo(id, (xmlDoc) => {
-      console.log(xmlDoc)
-      CXLImporter.importCXLfileFromCmapCloud(xmlDoc)
-    })
-  } else {
-    console.log('No id found in the URL')
+const checkFormData = function () {
+  let message = 'OK'
+  const nameInput = document.getElementById('rmeta_name')
+  const focusQuestionInput = document.getElementById('rmeta_focus_question')
+  const categoriesInput = document.getElementById('rmeta_keywords')
+  let dimensionsList = []
+  try {
+    dimensionsList = categoriesInput.value.split(';').filter(Boolean)
+  } catch (e) {
+    message = 'Error parsing categories'
   }
+  if (nameInput.value.length < 5) {
+    message = 'Provide a larger Cmap name'
+  } else if (focusQuestionInput.value < 5) {
+    message = 'Provide a larger focus question'
+  } else if (!dimensionsList || dimensionsList.length < 1 || categoriesInput.value === '') {
+    message = 'Provide categories'
+  }
+  return message
 }
 
 const getCXLInfo = function (id, callback) {
@@ -369,8 +386,6 @@ const getGroupId = function (list) {
 const updateProperties = function (node) {
   console.log('window opened')
   node.style.height = '178.3px'
-  const backgroundDiv = document.querySelector('div.ui-widget-overlay.ui-front')
-  backgroundDiv.style.background = 'none'
   const keywordLabel = node.querySelector('label[for="rmeta_keywords"]')
   if (keywordLabel) {
     keywordLabel.textContent = 'Categories (separate using semicolons(;))'
