@@ -203,7 +203,7 @@ const createTask = function (groupName, focusQuestion, dimensionString, userData
       if (_.isString(dimensionString)) {
         let urlList
         if (urlInput && _.isString(urlInput)) {
-          urlList = urlInput.split(';')
+          urlList = urlInput.split(';').filter(Boolean)
           urlList.forEach(element => element.trim)
         }
         const dimensionsList = dimensionString.split(';')

@@ -6,80 +6,59 @@ import LanguageUtils from '../../../utils/LanguageUtils'
 import FileSaver from 'file-saver'
 import Config from '../../../Config'
 import jsYaml from 'js-yaml'
+import ToolURL from '../evidenceAnnotation/ToolURL'
 
 class ExportCmapCloud {
-  static export (xmlDoc, urlFiles, userData, dimensions, mappingAnnotation) {
+  static export (xmlDoc, urlFiles, userData, dimensions, urlString, mappingAnnotation) {
     const user = userData.user
     const pass = userData.password
     const uid = userData.uid
     const cmapCloudClient = new CmapCloudClient(user, pass, uid)
     if (mappingAnnotation) {
-      this.exportToExistingFolder(cmapCloudClient, xmlDoc, urlFiles, userData, dimensions, mappingAnnotation)
-    } else {
-      this.exportWithVersions(cmapCloudClient, xmlDoc, urlFiles, userData)
+      this.exportToExistingFolder(cmapCloudClient, xmlDoc, urlFiles, userData, dimensions, urlString, mappingAnnotation)
     }
   }
 
-  static exportFirstMap (name, xmlDoc, userData, group, dimensionsString) {
+  static exportFirstMap (name, xmlDoc, userData, group, dimensionsString, urlString, codebook) {
     const user = userData.user
     const pass = userData.password
     const uid = userData.uid
     const cmapCloudClient = new CmapCloudClient(user, pass, uid)
+    const urlList = urlString.split(';').filter(Boolean)
+    const themes = codebook.themes
+    const topic = _.find(themes, (theme) => { return theme.isTopic === true })
+    const elementID = topic.id
+    const urlFiles = []
+    for (let i = 0; i < urlList.length; i++) {
+      const direction = urlList[i]
+      let name = direction
+      name = name.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s/g, '')
+      const newUrl = new ToolURL({ elementID, name, direction })
+      urlFiles.push(newUrl)
+    }
     cmapCloudClient.getRootFolderInfor((data) => {
       cmapCloudClient.createFolder(name, (newFolderData) => {
         const folderID = this.getFolderID(newFolderData)
         // Add resource-group-list
-        const mapString = new XMLSerializer().serializeToString(xmlDoc)
-        cmapCloudClient.uploadMap(folderID, mapString, (data) => {
-          console.log(data)
-          const urlWithIdentifier = data.childNodes[0].childNodes[5].innerHTML
-          const pattern = /id=([\w-]+)/
-          const match = urlWithIdentifier.match(pattern)
-          // Check if a match was found and extract the desired string
-          if (match) {
-            const mapId = match[1]
-            console.log(mapId)
-            let annotationServer
-            if (window.cag) {
-              annotationServer = window.cag.annotationServerManager
-            } else {
-              annotationServer = window.abwa.annotationServerManager
-            }
-            const annotation = this.createMappingAnnotation(folderID, mapId, group)
-            annotationServer.client.createNewAnnotation(annotation, (err, newAnnotation) => {
-              if (err) {
-                Alerts.errorAlert({ text: 'Unexpected error, unable to create annotation' })
-              } else {
-                if (window.location.href.startsWith('https://cmapcloud.ihmc.us/cmaps')) {
-                  window.location.reload()
-                }
-                Alerts.infoAlert({ text: 'You have available your resource in CmapCloud in ' + name + ' folder.\n', title: 'Completed' })
-              }
-            })
-          } else {
-            console.log('No match found')
-          }
-        }, group, dimensionsString)
-        // FileSaver.saveAs(blob, LanguageUtils.camelize(folderName) + '(' + window.abwa.groupSelector.currentGroup.id + ')' + '.cxl')
-        // })
+        // const mapString = new XMLSerializer().serializeToString(xmlDoc)
+        this.uploadAll(cmapCloudClient, xmlDoc, urlFiles, folderID, dimensionsString, name, true, group)
       }, reason => {
       })
     })
   }
 
-  static exportWithVersions (cmapCloudClient, xmlDoc, urlFiles) {
-    cmapCloudClient.getRootFolderInfor((data) => {
-      const folderName = this.getFolderName(data)
-      cmapCloudClient.createFolder(folderName, (newFolderData) => {
-        const folderId = this.getFolderID(newFolderData)
-        this.uploadAll(cmapCloudClient, xmlDoc, urlFiles, folderId, folderName)
-      })
-    })
-  }
-
-  static exportToExistingFolder (cmapCloudClient, xmlDoc, urlFiles, userData, dimensions, mappingAnnotation) {
+  static exportToExistingFolder (cmapCloudClient, xmlDoc, urlFiles, userData, dimensions, urlString, mappingAnnotation) {
+    const urlList = urlString.split(';').filter(Boolean)
+    const topic = window.abwa.codebookManager.codebookReader.getTopicTheme()
+    const elementID = topic.id
+    for (let i = 0; i < urlList.length; i++) {
+      const direction = urlList[i]
+      let name = direction
+      name = name.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s/g, '')
+      const newUrl = new ToolURL({ elementID, name, direction })
+      urlFiles.push(newUrl)
+    }
     const folderId = AnnotationUtils.getFolderIDFromAnnotation(mappingAnnotation)
-    console.log(folderId)
     this.removeFolderResources(cmapCloudClient, folderId, () => {
       chrome.runtime.sendMessage({ scope: 'cmapCloud', cmd: 'getFolderList', data: folderId }, (response) => {
         if (response.info) {
@@ -109,14 +88,14 @@ class ExportCmapCloud {
           if (identifiers.length > 0) {
             Alerts.infoAlert({ text: 'Folder is not empty', title: 'Error' })
           } else {
-            this.uploadAll(cmapCloudClient, xmlDoc, urlFiles, folderId, dimensions)
+            this.uploadAll(cmapCloudClient, xmlDoc, urlFiles, folderId, dimensions, null, false)
           }
         }
       })
     })
   }
 
-  static uploadAll (cmapCloudClient, xmlDoc, urlFiles, folderId, dimensions, folderName) {
+  static uploadAll (cmapCloudClient, xmlDoc, urlFiles, folderId, dimensions, folderName, uploadMap, group) {
     const beginPromises = []
     for (let i = 0; i < urlFiles.length; i++) {
       const urlFile = urlFiles[i]
@@ -153,13 +132,41 @@ class ExportCmapCloud {
       })
       let name
       folderName ? name = folderName : name = window.abwa.groupSelector.currentGroup.name
-      FileSaver.saveAs(blob, LanguageUtils.camelize(window.abwa.groupSelector.currentGroup.name) + '(' + window.abwa.groupSelector.currentGroup.id + ')' + '.cxl')
-      Alerts.infoAlert({ text: 'You have available your resource in CmapCloud in ' + name + ' folder.\n Please move the downloaded map to the corresponding CmapCloud folder.', title: 'Completed' })
-      /* cmapCloudClient.uploadMap(folderId, mapString, (data) => {
-        console.log(data)
-        Alerts.infoAlert({ text: 'You have available your resource in CmapCloud ' + name + ' folder.' })
-      }, window.abwa.groupSelector.currentGroup, dimensions)
-      // }) */
+      if (uploadMap) {
+        cmapCloudClient.uploadMap(folderId, mapString, (data) => {
+          console.log(data)
+          const urlWithIdentifier = data.childNodes[0].childNodes[5].innerHTML
+          const pattern = /id=([\w-]+)/
+          const match = urlWithIdentifier.match(pattern)
+          // Check if a match was found and extract the desired string
+          if (match) {
+            const mapId = match[1]
+            console.log(mapId)
+            let annotationServer
+            if (window.cag) {
+              annotationServer = window.cag.annotationServerManager
+            } else {
+              annotationServer = window.abwa.annotationServerManager
+            }
+            const annotation = this.createMappingAnnotation(folderId, mapId, group)
+            annotationServer.client.createNewAnnotation(annotation, (err, newAnnotation) => {
+              if (err) {
+                Alerts.errorAlert({ text: 'Unexpected error, unable to create annotation' })
+              } else {
+                if (window.location.href.startsWith('https://cmapcloud.ihmc.us/cmaps')) {
+                  window.location.reload()
+                }
+                Alerts.infoAlert({ text: 'You have available your resource in CmapCloud in ' + name + ' folder.\n', title: 'Completed' })
+              }
+            })
+          } else {
+            console.log('No match found')
+          }
+        }, group, dimensions)
+      } else {
+        FileSaver.saveAs(blob, LanguageUtils.camelize(window.abwa.groupSelector.currentGroup.name) + '(' + window.abwa.groupSelector.currentGroup.id + ')' + '.cxl')
+        Alerts.infoAlert({ text: 'You have available your resource in CmapCloud in ' + name + ' folder.\n Please move the downloaded map to the corresponding CmapCloud folder.', title: 'Completed' })
+      }
     }, reason => {
     })
   }
@@ -325,6 +332,16 @@ class ExportCmapCloud {
       } else {
         Alerts.infoAlert({ text: 'Folder not found', title: 'Info' })
       }
+    })
+  }
+
+  static exportWithVersions (cmapCloudClient, xmlDoc, urlFiles) {
+    cmapCloudClient.getRootFolderInfor((data) => {
+      const folderName = this.getFolderName(data)
+      cmapCloudClient.createFolder(folderName, (newFolderData) => {
+        const folderId = this.getFolderID(newFolderData)
+        this.uploadAll(cmapCloudClient, xmlDoc, urlFiles, folderId, folderName)
+      })
     })
   }
 }

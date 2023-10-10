@@ -163,7 +163,11 @@ export class CXLExporter {
       id.value = dimension.id
       dimensionElement.setAttributeNode(id)
       const label = document.createAttribute('label')
-      label.value = dimension.name
+      if (dimension.isMisc) {
+        label.value = Config.miscDimensionName
+      } else {
+        label.value = dimension.name
+      }
       dimensionElement.setAttributeNode(label)
       conceptList.appendChild(dimensionElement)
       const dimensionAppearance = xmlDoc.createElement('concept-appearance')
@@ -209,17 +213,23 @@ export class CXLExporter {
       if (concept.theme.isTopic) {
         background.value = ColorUtils.turnForCmapCloud(ColorUtils.getTopicColor())
         conceptAppearance.setAttributeNode(background)
+        const font = document.createAttribute('font-style')
+        font.value = 'bold'
+        conceptAppearance.setAttributeNode(font)
+        const fontSize = document.createAttribute('font-size')
+        fontSize.value = '16'
+        conceptAppearance.setAttributeNode(fontSize)
       } else {
         const dimension = window.abwa.codebookManager.codebookReader.codebook.getDimensionByName(concept.theme.dimension)
         if (dimension) {
           background.value = ColorUtils.turnForCmapCloud(dimension.color)
           conceptAppearance.setAttributeNode(background)
         }
+        // font-size="14"
+        const fontSize = document.createAttribute('font-size')
+        fontSize.value = '14'
+        conceptAppearance.setAttributeNode(fontSize)
       }
-      // font-size="14"
-      const fontSize = document.createAttribute('font-size')
-      fontSize.value = '14'
-      conceptAppearance.setAttributeNode(fontSize)
       conceptAppearanceList.appendChild(conceptAppearance)
       if (concept.evidenceAnnotations.length > 0) {
         for (let i = 0; i < concept.evidenceAnnotations.length; i++) {
@@ -357,9 +367,7 @@ export class CXLExporter {
       ExportCXLArchiveFile.export(xmlDoc, urlFiles)
     } else if (exportType === 'cmapCloud') {
       if (mappingAnnotation) {
-        ExportCmapCloud.export(xmlDoc, urlFiles, userData, window.abwa.codebookManager.codebookReader.codebook.getDimensionsForCmapCloud(), mappingAnnotation)
-      } else {
-        ExportCmapCloud.export(xmlDoc, urlFiles, userData, window.abwa.codebookManager.codebookReader.codebook.getDimensionsForCmapCloud())
+        ExportCmapCloud.export(xmlDoc, urlFiles, userData, window.abwa.codebookManager.codebookReader.codebook.getDimensionsForCmapCloud(), urlString, mappingAnnotation)
       }
     }
   }
@@ -543,20 +551,24 @@ export class CXLExporter {
         id.value = elementID
         conceptAppearance.setAttributeNode(id)
         const background = document.createAttribute('background-color')
+        const fontSize = document.createAttribute('font-size')
         if (concept.isTopic) {
+          const font = document.createAttribute('font-style')
           background.value = ColorUtils.turnForCmapCloud(ColorUtils.getTopicColor())
           conceptAppearance.setAttributeNode(background)
+          font.value = 'bold'
+          conceptAppearance.setAttributeNode(font)
+          fontSize.value = '16'
+          conceptAppearance.setAttributeNode(fontSize)
         } else {
           const dimension = codebook.getDimensionByName(concept.dimension)
           if (dimension) {
             background.value = ColorUtils.turnForCmapCloud(dimension.color)
             conceptAppearance.setAttributeNode(background)
           }
+          fontSize.value = '14'
+          conceptAppearance.setAttributeNode(fontSize)
         }
-        // font-size="14"
-        const fontSize = document.createAttribute('font-size')
-        fontSize.value = '14'
-        conceptAppearance.setAttributeNode(fontSize)
         conceptAppearanceList.appendChild(conceptAppearance)
       }
     }
@@ -574,7 +586,7 @@ export class CXLExporter {
     cmapPartsList.appendChild(annotation)
     cmapElement.appendChild(cmapPartsList)
     // Export Cmap
-    ExportCmapCloud.exportFirstMap(groupName, xmlDoc, userData, group, dimensionsString)
+    ExportCmapCloud.exportFirstMap(groupName, xmlDoc, userData, group, dimensionsString, urlString, codebook)
   }
 
   static findLinkingPhrase (linkingPhrases, relation) {
