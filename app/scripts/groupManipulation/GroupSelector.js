@@ -439,51 +439,74 @@ class GroupSelector {
                   if (err) {
                     window.alert('Unable to load swal. Please contact developer.')
                   } else {
-                    groupName = LanguageUtils.normalizeString(groupName)
-                    const tempCodebook = Codebook.fromCXLFile(null, dimensionsList, groupName, focusQuestion, [])
-                    window.abwa.groupSelector.groups.push(newGroup)
-                    Codebook.setAnnotationServer(newGroup.id, (annotationServer) => {
-                      tempCodebook.annotationServer = annotationServer
-                      const topicThemeObject = _.filter(tempCodebook.themes, (theme) => {
-                        return theme.topic === groupName || theme.name === groupName
-                      })
-                      topicThemeObject[0].isTopic = true
-                      const annotations = tempCodebook.toAnnotations()
-                      // Send create highlighter
-                      window.abwa.annotationServerManager.client.createNewAnnotations(annotations, (err, codebookAnnotations) => {
+                    Alerts.inputTextAlert({
+                      title: 'Introduce the reading materials. Separate each URL with a semicolon(;)',
+                      allowOutsideClick: false,
+                      inputPlaceholder: 'url1;url2...',
+                      showCancelButton: false,
+                      preConfirm: (urlString) => {
+                        if (_.isString(urlString)) {
+                          const urlList = urlString.split(';')
+                          urlList.forEach(element => console.log(element.trim))
+                          if (urlList.length <= 0) {
+                            const swal = require('sweetalert2').default
+                            swal.showValidationMessage('URLS not found.')
+                          } else {
+                            return urlString
+                          }
+                        }
+                      },
+                      callback: (err, urlString) => {
                         if (err) {
-                          Alerts.errorAlert({ text: 'Unable to create codebook annotations.' })
+                          window.alert('Unable to load swal. Please contact developer.')
                         } else {
-                          Codebook.fromAnnotations(codebookAnnotations, (err, codebook) => {
-                            if (err) {
-                              Alerts.errorAlert({ text: 'Unable to create codebook from annotations.' })
-                            } else {
-                              chrome.runtime.sendMessage({ scope: 'cmapCloud', cmd: 'getUserData' }, (response) => {
-                                if (response.data) {
-                                  const data = response.data
-                                  if (data.userData.user && data.userData.password && data.userData.uid) {
-                                    CXLExporter.createCmapFromCmapCloud(newGroup, codebook, groupName, data.userData)
+                          groupName = LanguageUtils.normalizeString(groupName)
+                          const tempCodebook = Codebook.fromCXLFile(null, dimensionsList, groupName, focusQuestion, [], urlString)
+                          window.abwa.groupSelector.groups.push(newGroup)
+                          Codebook.setAnnotationServer(newGroup.id, (annotationServer) => {
+                            tempCodebook.annotationServer = annotationServer
+                            const topicThemeObject = _.filter(tempCodebook.themes, (theme) => {
+                              return theme.topic === groupName || theme.name === groupName
+                            })
+                            topicThemeObject[0].isTopic = true
+                            const annotations = tempCodebook.toAnnotations()
+                            // Send create highlighter
+                            window.abwa.annotationServerManager.client.createNewAnnotations(annotations, (err, codebookAnnotations) => {
+                              if (err) {
+                                Alerts.errorAlert({ text: 'Unable to create codebook annotations.' })
+                              } else {
+                                Codebook.fromAnnotations(codebookAnnotations, (err, codebook) => {
+                                  if (err) {
+                                    Alerts.errorAlert({ text: 'Unable to create codebook from annotations.' })
+                                  } else {
+                                    chrome.runtime.sendMessage({ scope: 'cmapCloud', cmd: 'getUserData' }, (response) => {
+                                      if (response.data) {
+                                        const data = response.data
+                                        if (data.userData.user && data.userData.password && data.userData.uid) {
+                                          CXLExporter.createCmapFromCmapCloud(newGroup, codebook, groupName, data.userData)
+                                        }
+                                      } else {
+                                        window.open(chrome.extension.getURL('pages/options.html#cmapCloudConfiguration'))
+                                        Alerts.infoAlert({
+                                          text: 'Please, provide us your Cmap Cloud login credentials in the configuration page of the Web extension.',
+                                          title: 'We need your Cmap Cloud credentials'
+                                        })
+                                      }
+                                    })
+                                    Alerts.successAlert({ text: 'Highlighter created!' })
+                                    loadingCallback(null, newGroup)
                                   }
-                                } else {
-                                  window.open(chrome.extension.getURL('pages/options.html#cmapCloudConfiguration'))
-                                  Alerts.infoAlert({ text: 'Please, provide us your Cmap Cloud login credentials in the configuration page of the Web extension.', title: 'We need your Cmap Cloud credentials' })
-                                }
-                              })
-                              Alerts.successAlert({ text: 'Highlighter created!' })
-                              loadingCallback(null, newGroup)
-                            }
+                                })
+                              }
+                            })
                           })
                         }
-                      })
+                      }
                     })
                   }
-                  // window.abwa.annotationServerManager.client.createNewGroup({ name: groupName, description: 'A group created using annotation tool ' + chrome.runtime.getManifest().name }, () => {
-                  // })
-                  // loadingCallback()
                 }
               })
             }
-            // loadingCallback()
           })
         }
       }

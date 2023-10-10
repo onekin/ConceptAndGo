@@ -20,91 +20,6 @@ class ExportCmapCloud {
     }
   }
 
-  static getFolderName (data) {
-    let folderName
-    const elements = data.getElementsByTagName('res-meta')
-    if (elements.length > 0) {
-      const folderElements = _.map(_.filter(elements, (element) => {
-        if (element.attributes.format) {
-          return element.attributes.format.nodeValue === 'x-nlk-project/x-binary'
-        }
-      }), (folderElement) => {
-        return folderElement.attributes.title.nodeValue
-      })
-      let candidateName
-      let foundFolder
-      let i = 1
-      while (true) {
-        candidateName = window.abwa.groupSelector.currentGroup.name + '_v.' + i
-        foundFolder = _.filter(folderElements, (folderName) => {
-          return folderName === candidateName
-        })
-        if (foundFolder.length === 0) {
-          return candidateName
-        } else {
-          i++
-        }
-      }
-    } else {
-      folderName = window.abwa.groupSelector.currentGroup.name + '_v.1'
-      return folderName
-    }
-  }
-
-  static getFolderID (data) {
-    const identifier = data.getElementsByTagName('dc:identifier')[0].innerHTML.match(/id=(\w+)-(\w+)-(\w+)/)[0]
-    const folderID = identifier.toString().replace('id=', '')
-    return folderID
-  }
-
-  static referenceURLIntoMap (xmlDoc, urlFiles, folderID) {
-    const resourceGroupListElement = xmlDoc.getElementsByTagName('resource-group-list')[0]
-    const resourcesMap = _.chain(urlFiles)
-      .groupBy('parentId')
-      .toPairs()
-      .map(pair => _.zipObject(['parentId', 'urls'], pair))
-      .value()
-    for (let i = 0; i < resourcesMap.length; i++) {
-      const resource = resourcesMap[i]
-      const resourceGroupElement = xmlDoc.createElement('resource-group')
-      const resourceGroupIdAttribute = document.createAttribute('parent-id')
-      resourceGroupIdAttribute.value = resource.parentId
-      resourceGroupElement.setAttributeNode(resourceGroupIdAttribute)
-      const groupTypeIdAttribute = document.createAttribute('group-type')
-      groupTypeIdAttribute.value = 'text-and-image'
-      resourceGroupElement.setAttributeNode(groupTypeIdAttribute)
-      for (let j = 0; j < resource.urls.length; j++) {
-        const url = resource.urls[j]
-        const resourceElement = xmlDoc.createElement('resource')
-        const resourceElementLabelAttribute = document.createAttribute('label')
-        resourceElementLabelAttribute.value = url.name
-        resourceElement.setAttributeNode(resourceElementLabelAttribute)
-        const resourceElementNameAttribute = document.createAttribute('resource-name')
-        resourceElementNameAttribute.value = url.name
-        resourceElement.setAttributeNode(resourceElementNameAttribute)
-        const resourceElementURLAttribute = document.createAttribute('resource-url')
-        resourceElementURLAttribute.value = 'https://cmapscloud.ihmc.us:443/id=' + url.id + '/' + url.name + '.url?redirect'
-        resourceElement.setAttributeNode(resourceElementURLAttribute)
-        const resourceElementIdAttribute = document.createAttribute('resource-id')
-        resourceElementIdAttribute.value = url.id
-        resourceElement.setAttributeNode(resourceElementIdAttribute)
-        const resourceFolderIdAttribute = document.createAttribute('resource-folder-id')
-        resourceFolderIdAttribute.value = folderID
-        resourceElement.setAttributeNode(resourceFolderIdAttribute)
-        const resourceServerIdAttribute = document.createAttribute('resource-server-id')
-        resourceServerIdAttribute.value = '1MHZH5RK6-2C8DRLF-1'
-        resourceElement.setAttributeNode(resourceServerIdAttribute)
-        const resourceElementMimetypeAttribute = document.createAttribute('resource-mimetype')
-        resourceElementMimetypeAttribute.value = 'text/x-url'
-        resourceElement.setAttributeNode(resourceElementMimetypeAttribute)
-        resourceGroupElement.appendChild(resourceElement)
-      }
-      resourceGroupListElement.appendChild(resourceGroupElement)
-    }
-    const mapString = new XMLSerializer().serializeToString(xmlDoc)
-    return mapString
-  }
-
   static exportFirstMap (name, xmlDoc, userData, group, dimensionsString) {
     const user = userData.user
     const pass = userData.password
@@ -150,30 +65,6 @@ class ExportCmapCloud {
       }, reason => {
       })
     })
-  }
-
-  static createMappingAnnotation (folderId, mapId, group) {
-    const motivationTag = 'motivation:mapping'
-    const folderTag = Config.namespace + ':folder:' + folderId
-    const mapTag = Config.namespace + ':map:' + mapId
-
-    const tags = [motivationTag, folderTag, mapTag]
-    // Construct text attribute of the annotation
-    let textObject
-    // Return the constructed annotation
-    return {
-      name: 'mappingAnnotation',
-      group: group.id,
-      permissions: {
-        read: ['group:' + group.id]
-      },
-      references: [],
-      motivation: 'mapping',
-      tags: tags,
-      target: [],
-      text: jsYaml.dump(textObject),
-      uri: 'https://hypothes.is/groups/' + group.id
-    }
   }
 
   static exportWithVersions (cmapCloudClient, xmlDoc, urlFiles) {
@@ -271,6 +162,115 @@ class ExportCmapCloud {
       // }) */
     }, reason => {
     })
+  }
+
+  static getFolderID (data) {
+    const identifier = data.getElementsByTagName('dc:identifier')[0].innerHTML.match(/id=(\w+)-(\w+)-(\w+)/)[0]
+    const folderID = identifier.toString().replace('id=', '')
+    return folderID
+  }
+
+  static referenceURLIntoMap (xmlDoc, urlFiles, folderID) {
+    const resourceGroupListElement = xmlDoc.getElementsByTagName('resource-group-list')[0]
+    const resourcesMap = _.chain(urlFiles)
+      .groupBy('parentId')
+      .toPairs()
+      .map(pair => _.zipObject(['parentId', 'urls'], pair))
+      .value()
+    for (let i = 0; i < resourcesMap.length; i++) {
+      const resource = resourcesMap[i]
+      const resourceGroupElement = xmlDoc.createElement('resource-group')
+      const resourceGroupIdAttribute = document.createAttribute('parent-id')
+      resourceGroupIdAttribute.value = resource.parentId
+      resourceGroupElement.setAttributeNode(resourceGroupIdAttribute)
+      const groupTypeIdAttribute = document.createAttribute('group-type')
+      groupTypeIdAttribute.value = 'text-and-image'
+      resourceGroupElement.setAttributeNode(groupTypeIdAttribute)
+      for (let j = 0; j < resource.urls.length; j++) {
+        const url = resource.urls[j]
+        const resourceElement = xmlDoc.createElement('resource')
+        const resourceElementLabelAttribute = document.createAttribute('label')
+        resourceElementLabelAttribute.value = url.name
+        resourceElement.setAttributeNode(resourceElementLabelAttribute)
+        const resourceElementNameAttribute = document.createAttribute('resource-name')
+        resourceElementNameAttribute.value = url.name
+        resourceElement.setAttributeNode(resourceElementNameAttribute)
+        const resourceElementURLAttribute = document.createAttribute('resource-url')
+        resourceElementURLAttribute.value = 'https://cmapscloud.ihmc.us:443/id=' + url.id + '/' + url.name + '.url?redirect'
+        resourceElement.setAttributeNode(resourceElementURLAttribute)
+        const resourceElementIdAttribute = document.createAttribute('resource-id')
+        resourceElementIdAttribute.value = url.id
+        resourceElement.setAttributeNode(resourceElementIdAttribute)
+        const resourceFolderIdAttribute = document.createAttribute('resource-folder-id')
+        resourceFolderIdAttribute.value = folderID
+        resourceElement.setAttributeNode(resourceFolderIdAttribute)
+        const resourceServerIdAttribute = document.createAttribute('resource-server-id')
+        resourceServerIdAttribute.value = '1MHZH5RK6-2C8DRLF-1'
+        resourceElement.setAttributeNode(resourceServerIdAttribute)
+        const resourceElementMimetypeAttribute = document.createAttribute('resource-mimetype')
+        resourceElementMimetypeAttribute.value = 'text/x-url'
+        resourceElement.setAttributeNode(resourceElementMimetypeAttribute)
+        resourceGroupElement.appendChild(resourceElement)
+      }
+      resourceGroupListElement.appendChild(resourceGroupElement)
+    }
+    const mapString = new XMLSerializer().serializeToString(xmlDoc)
+    return mapString
+  }
+
+  static getFolderName (data) {
+    let folderName
+    const elements = data.getElementsByTagName('res-meta')
+    if (elements.length > 0) {
+      const folderElements = _.map(_.filter(elements, (element) => {
+        if (element.attributes.format) {
+          return element.attributes.format.nodeValue === 'x-nlk-project/x-binary'
+        }
+      }), (folderElement) => {
+        return folderElement.attributes.title.nodeValue
+      })
+      let candidateName
+      let foundFolder
+      let i = 1
+      while (true) {
+        candidateName = window.abwa.groupSelector.currentGroup.name + '_v.' + i
+        foundFolder = _.filter(folderElements, (folderName) => {
+          return folderName === candidateName
+        })
+        if (foundFolder.length === 0) {
+          return candidateName
+        } else {
+          i++
+        }
+      }
+    } else {
+      folderName = window.abwa.groupSelector.currentGroup.name + '_v.1'
+      return folderName
+    }
+  }
+
+  static createMappingAnnotation (folderId, mapId, group) {
+    const motivationTag = 'motivation:mapping'
+    const folderTag = Config.namespace + ':folder:' + folderId
+    const mapTag = Config.namespace + ':map:' + mapId
+
+    const tags = [motivationTag, folderTag, mapTag]
+    // Construct text attribute of the annotation
+    let textObject
+    // Return the constructed annotation
+    return {
+      name: 'mappingAnnotation',
+      group: group.id,
+      permissions: {
+        read: ['group:' + group.id]
+      },
+      references: [],
+      motivation: 'mapping',
+      tags: tags,
+      target: [],
+      text: jsYaml.dump(textObject),
+      uri: 'https://hypothes.is/groups/' + group.id
+    }
   }
 
   static removeFolderResources (cmapCloudClient, folderId, callback) {

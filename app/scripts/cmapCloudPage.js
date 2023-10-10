@@ -7,6 +7,7 @@ import CXLImporter from './importExport/cmap/CXLImporter'
 // import swal from 'sweetalert2'
 import Codebook from './codebook/model/Codebook'
 import { CXLExporter } from './importExport/cmap/CXLExporter'
+import CmapCloudClient from './importExport/cmap/cmapCloud/CmapCloudClient'
 let noteOpened = false
 
 const kudeatzaileakHasieratu = function () {
@@ -36,9 +37,35 @@ const kudeatzaileakHasieratu = function () {
               aElement.innerText = 'New annotation-driven Cmap'
               aElement.style.fontWeight = 'normal'
               aElement.addEventListener('click', () => {
-                console.log('exportMap')
-                // createTask()
-                createWindow()
+                chrome.runtime.sendMessage({ scope: 'cmapCloud', cmd: 'getUserData' }, (response) => {
+                  if (response.data) {
+                    const data = response.data
+                    if (data.userData.user && data.userData.password && data.userData.uid) {
+                      const cmapCloudClient = new CmapCloudClient(data.userData.user, data.userData.password, data.userData.uid)
+                      console.log('createTask')
+                      // createTask()
+                      createWindow(cmapCloudClient, data.userData)
+                    } else {
+                      let callback = () => {
+                        window.open(chrome.extension.getURL('pages/options.html#cmapCloudConfiguration'))
+                      }
+                      Alerts.infoAlert({
+                        text: 'Please, provide us your Cmap Cloud login credentials in the configuration page of the Web extension.',
+                        title: 'We need your Cmap Cloud credentials',
+                        callback: callback()
+                      })
+                    }
+                  } else {
+                    let callback = () => {
+                      window.open(chrome.extension.getURL('pages/options.html#cmapCloudConfiguration'))
+                    }
+                    Alerts.infoAlert({
+                      text: 'Please, provide us your Cmap Cloud login credentials in the configuration page of the Web extension.',
+                      title: 'We need your Cmap Cloud credentials',
+                      callback: callback()
+                    })
+                  }
+                })
               })
               aElement.addEventListener('mouseenter', () => {
                 aElement.style.fontWeight = 'bold'
@@ -89,9 +116,35 @@ const kudeatzaileakHasieratu = function () {
                           aElement.id = 'conceptGoLabel'
                           aElement.innerText = 'New annotation-driven Cmap'
                           aElement.addEventListener('click', () => {
-                            console.log('createTask')
-                            // createTask()
-                            createWindow()
+                            chrome.runtime.sendMessage({ scope: 'cmapCloud', cmd: 'getUserData' }, (response) => {
+                              if (response.data) {
+                                const data = response.data
+                                if (data.userData.user && data.userData.password && data.userData.uid) {
+                                  const cmapCloudClient = new CmapCloudClient(data.userData.user, data.userData.password, data.userData.uid)
+                                  console.log('createTask')
+                                  // createTask()
+                                  createWindow(cmapCloudClient, data.userData)
+                                } else {
+                                  let callback = () => {
+                                    window.open(chrome.extension.getURL('pages/options.html#cmapCloudConfiguration'))
+                                  }
+                                  Alerts.infoAlert({
+                                    text: 'Please, provide us your Cmap Cloud login credentials in the configuration page of the Web extension.',
+                                    title: 'We need your Cmap Cloud credentials',
+                                    callback: callback()
+                                  })
+                                }
+                              } else {
+                                let callback = () => {
+                                  window.open(chrome.extension.getURL('pages/options.html#cmapCloudConfiguration'))
+                                }
+                                Alerts.infoAlert({
+                                  text: 'Please, provide us your Cmap Cloud login credentials in the configuration page of the Web extension.',
+                                  title: 'We need your Cmap Cloud credentials',
+                                  callback: callback()
+                                })
+                              }
+                            })
                           })
                           aElement.addEventListener('mouseenter', () => {
                             aElement.style.fontWeight = 'bold'
@@ -107,6 +160,7 @@ const kudeatzaileakHasieratu = function () {
                           listElement.parentNode.parentNode.insertBefore(newListElement, listElement.parentNode.parentNode.firstChild)
                         }
                       } else if (node.className === 'res-meta-dialog ui-dialog-content ui-widget-content') {
+                        node.style.height = '230px'
                         updateProperties(node)
                       }
                     }
@@ -137,7 +191,7 @@ const kudeatzaileakHasieratu = function () {
   }, 1000)
 }
 
-const createTask = function (groupName, focusQuestion, dimensionString) {
+const createTask = function (groupName, focusQuestion, dimensionString, userData, urlInput) {
   groupName = LanguageUtils.normalizeString(groupName)
   if (groupName.length > 25) {
     groupName = groupName.substring(0, 24)
@@ -147,10 +201,20 @@ const createTask = function (groupName, focusQuestion, dimensionString) {
       window.alert('Unable to load swal. Please contact developer.')
     } else {
       if (_.isString(dimensionString)) {
+        let urlList
+        if (urlInput && _.isString(urlInput)) {
+          urlList = urlInput.split(';')
+          urlList.forEach(element => element.trim)
+        }
         const dimensionsList = dimensionString.split(';')
         dimensionsList.forEach(element => element.trim)
         groupName = LanguageUtils.normalizeString(groupName)
-        const tempCodebook = Codebook.fromCXLFile(null, dimensionsList, groupName, focusQuestion, [])
+        let tempCodebook
+        if (urlList) {
+          tempCodebook = Codebook.fromCXLFile(null, dimensionsList, groupName, focusQuestion, [], urlInput)
+        } else {
+          tempCodebook = Codebook.fromCXLFile(null, dimensionsList, groupName, focusQuestion, [], null)
+        }
         Codebook.setAnnotationServer(newGroup.id, (annotationServer) => {
           tempCodebook.annotationServer = annotationServer
           const topicThemeObject = _.filter(tempCodebook.themes, (theme) => {
@@ -167,21 +231,12 @@ const createTask = function (groupName, focusQuestion, dimensionString) {
                 if (err) {
                   Alerts.errorAlert({ text: 'Unable to create codebook.' })
                 } else {
-                  chrome.runtime.sendMessage({ scope: 'cmapCloud', cmd: 'getUserData' }, (response) => {
-                    if (response.data) {
-                      const data = response.data
-                      if (data.userData.user && data.userData.password && data.userData.uid) {
-                        CXLExporter.createCmapFromCmapCloud(newGroup, codebook, groupName, data.userData)
-                      }
-                    } else {
-                      window.open(chrome.extension.getURL('pages/options.html#cmapCloudConfiguration'))
-                      Alerts.infoAlert({ text: 'Please, provide us your Cmap Cloud login credentials in the configuration page of the Web extension.', title: 'We need your Cmap Cloud credentials' })
-                    }
-                  })
+                  CXLExporter.createCmapFromCmapCloud(newGroup, codebook, groupName, userData)
+                  const window = document.getElementById('windowDialog')
+                  const background = document.getElementById('windowBackground')
+                  window.remove()
+                  background.remove()
                   Alerts.successAlert({ text: 'Annotation Group successfully created!' })
-                  const errorMessage = document.getElementById('windowErrorMessage')
-                  errorMessage.style.color = '#006400'
-                  errorMessage.textContent = 'Creating Cmap folder...'
                 }
               })
             }
@@ -192,16 +247,17 @@ const createTask = function (groupName, focusQuestion, dimensionString) {
   })
 }
 
-const createWindow = function () {
+const createWindow = function (cmapCloudClient, userData) {
   const htmlString = '<div id="windowDialog" tabIndex="-1" role="dialog" style="position: absolute; height: auto; width: 450px; top: 425px; left: 332px; display: block;" aria-describedby="ui-id-36" aria-labelledby="ui-id-37"> ' +
     '<div id="windowHeader">' +
     '<span id="windowDialogTitle">Creating new annotation driven concept map</span> ' +
     '</div> ' +
-    '<div id="windowMetadata" style="display: block; width: auto; min-height: 0px; max-height: none; height: 195px;">' +
+    '<div id="windowMetadata" style="display: block; width: auto; min-height: 0px; max-height: none; height: 265px;">' +
     '<form>' +
     '<label htmlFor="rmeta_name" class="windowLabel">What is the name of your Cmap?</label><input placeholder="Cmap name.." type="text" name="name" id="rmeta_name" class="windowInput">' +
     '<label class="windowLabel" htmlFor="rmeta_focus_question">What is the focus question?</label><input placeholder="Focus question..." type="text" name="focus_question" id="rmeta_focus_question" class="windowInput">' +
     '<label class="windowLabel" htmlFor="rmeta_keywords">Which are the Categories? (separate them using semicolons;)</label><input placeholder="Category1;Category2..." type="text" name="keywords" id="rmeta_keywords" class="windowInput">' +
+    '<label class="windowLabel" htmlFor="rmeta_urls">Which are the Reading materials? (separate URLs using semicolons;)</label><input placeholder="URL1;URL2..." type="text" name="urls" id="rmeta_urls" class="windowInput">' +
     '</form> </div> ' +
     '<div id="windowButtonPane"> ' +
     '<div id="windowButtonSet""> ' +
@@ -224,18 +280,20 @@ const createWindow = function () {
   const createMapBtn = document.getElementById('createMapBtn')
   createMapBtn.onclick = () => {
     const errorMessage = document.getElementById('windowErrorMessage')
-    const message = checkFormData()
-    if (message === 'OK') {
-      const nameInput = document.getElementById('rmeta_name')
-      const focusQuestionInput = document.getElementById('rmeta_focus_question')
-      const categoriesInput = document.getElementById('rmeta_keywords')
-      errorMessage.style.color = '#006400'
-      errorMessage.textContent = 'Creating annotation group...'
-      createTask(nameInput.value, focusQuestionInput.value, categoriesInput.value)
-    } else {
-      errorMessage.style.color = '#8B0000'
-      errorMessage.textContent = message
-    }
+    checkFormData(cmapCloudClient, (message) => {
+      if (message === 'OK') {
+        const nameInput = document.getElementById('rmeta_name')
+        const focusQuestionInput = document.getElementById('rmeta_focus_question')
+        const categoriesInput = document.getElementById('rmeta_keywords')
+        const urlInput = document.getElementById('rmeta_urls')
+        errorMessage.style.color = '#006400'
+        errorMessage.textContent = 'Creating annotation group...'
+        createTask(nameInput.value, focusQuestionInput.value, categoriesInput.value, userData, urlInput.value)
+      } else {
+        errorMessage.style.color = '#8B0000'
+        errorMessage.textContent = message
+      }
+    })
   }
   const cancelBtn = document.getElementById('cancelBtn')
   cancelBtn.onclick = () => {
@@ -329,41 +387,68 @@ const loadAnnotations = function () {
   }
 }
 
-const checkFormData = function () {
-  let message = 'OK'
-  const nameInput = document.getElementById('rmeta_name')
-  const focusQuestionInput = document.getElementById('rmeta_focus_question')
-  const categoriesInput = document.getElementById('rmeta_keywords')
-  let dimensionsList = []
-  try {
-    dimensionsList = categoriesInput.value.split(';').filter(Boolean)
-  } catch (e) {
-    message = 'Error parsing categories'
-  }
-  if (nameInput.value.length < 5) {
-    message = 'Provide a larger Cmap name'
-  } else if (focusQuestionInput.value < 5) {
-    message = 'Provide a larger focus question'
-  } else if (!dimensionsList || dimensionsList.length < 1 || categoriesInput.value === '') {
-    message = 'Provide categories'
-  }
-  return message
+const checkFormData = function (cmapCloudClient, callback) {
+  getFolderNames(cmapCloudClient, (folderNames) => {
+    let message = 'OK'
+    const nameInput = document.getElementById('rmeta_name')
+    const focusQuestionInput = document.getElementById('rmeta_focus_question')
+    const categoriesInput = document.getElementById('rmeta_keywords')
+    const urlsInput = document.getElementById('rmeta_urls')
+    let urlList = []
+    let dimensionsList = []
+    try {
+      dimensionsList = categoriesInput.value.split(';').filter(Boolean)
+    } catch (e) {
+      message = 'Error parsing categories'
+    }
+    try {
+      urlList = urlsInput.value.split(';').filter(Boolean)
+    } catch (e) {
+      message = 'Error parsing urls'
+    }
+    if (folderNames && folderNames.includes(nameInput.value)) {
+      message = 'Cmap name already exist'
+    }
+    if (nameInput.value.length < 5) {
+      message = 'Provide a larger Cmap name'
+    } else if (focusQuestionInput.value < 5) {
+      message = 'Provide a larger focus question'
+    } else if (!dimensionsList || dimensionsList.length < 1 || categoriesInput.value === '') {
+      message = 'Provide categories'
+    } else if (!urlList || urlList.length < 1 || urlsInput.value === '') {
+      message = 'Provide URLs'
+    } else if (urlList && urlList.length > 0) {
+      urlList.forEach(url => {
+        if (!isURL(url)) {
+          message = 'A provided URL is incorrect'
+        }
+      })
+    }
+    callback(message)
+  })
 }
 
-const getCXLInfo = function (id, callback) {
-  chrome.runtime.sendMessage({
-    scope: 'cmapCloud',
-    cmd: 'getCXL',
-    data: { id: id }
-  }, (response) => {
-    if (response.info) {
-      const parser = new DOMParser()
-      const xmlDoc = parser.parseFromString(response.info, 'text/xml')
-      callback(xmlDoc)
-      // validated
-    } else if (response.err) {
-      // Not validated
-      callback(null)
+function isURL (string) {
+  // Regular expression pattern to match a URL
+  let urlPattern = /^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/i
+  // Test if the string matches the URL pattern
+  return urlPattern.test(string)
+}
+
+const getFolderNames = function (cmapCloudClient, callback) {
+  cmapCloudClient.getRootFolderInfor((data) => {
+    const elements = data.getElementsByTagName('res-meta')
+    if (elements.length > 0) {
+      const folderElements = _.map(_.filter(elements, (element) => {
+        if (element.attributes.format) {
+          return element.attributes.format.nodeValue === 'x-nlk-project/x-binary'
+        }
+      }), (folderElement) => {
+        return folderElement.attributes.title.nodeValue
+      })
+      callback(folderElements)
+    } else {
+      callback()
     }
   })
 }
@@ -392,12 +477,12 @@ const updateProperties = function (node) {
   }
   const languageLabel = node.querySelector('label[for="rmeta_language"]')
   if (languageLabel) {
-    languageLabel.style.visibility = 'hidden'
+    languageLabel.textContent = 'Reading materials (separate URLs using semicolons(;))'
   }
-  const languageInput = node.querySelector('input[name="language"]')
+  /* const languageInput = node.querySelector('input[name="language"]')
   if (languageInput) {
     languageInput.style.visibility = 'hidden'
-  }
+  } */
   const authorLabel = node.querySelector('label[for="rmeta_author"]')
   if (authorLabel) {
     authorLabel.style.visibility = 'hidden'

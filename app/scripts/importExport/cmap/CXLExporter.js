@@ -83,6 +83,12 @@ export class CXLExporter {
     dimensionsTag.textContent = window.abwa.codebookManager.codebookReader.codebook.getDimensionsForCmapCloud()
     metadata.appendChild(dimensionsTag)
 
+    // Set keywords
+    const urlsTag = xmlDoc.createElement('dc:language')
+    const urlString = window.abwa.codebookManager.codebookReader.codebook.readingMaterials
+    urlsTag.textContent = urlString
+    metadata.appendChild(urlsTag)
+
     // Set Hypothes.is group
     const rights = xmlDoc.createElement('dcterms:rightsHolder')
     const creator = xmlDoc.createElement('dc:creator')
@@ -407,6 +413,12 @@ export class CXLExporter {
     dimensionsString = dimensionsString.slice(0, -1)
     dimensionsTag.textContent = dimensionsString
     metadata.appendChild(dimensionsTag)
+
+    // Set keywords
+    const urlsTag = xmlDoc.createElement('dc:language')
+    const urlString = codebook.readingMaterials
+    urlsTag.textContent = urlString
+    metadata.appendChild(urlsTag)
 
     // Set Hypothes.is group
     const rights = xmlDoc.createElement('dcterms:rightsHolder')

@@ -14,7 +14,8 @@ class Codebook {
     id = null,
     name = '',
     annotationServer = null,
-    focusQuestion = ''
+    focusQuestion = '',
+    urls = ''
   }) {
     this.id = id
     this.name = name
@@ -22,6 +23,7 @@ class Codebook {
     this.dimensions = []
     this.annotationServer = annotationServer
     this.focusQuestion = focusQuestion
+    this.readingMaterials = urls
   }
 
   toAnnotation () {
@@ -42,7 +44,9 @@ class Codebook {
       motivation: 'defining',
       tags: tags,
       target: [],
-      text: jsYaml.dump(textObject),
+      text: jsYaml.dump({
+        urls: this.readingMaterials
+      }),
       uri: this.annotationServer.getGroupUrl()
     }
   }
@@ -68,10 +72,12 @@ class Codebook {
   static fromAnnotation (annotation, callback) {
     this.setAnnotationServer(null, (annotationServer) => {
       const tag = AnnotationUtils.getTagFromAnnotation(annotation, 'focusQuestion')
+      const config = jsYaml.load(annotation.text)
+      const urls = config.urls
       let annotationGuideOpts
       if (tag) {
         const focusQuestion = tag.replace('focusQuestion:', '')
-        annotationGuideOpts = { id: annotation.id, name: annotation.name, annotationServer: annotationServer, focusQuestion: focusQuestion }
+        annotationGuideOpts = { id: annotation.id, name: annotation.name, annotationServer: annotationServer, focusQuestion: focusQuestion, urls: urls }
       } else {
         annotationGuideOpts = { id: annotation.id, name: annotation.name, annotationServer: annotationServer }
       }
@@ -166,8 +172,13 @@ class Codebook {
     return annotationGuide
   }
 
-  static fromCXLFile (conceptList, dimensionsList, name, topic, conceptAppearanceList) {
-    const annotationGuide = new Codebook({ name: name, focusQuestion: topic })
+  static fromCXLFile (conceptList, dimensionsList, name, topic, conceptAppearanceList, urls) {
+    let annotationGuide
+    if (urls) {
+      annotationGuide = new Codebook({ name: name, focusQuestion: topic, urls: urls })
+    } else {
+      annotationGuide = new Codebook({ name: name, focusQuestion: topic })
+    }
     if (dimensionsList.length > 0) {
       for (let i = 0; i < dimensionsList.length; i++) {
         const dimension = new Dimension({ name: dimensionsList[i], annotationGuide })

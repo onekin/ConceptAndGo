@@ -210,7 +210,8 @@ class CXLImporter {
               const conceptAppearanceList = cxlObject.getElementsByTagName('concept-appearance-list')[0]
               const dimensionsListElement = cxlObject.getElementsByTagName('dc:subject')[0]
               const dimensionsList = dimensionsListElement.innerHTML.split(';')
-              const tempCodebook = Codebook.fromCXLFile(conceptList, dimensionsList, groupName, focusQuestion, conceptAppearanceList)
+              const urlListElement = cxlObject.getElementsByTagName('dc:language')[0]
+              const tempCodebook = Codebook.fromCXLFile(conceptList, dimensionsList, groupName, focusQuestion, conceptAppearanceList, urlListElement.innerHTML)
               window.abwa.groupSelector.groups.push(newGroup)
               Codebook.setAnnotationServer(newGroup.id, (annotationServer) => {
                 tempCodebook.annotationServer = annotationServer
@@ -327,7 +328,8 @@ class CXLImporter {
     const conceptAppearanceList = cxlObject.getElementsByTagName('concept-appearance-list')[0]
     const dimensionsListElement = cxlObject.getElementsByTagName('dc:subject')[0]
     const dimensionsList = dimensionsListElement.innerHTML.split(';')
-    const importedCodebook = Codebook.fromCXLFile(conceptList, dimensionsList, restoredGroup, focusQuestion, conceptAppearanceList)
+    const urlListElement = cxlObject.getElementsByTagName('dc:language')[0]
+    const importedCodebook = Codebook.fromCXLFile(conceptList, dimensionsList, restoredGroup, focusQuestion, conceptAppearanceList, urlListElement.innerHTML)
     Codebook.setAnnotationServer(restoredGroup.id, (annotationServer) => {
       importedCodebook.annotationServer = annotationServer
       const title = 'Concept&Go has detected a version of this map. What was the topic or focus question?'
@@ -623,7 +625,8 @@ class CXLImporter {
               const conceptAppearanceList = cxlObject.getElementsByTagName('concept-appearance-list')[0]
               const dimensionsListElement = cxlObject.getElementsByTagName('dc:subject')[0]
               const dimensionsList = dimensionsListElement.innerHTML.split(';')
-              const tempCodebook = Codebook.fromCXLFile(conceptList, dimensionsList, groupName, focusQuestion, conceptAppearanceList)
+              const urlListElement = cxlObject.getElementsByTagName('dc:language')[0]
+              const tempCodebook = Codebook.fromCXLFile(conceptList, dimensionsList, groupName, focusQuestion, conceptAppearanceList, urlListElement.innerHTML)
               // window.abwa.groupSelector.groups.push(newGroup)
               Codebook.setAnnotationServer(newGroup.id, (annotationServer) => {
                 tempCodebook.annotationServer = annotationServer
@@ -728,7 +731,8 @@ class CXLImporter {
     const conceptAppearanceList = cxlObject.getElementsByTagName('concept-appearance-list')[0]
     const dimensionsListElement = cxlObject.getElementsByTagName('dc:subject')[0]
     const dimensionsList = dimensionsListElement.innerHTML.split(';')
-    const importedCodebook = Codebook.fromCXLFile(conceptList, dimensionsList, restoredGroup, focusQuestion, conceptAppearanceList)
+    const urlListElement = cxlObject.getElementsByTagName('dc:language')[0]
+    const importedCodebook = Codebook.fromCXLFile(conceptList, dimensionsList, restoredGroup, focusQuestion, conceptAppearanceList, urlListElement.innerHTML)
     Codebook.setAnnotationServer(restoredGroup.id, (annotationServer) => {
       importedCodebook.annotationServer = annotationServer
       const title = 'Concept&Go has detected a version of this map. What was the topic or focus question?'

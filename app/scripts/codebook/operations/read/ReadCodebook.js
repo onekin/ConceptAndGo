@@ -264,7 +264,7 @@ class ReadCodebook {
     })
     const miscDimension = this.getMiscDimension()
     if (miscDimension) {
-      UpdateCodebook.createNewThemeButton(miscDimension, 'Catch-all')
+      UpdateCodebook.createNewThemeButton(miscDimension, Config.miscDimensionName)
     }
     for (let i = 0; i < undefindedThemes.length; i++) {
       const theme = undefindedThemes[i]
