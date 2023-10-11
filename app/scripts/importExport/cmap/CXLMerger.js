@@ -5,7 +5,6 @@ import _ from 'lodash'
 import Events from '../../Events'
 import { Relationship } from '../../contentScript/MapContentManager'
 import ColorUtils from '../../utils/ColorUtils'
-import swal from 'sweetalert2'
 import CXLImporter from './CXLImporter'
 
 class CXLMerger {
@@ -15,8 +14,6 @@ class CXLMerger {
       const contributor = cxlObject.getElementsByTagName('dc:contributor')[0]
       const groupIDElement = contributor.getElementsByTagName('vcard:FN')[0]
       groupID = groupIDElement.innerHTML
-      // let focusQuestionElement = cxlObject.getElementsByTagName('dc:description')[0]
-      // focusQuestion = focusQuestionElement.innerHTML
     } catch (err) {
       groupID = ''
     }
@@ -61,14 +58,11 @@ class CXLMerger {
               const miscThemeObject = _.filter(previousCodebook.themes, (theme) => {
                 return theme.isMisc === true
               })
-              const miscDimensionObject = _.filter(previousCodebook.dimensions, (dimension) => {
-                return dimension.isMisc === true
-              })
               importedCodebook.themes.push(miscThemeObject[0])
               const previousCodebookIDs = previousCodebook.themes.map(previousCodebookTheme => previousCodebookTheme.id)
               const previousCodebookNames = previousCodebook.themes.map(previousCodebookTheme => previousCodebookTheme.name)
               const importedCodebookIDs = importedCodebook.themes.map(importedCodebookTheme => importedCodebookTheme.id)
-              const previousDimensionsIDs = previousCodebook.dimensions.map(previousCodebookDimensions => previousCodebookDimensions.id)
+              // const previousDimensionsIDs = previousCodebook.dimensions.map(previousCodebookDimensions => previousCodebookDimensions.id)
               const previousDimensionsNames = previousCodebook.dimensions.map(previousCodebookDimensions => previousCodebookDimensions.name)
               const importedDimensionsNames = importedCodebook.dimensions.map(importedCodebookDimensions => importedCodebookDimensions.name)
               let importedRelationships = []
@@ -227,7 +221,6 @@ class CXLMerger {
               })
               // UPDATED RELATIONSHIPS
               const candidateRelationshipsToUpdate = importedRelationships.filter(importedRelationship => previousRelationshipsIDs.includes(importedRelationship.id))
-              let newRelationships
               const relationshipsToUpdate = candidateRelationshipsToUpdate.filter(relationshipToUpdate => {
                 const elementsToCompare = previousRelationships.filter(previousRelationship => previousRelationship.id === relationshipToUpdate.id)
                 if (elementsToCompare.length > 1) {

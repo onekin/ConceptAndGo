@@ -231,17 +231,11 @@ class ReadCodebook {
    */
   createButtons (callback) {
     let themeButtonContainer
-    const miscTheme = this.getMiscTheme()
-    if (miscTheme) {
-      themeButtonContainer = this.createUndefinedHighlightTheme(miscTheme)
-      if (_.isElement(themeButtonContainer)) {
-        this.buttonContainer.append(themeButtonContainer)
-      }
-    }
-    // Create new theme button
-    // UpdateCodebook.createNewDimensionButton()
+
     // Create new relation button
     LinkingButton.createNewLinkButton()
+
+    // Create color-coding buttons
     this.codebook.dimensions.forEach((dimension) => {
       if (dimension.name !== 'misc') {
         // Create new theme button
@@ -287,41 +281,6 @@ class ReadCodebook {
     if (_.isFunction(callback)) {
       callback()
     }
-  }
-
-  createUndefinedHighlightTheme (theme) {
-    const name = 'Highlight'
-    return Buttons.createButton({
-      id: theme.id,
-      name: name,
-      className: 'codingElement',
-      description: theme.description,
-      color: theme.color,
-      handler: (event) => {
-        const themeId = event.target.dataset.codeId
-        if (themeId) {
-          const theme = this.codebook.getCodeOrThemeFromId(themeId)
-          if (LanguageUtils.isInstanceOf(theme, Theme)) {
-            const tags = [Config.namespace + ':' + Config.tags.grouped.group + ':' + theme.name]
-            // Test if text is selected
-            if (document.getSelection().toString().length > 0) {
-              // If selected create annotation
-              LanguageUtils.dispatchCustomEvent(Events.createAnnotation, {
-                purpose: 'classifying',
-                tags: tags,
-                codeId: theme.id
-              })
-            } else {
-              // Else navigate to annotation
-              LanguageUtils.dispatchCustomEvent(Events.navigateToAnnotationByCode, {
-                codeId: theme.id
-              })
-            }
-          }
-        }
-      }/*  */,
-      buttonRightClickHandler: this.themeRightClickHandler()/*  */
-    })
   }
 
   createThemeButtonContainer (theme) {
@@ -686,11 +645,6 @@ class ReadCodebook {
   getTopicTheme () {
     const themes = this.codebook.themes
     return _.find(themes, (theme) => { return theme.isTopic === true })
-  }
-
-  getMiscTheme () {
-    const themes = this.codebook.themes
-    return _.find(themes, (theme) => { return theme.isMisc === true })
   }
 
   getMiscDimension () {

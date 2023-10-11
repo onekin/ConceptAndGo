@@ -98,42 +98,14 @@ class GroupSelector {
                   this.currentGroup = _.first(window.abwa.groupSelector.groups)
                   callback(null)
                 } else {
-                  const options = {}
-                  options.importCXLFile = () => {
-                    CXLImporter.importCXLfile()
-                  }
-
-                  options.configure = () => {
-                    this.createNewGroup((err, result) => {
-                      if (err) {
-                        Alerts.errorAlert({ text: 'Unable to create a new group. Please try again or contact developers if the error continues happening.' })
-                      } else {
-                        // Update list of groups from annotation Server
-                        this.retrieveGroups(() => {
-                          // Move group to new created one
-                          this.setCurrentGroup(result.id, () => {
-                            // Expand groups container
-                            this.container.setAttribute('aria-expanded', 'false')
-                            // Reopen sidebar if closed
-                            window.abwa.sidebar.openSidebar()
-                            callback(null)
-                          })
-                        })
-                      }
-                    })
-                  }
                   const showForm = () => {
                     // Create form
-                    const html = ''
-                    Alerts.twoOptionsAlert({
-                      title: 'How do you want to start concept mapping?',
-                      html: html,
-                      confirmButtonText: 'Import cxl file',
-                      denyButtonText: 'Configurate by myself',
-                      callback: options.importCXLFile,
-                      denyCallback: options.configure,
-                      customClass: 'large-swal',
-                      allowOutsideClick: false
+                    Alerts.infoAlert({
+                      title: 'Wait!',
+                      text: 'In order to start using Concept&Go, first you must have an annotation group. Please, ask your teacher to share you the Hypothes.is group and the CmapCloud map',
+                      callback: () => {
+                        // window.open(chrome.extension.getURL('pages/options.html#cmapCloudConfiguration'))
+                      }
                     })
                   }
                   showForm()
@@ -284,14 +256,6 @@ class GroupSelector {
           groupSelectorItem.querySelector('.renameGroup').addEventListener('click', this.createGroupSelectorRenameOptionEventHandler(group))
           groupSelectorItem.querySelector('.deleteGroup').addEventListener('click', this.createGroupSelectorDeleteOptionEventHandler(group))
         }
-        // New group button
-        const newGroupButton = document.createElement('div')
-        newGroupButton.innerText = 'Create ' + Config.codebook
-        newGroupButton.id = 'createNewModelButton'
-        newGroupButton.className = 'groupSelectorButton'
-        newGroupButton.title = 'Create a new codebook'
-        newGroupButton.addEventListener('click', this.createNewReviewModelEventHandler())
-        groupsContainer.appendChild(newGroupButton)
       }
     })
   }
@@ -361,27 +325,6 @@ class GroupSelector {
       } else {
         groupSelectorItemContainer.setAttribute('aria-expanded', 'true')
       }
-    }
-  }
-
-  createNewReviewModelEventHandler () {
-    return () => {
-      this.createNewGroup((err, result) => {
-        if (err) {
-          Alerts.errorAlert({ text: 'Unable to create a new group. Please try again or contact developers if the error continues happening.' })
-        } else {
-          // Update list of groups from annotation Server
-          this.retrieveGroups(() => {
-            // Move group to new created one
-            this.setCurrentGroup(result.id, () => {
-              // Expand groups container
-              this.container.setAttribute('aria-expanded', 'false')
-              // Reopen sidebar if closed
-              window.abwa.sidebar.openSidebar()
-            })
-          })
-        }
-      })
     }
   }
 

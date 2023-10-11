@@ -158,36 +158,38 @@ export class CXLExporter {
     const dimensions = window.abwa.codebookManager.codebookReader.codebook.dimensions
     for (let i = 0; i < dimensions.length; i++) {
       const dimension = dimensions[i]
-      const dimensionElement = xmlDoc.createElement('concept')
-      let id = document.createAttribute('id')
-      id.value = dimension.id
-      dimensionElement.setAttributeNode(id)
-      const label = document.createAttribute('label')
-      if (dimension.isMisc) {
-        label.value = Config.miscDimensionName
-      } else {
-        label.value = dimension.name
+      if (!dimension.isMisc) {
+        const dimensionElement = xmlDoc.createElement('concept')
+        let id = document.createAttribute('id')
+        id.value = dimension.id
+        dimensionElement.setAttributeNode(id)
+        const label = document.createAttribute('label')
+        if (dimension.isMisc) {
+          label.value = Config.miscDimensionName
+        } else {
+          label.value = dimension.name
+        }
+        dimensionElement.setAttributeNode(label)
+        conceptList.appendChild(dimensionElement)
+        const dimensionAppearance = xmlDoc.createElement('concept-appearance')
+        id = document.createAttribute('id')
+        const elementID = dimension.id
+        id.value = elementID
+        dimensionAppearance.setAttributeNode(id)
+        const background = document.createAttribute('background-color')
+        background.value = ColorUtils.turnForCmapCloud(dimension.color)
+        dimensionAppearance.setAttributeNode(background)
+        const font = document.createAttribute('font-style')
+        font.value = 'italic|bold'
+        dimensionAppearance.setAttributeNode(font)
+        const border = document.createAttribute('border-style')
+        border.value = 'dashed'
+        dimensionAppearance.setAttributeNode(border)
+        const fontSize = document.createAttribute('font-size')
+        fontSize.value = '18'
+        dimensionAppearance.setAttributeNode(fontSize)
+        conceptAppearanceList.appendChild(dimensionAppearance)
       }
-      dimensionElement.setAttributeNode(label)
-      conceptList.appendChild(dimensionElement)
-      const dimensionAppearance = xmlDoc.createElement('concept-appearance')
-      id = document.createAttribute('id')
-      const elementID = dimension.id
-      id.value = elementID
-      dimensionAppearance.setAttributeNode(id)
-      const background = document.createAttribute('background-color')
-      background.value = ColorUtils.turnForCmapCloud(dimension.color)
-      dimensionAppearance.setAttributeNode(background)
-      const font = document.createAttribute('font-style')
-      font.value = 'italic|bold'
-      dimensionAppearance.setAttributeNode(font)
-      const border = document.createAttribute('border-style')
-      border.value = 'dashed'
-      dimensionAppearance.setAttributeNode(border)
-      const fontSize = document.createAttribute('font-size')
-      fontSize.value = '18'
-      dimensionAppearance.setAttributeNode(fontSize)
-      conceptAppearanceList.appendChild(dimensionAppearance)
     }
     // Add concepts
     for (let i = 0; i < concepts.length; i++) {
@@ -497,36 +499,38 @@ export class CXLExporter {
     const dimensions = codebook.dimensions
     for (let i = 0; i < dimensions.length; i++) {
       const dimension = dimensions[i]
-      const dimensionElement = xmlDoc.createElement('concept')
-      let id = document.createAttribute('id')
-      id.value = dimension.id
-      dimensionElement.setAttributeNode(id)
-      const label = document.createAttribute('label')
-      if (dimension.isMisc) {
-        label.value = Config.miscDimensionName
-      } else {
-        label.value = dimension.name
+      if (!dimension.isMisc) {
+        const dimensionElement = xmlDoc.createElement('concept')
+        let id = document.createAttribute('id')
+        id.value = dimension.id
+        dimensionElement.setAttributeNode(id)
+        const label = document.createAttribute('label')
+        if (dimension.isMisc) {
+          label.value = Config.miscDimensionName
+        } else {
+          label.value = dimension.name
+        }
+        dimensionElement.setAttributeNode(label)
+        conceptList.appendChild(dimensionElement)
+        const dimensionAppearance = xmlDoc.createElement('concept-appearance')
+        id = document.createAttribute('id')
+        const elementID = dimension.id
+        id.value = elementID
+        dimensionAppearance.setAttributeNode(id)
+        const background = document.createAttribute('background-color')
+        background.value = ColorUtils.turnForCmapCloud(dimension.color)
+        dimensionAppearance.setAttributeNode(background)
+        const font = document.createAttribute('font-style')
+        font.value = 'italic|bold'
+        dimensionAppearance.setAttributeNode(font)
+        const border = document.createAttribute('border-style')
+        border.value = 'dashed'
+        dimensionAppearance.setAttributeNode(border)
+        const fontSize = document.createAttribute('font-size')
+        fontSize.value = '18'
+        dimensionAppearance.setAttributeNode(fontSize)
+        conceptAppearanceList.appendChild(dimensionAppearance)
       }
-      dimensionElement.setAttributeNode(label)
-      conceptList.appendChild(dimensionElement)
-      const dimensionAppearance = xmlDoc.createElement('concept-appearance')
-      id = document.createAttribute('id')
-      const elementID = dimension.id
-      id.value = elementID
-      dimensionAppearance.setAttributeNode(id)
-      const background = document.createAttribute('background-color')
-      background.value = ColorUtils.turnForCmapCloud(dimension.color)
-      dimensionAppearance.setAttributeNode(background)
-      const font = document.createAttribute('font-style')
-      font.value = 'italic|bold'
-      dimensionAppearance.setAttributeNode(font)
-      const border = document.createAttribute('border-style')
-      border.value = 'dashed'
-      dimensionAppearance.setAttributeNode(border)
-      const fontSize = document.createAttribute('font-size')
-      fontSize.value = '18'
-      dimensionAppearance.setAttributeNode(fontSize)
-      conceptAppearanceList.appendChild(dimensionAppearance)
     }
     // Add concepts
     const concepts = codebook.themes
