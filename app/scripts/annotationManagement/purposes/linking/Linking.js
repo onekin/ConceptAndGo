@@ -1,7 +1,7 @@
 import Body from '../Body'
 
 class Linking extends Body {
-  constructor ({ purpose = Linking.purpose, value }) {
+  constructor ({ purpose = Linking.purpose, value, cxlID = '' }) {
     super(purpose)
     this.value = value
   }
@@ -15,15 +15,15 @@ class Linking extends Body {
   }
 
   static deserialize (obj) {
-    let from = window.abwa.codebookManager.codebookReader.codebook.getCodeOrThemeFromId(obj.from)
-    let to = window.abwa.codebookManager.codebookReader.codebook.getCodeOrThemeFromId(obj.to)
-    let linkingWord = obj.linkingWord
+    const from = window.abwa.codebookManager.codebookReader.codebook.getCodeOrThemeFromId(obj.from)
+    const to = window.abwa.codebookManager.codebookReader.codebook.getCodeOrThemeFromId(obj.to)
+    const linkingWord = obj.linkingWord
     return new Linking({ from, to, linkingWord })
   }
 
   tooltip () {
-    let from = window.abwa.codebookManager.codebookReader.codebook.getCodeOrThemeFromId(this.value.from)
-    let to = window.abwa.codebookManager.codebookReader.codebook.getCodeOrThemeFromId(this.value.to)
+    const from = window.abwa.codebookManager.codebookReader.codebook.getCodeOrThemeFromId(this.value.from)
+    const to = window.abwa.codebookManager.codebookReader.codebook.getCodeOrThemeFromId(this.value.to)
     if (from && to) {
       return 'Linking: ' + from.name + ' ' + this.value.linkingWord + ' ' + to.name
     }

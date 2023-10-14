@@ -79,6 +79,10 @@ class ColorUtils {
     return 'rgba(239,109,121)'
   }
 
+  static getCmapDefaultColor () {
+    return 'rgba(237, 244, 246)'
+  }
+
   static getMiscColor () {
     return 'rgba(255,255,150)'
   }

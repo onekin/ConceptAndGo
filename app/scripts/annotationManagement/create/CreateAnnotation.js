@@ -36,24 +36,32 @@ class CreateAnnotation {
         // Annotation is already prepared to send to the server
         annotationToCreate = event.detail.replyingAnnotation
       } else if (event.detail.purpose === 'classifying' || event.detail.purpose === 'linking') {
-        let target
         // If selection is child of sidebar, return null
         if ($(document.getSelection().anchorNode).parents('#annotatorSidebarWrapper').toArray().length !== 0) {
           Alerts.infoAlert({ text: chrome.i18n.getMessage('CurrentSelectionNotAnnotable') })
           return
         }
         // Create target
-        target = this.obtainTargetToCreateAnnotation(event.detail)
+        const target = this.obtainTargetToCreateAnnotation(event.detail)
         // Create body
         const body = this.obtainBodyToCreateAnnotation(event.detail)
         // Create tags
         const tags = this.obtainTagsToCreateAnnotation(event.detail)
         // Construct the annotation to send to hypothesis
-        annotationToCreate = new Annotation({
-          target: target,
-          tags: tags,
-          body: body
-        })
+        if (event.detail.cxlID) {
+          annotationToCreate = new Annotation({
+            target: target,
+            tags: tags,
+            body: body,
+            linkingCXLid: event.detail.cxlID
+          })
+        } else {
+          annotationToCreate = new Annotation({
+            target: target,
+            tags: tags,
+            body: body
+          })
+        }
       }
       if (annotationToCreate) {
         window.abwa.annotationServerManager.client.createNewAnnotation(annotationToCreate.serialize(), (err, annotation) => {
@@ -66,13 +74,13 @@ class CreateAnnotation {
             // Dispatch annotation created event
             LanguageUtils.dispatchCustomEvent(Events.annotationCreated, { annotation: deserializedAnnotation })
             if (deserializedAnnotation.body) {
-              let bodyWithLinkingPurpose = deserializedAnnotation.getBodyForPurpose('linking')
+              const bodyWithLinkingPurpose = deserializedAnnotation.getBodyForPurpose('linking')
               if (bodyWithLinkingPurpose) {
                 LanguageUtils.dispatchCustomEvent(Events.linkAnnotationCreated, { annotation: deserializedAnnotation })
               }
             }
             if (deserializedAnnotation.body) {
-              let bodyWithClassifyingPurpose = deserializedAnnotation.getBodyForPurpose('classifying')
+              const bodyWithClassifyingPurpose = deserializedAnnotation.getBodyForPurpose('classifying')
               if (bodyWithClassifyingPurpose) {
                 LanguageUtils.dispatchCustomEvent(Events.evidenceAnnotationAdded, { annotation: deserializedAnnotation })
               }
@@ -120,7 +128,7 @@ class CreateAnnotation {
         value.from = detail.from
         value.to = detail.to
         value.linkingWord = detail.linkingWord
-        let linkingBody = new Linking({ value })
+        const linkingBody = new Linking({ value })
         body.push(linkingBody.serialize())
       }
     }

@@ -213,8 +213,8 @@ export class CXLExporter {
       conceptAppearance.setAttributeNode(id)
       const background = document.createAttribute('background-color')
       if (concept.theme.isTopic) {
-        background.value = ColorUtils.turnForCmapCloud(ColorUtils.getTopicColor())
-        conceptAppearance.setAttributeNode(background)
+        // background.value = ColorUtils.turnForCmapCloud(ColorUtils.getTopicColor())
+        // conceptAppearance.setAttributeNode(background)
         const font = document.createAttribute('font-style')
         font.value = 'bold'
         conceptAppearance.setAttributeNode(font)
@@ -224,8 +224,10 @@ export class CXLExporter {
       } else {
         const dimension = window.abwa.codebookManager.codebookReader.codebook.getDimensionByName(concept.theme.dimension)
         if (dimension) {
-          background.value = ColorUtils.turnForCmapCloud(dimension.color)
-          conceptAppearance.setAttributeNode(background)
+          if (!dimension.isMisc) {
+            background.value = ColorUtils.turnForCmapCloud(dimension.color)
+            conceptAppearance.setAttributeNode(background)
+          }
         }
         // font-size="14"
         const fontSize = document.createAttribute('font-size')
@@ -411,7 +413,13 @@ export class CXLExporter {
 
     // Set focus question
     const focusQuestion = xmlDoc.createElement('dc:description')
-    focusQuestion.textContent = groupName
+    const themes = codebook.themes
+    const topicTheme = _.find(themes, (theme) => { return theme.isTopic === true })
+    if (topicTheme.topic !== '') {
+      focusQuestion.textContent = topicTheme.topic
+    } else {
+      focusQuestion.textContent = topicTheme.name
+    }
     metadata.appendChild(focusQuestion)
 
     // Set keywords
@@ -558,8 +566,8 @@ export class CXLExporter {
         const fontSize = document.createAttribute('font-size')
         if (concept.isTopic) {
           const font = document.createAttribute('font-style')
-          background.value = ColorUtils.turnForCmapCloud(ColorUtils.getTopicColor())
-          conceptAppearance.setAttributeNode(background)
+          // background.value = ColorUtils.turnForCmapCloud(ColorUtils.getTopicColor())
+          // conceptAppearance.setAttributeNode(background)
           font.value = 'bold'
           conceptAppearance.setAttributeNode(font)
           fontSize.value = '16'

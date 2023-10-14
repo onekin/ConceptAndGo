@@ -15,7 +15,8 @@ class Theme {
     description = ''/*  *//*  *//*  */,
     isTopic = false/*  */ /*  */,
     topic = '' /*  */,
-    isMisc = false
+    isMisc = false,
+    cxlID = ''
   }) {
     this.id = id
     this.name = name
@@ -34,6 +35,7 @@ class Theme {
     this.isTopic = isTopic
     this.isMisc = isMisc
     this.topic = topic
+    this.cxlID = cxlID
   }
 
   toAnnotations () {
@@ -63,7 +65,8 @@ class Theme {
         description: this.description/*  *//*  */,
         isTopic: this.isTopic,
         topic: this.topic,
-        isMisc: this.isMisc
+        isMisc: this.isMisc,
+        cxlID: this.cxlID
       }),
       uri: this.annotationGuide.annotationServer.getGroupUrl()
     }
@@ -91,6 +94,7 @@ class Theme {
         let isTopic = config.isTopic
         let topic = config.topic
         let isMisc = config.isMisc
+        let cxlID = config.cxlID
         return new Theme({
           id,
           name,
@@ -100,7 +104,8 @@ class Theme {
           annotationGuide/*  *//*  *//*  */,
           isTopic,
           topic,
-          isMisc
+          isMisc,
+          cxlID
         })
       } else {
         console.error('Unable to retrieve configuration for annotation')
@@ -124,7 +129,8 @@ class Theme {
       id: this.id/*  */,
       isTopic: this.isTopic/*  */ /*  */,
       topic: this.topic,
-      isMisc: this.isMisc
+      isMisc: this.isMisc,
+      cxlID: this.cxlID
     }
   }
 

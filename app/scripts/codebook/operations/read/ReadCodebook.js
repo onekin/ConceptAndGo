@@ -366,11 +366,11 @@ class ReadCodebook {
         const topicColor = ColorUtils.getTopicColor()
         topic.color = ColorUtils.setAlphaToColor(topicColor, 0.6)
       }
-      const misc = this.getMiscTheme()
+      /* const misc = this.getMiscTheme()
       if (misc) {
         const miscColor = ColorUtils.getMiscColor()
         misc.color = ColorUtils.setAlphaToColor(miscColor, 0.6)
-      }
+      } */
       const miscDimension = this.getMiscDimension()
       if (miscDimension) {
         const miscDimensionColor = ColorUtils.getMiscColor()
@@ -519,19 +519,21 @@ class ReadCodebook {
    */
   themeCreatedEventHandler () {
     return (event) => {
-      const theme = Theme.fromAnnotation(event.detail.newThemeAnnotation, this.codebook)
-      // Add to the model the new theme
-      const checkTheme = this.codebook.getCodeOrThemeFromId(theme.id)
-      if (!checkTheme) {
-        this.codebook.addTheme(theme)
+      if (!event.detail.fromCmapCloud) {
+        const theme = Theme.fromAnnotation(event.detail.newThemeAnnotation, this.codebook)
+        // Add to the model the new theme
+        const checkTheme = this.codebook.getCodeOrThemeFromId(theme.id)
+        if (!checkTheme) {
+          this.codebook.addTheme(theme)
+        }
+        // Create theme annotation
+        LanguageUtils.dispatchCustomEvent(Events.createAnnotation, {
+          purpose: 'classifying',
+          target: event.detail.target,
+          codeId: theme.id/*  */,
+          addToCXL: true /*  */
+        })
       }
-      // Create theme annotation
-      LanguageUtils.dispatchCustomEvent(Events.createAnnotation, {
-        purpose: 'classifying',
-        target: event.detail.target,
-        codeId: theme.id/*  */,
-        addToCXL: true /*  */
-      })
       // Reload button container
       this.reloadButtonContainer()
       // Dispatch codebook updated event

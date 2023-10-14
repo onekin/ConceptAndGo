@@ -6,6 +6,7 @@ import Events from '../../Events'
 import { Relationship } from '../../contentScript/MapContentManager'
 import ColorUtils from '../../utils/ColorUtils'
 import CXLImporter from './CXLImporter'
+import Theme from '../../codebook/model/Theme'
 
 class CXLMerger {
   static mergeCXLfile (cxlObject) {
@@ -46,6 +47,7 @@ class CXLMerger {
           return theme.topic === topicConceptName || theme.name === topicConceptName
         })
         topicThemeObject[0].isTopic = true
+        const currentCodebook = window.abwa.codebookManager.codebookReader.codebook
         window.abwa.annotationServerManager.client.searchAnnotations({
           url: 'https://hypothes.is/groups/' + restoredGroup.id,
           order: 'desc'
@@ -53,14 +55,12 @@ class CXLMerger {
           if (err) {
             Alerts.errorAlert({ text: 'Unable to construct the highlighter. Please reload webpage and try it again.' })
           } else {
+            window.abwa.codebookManager.codebookReader.codebook = currentCodebook
             const codebookDefinitionAnnotations = annotations.filter(annotation => annotation.motivation === 'codebookDevelopment' || 'defining')
             Codebook.fromAnnotations(codebookDefinitionAnnotations, (err, previousCodebook) => {
-              const miscThemeObject = _.filter(previousCodebook.themes, (theme) => {
-                return theme.isMisc === true
-              })
-              importedCodebook.themes.push(miscThemeObject[0])
               const previousCodebookIDs = previousCodebook.themes.map(previousCodebookTheme => previousCodebookTheme.id)
-              const previousCodebookNames = previousCodebook.themes.map(previousCodebookTheme => previousCodebookTheme.name)
+              // const previousCodebookNames = previousCodebook.themes.map(previousCodebookTheme => previousCodebookTheme.name)
+              const previousCodebookCxlID = previousCodebook.themes.map(previousCodebookTheme => previousCodebookTheme.cxlID)
               const importedCodebookIDs = importedCodebook.themes.map(importedCodebookTheme => importedCodebookTheme.id)
               // const previousDimensionsIDs = previousCodebook.dimensions.map(previousCodebookDimensions => previousCodebookDimensions.id)
               const previousDimensionsNames = previousCodebook.dimensions.map(previousCodebookDimensions => previousCodebookDimensions.name)
@@ -105,6 +105,7 @@ class CXLMerger {
               })
               const previousRelationships = window.abwa.mapContentManager.relationships
               const previousRelationshipsIDs = previousRelationships.map(previousRelationship => previousRelationship.id)
+              const previousRelationshipsCXLIDs = previousRelationships.map(previousRelationship => previousRelationship.cxlID)
               const importedRelationshipsIDs = importedRelationships.map(importedRelationship => importedRelationship.id)
               console.log('previousRelationships')
               console.log(previousRelationships)
@@ -123,8 +124,7 @@ class CXLMerger {
                         Alerts.errorAlert({ text: 'Unable to create the new code. Error: ' + err.toString() })
                       } else {
                         LanguageUtils.dispatchCustomEvent(Events.dimensionCreated, {
-                          newDimensionAnnotation: annotation,
-                          target: event.detail.target
+                          newDimensionAnnotation: annotation
                         })
                       }
                     })
@@ -162,15 +162,16 @@ class CXLMerger {
                   }
                 })
                 // UPDATED THEMES
-                const candidateThemesToUpdate = importedCodebook.themes.filter(importedCodebookTheme => previousCodebookIDs.includes(importedCodebookTheme.id))
+                const candidateThemesToUpdate = importedCodebook.themes.filter(importedCodebookTheme => previousCodebookIDs.includes(importedCodebookTheme.id) || previousCodebookCxlID.includes(importedCodebookTheme.id))
                 const themesToUpdate = candidateThemesToUpdate.filter(themeToUpdate => {
-                  const elementToCompare = previousCodebook.themes.filter(previousCodebookTheme => previousCodebookTheme.id === themeToUpdate.id)
+                  const elementToCompare = previousCodebook.themes.filter(previousCodebookTheme => (previousCodebookTheme.id === themeToUpdate.id || previousCodebookTheme.cxlID === themeToUpdate.id))
                   return (!(themeToUpdate.name === elementToCompare[0].name) || !(themeToUpdate.dimension === elementToCompare[0].dimension)) && !themeToUpdate.isTopic
                 })
                 console.log(themesToUpdate)
                 if (themesToUpdate[0]) {
                   themesToUpdate.forEach(themeToUpdate => {
-                    const oldTheme = previousCodebook.themes.filter(previousCodebookTheme => previousCodebookTheme.id === themeToUpdate.id)
+                    const oldTheme = previousCodebook.themes.filter(previousCodebookTheme => (previousCodebookTheme.id === themeToUpdate.id || previousCodebookTheme.cxlID === themeToUpdate.id))
+                    themeToUpdate.cxlID = oldTheme[0].cxlID
                     window.abwa.codebookManager.codebookUpdater.updateCodebookTheme(themeToUpdate)
                     // Update all annotations done with this theme
                     window.abwa.codebookManager.codebookUpdater.updateAnnotationsWithTheme(oldTheme[0], themeToUpdate)
@@ -178,103 +179,122 @@ class CXLMerger {
                 }
               }
               // INCLUDE NEW THEMES
+              const beginPromises = []
               let themesToInclude = importedCodebook.themes.filter(importedCodebookTheme => !(previousCodebookIDs.includes(importedCodebookTheme.id)))
               if (themesToInclude[0]) {
-                themesToInclude = themesToInclude.filter(importedCodebookTheme => !(previousCodebookNames.includes(importedCodebookTheme.name)))
+                themesToInclude = themesToInclude.filter(importedCodebookTheme => !(previousCodebookCxlID.includes(importedCodebookTheme.id)))
                 console.log(themesToInclude)
                 if (themesToInclude[0]) {
                   themesToInclude.forEach(themeToInclude => {
                     if (themeToInclude.name !== focusQuestion) {
-                      window.abwa.codebookManager.codebookReader.codebook.addTheme(themeToInclude)
+                      themeToInclude.cxlID = themeToInclude.id
+                      // window.abwa.codebookManager.codebookReader.codebook.addTheme(themeToInclude)
                       const newThemeAnnotation = themeToInclude.toAnnotation()
-                      window.abwa.annotationServerManager.client.createNewAnnotation(newThemeAnnotation, (err, annotation) => {
-                        if (err) {
-                          Alerts.errorAlert({ text: 'Unable to create the new code. Error: ' + err.toString() })
-                        } else {
-                          const target = [{}]
-                          const source = {}
-                          // Get document title
-                          source.title = 'https://cmapcloud.ihmc.us/cmaps/myCmaps.html'
-                          target[0].source = source // Add source to the target
-                          LanguageUtils.dispatchCustomEvent(Events.themeCreated, {
-                            newThemeAnnotation: annotation,
-                            target: target
-                          })
-                        }
+                      const beginPromise = new Promise((resolve, reject) => {
+                        window.abwa.annotationServerManager.client.createNewAnnotation(newThemeAnnotation, (err, annotation) => {
+                          if (err) {
+                            Alerts.errorAlert({ text: 'Unable to create the new code. Error: ' + err.toString() })
+                          } else {
+                            const theme = Theme.fromAnnotation(annotation, window.abwa.codebookManager.codebookReader.codebook)
+                            // Add to the model the new theme
+                            const checkTheme = window.abwa.codebookManager.codebookReader.codebook.getCodeOrThemeFromId(theme.id)
+                            if (!checkTheme) {
+                              window.abwa.codebookManager.codebookReader.codebook.addTheme(theme)
+                            }
+                            resolve()
+                            LanguageUtils.dispatchCustomEvent(Events.themeCreated, {
+                              newThemeAnnotation: annotation,
+                              fromCmapCloud: true
+                            })
+                          }
+                        })
                       })
+                      beginPromises.push(beginPromise)
                     }
                   })
                 }
               }
-              // REMOVE OLD THEMES
-              const themesToRemove = previousCodebook.themes.filter(previousCodebookTheme => !(importedCodebookIDs.includes(previousCodebookTheme.id)))
-              console.log(themesToRemove)
-              themesToRemove.forEach(themeToRemove => {
-                const annotationsToDelete = [themeToRemove.id]
-                window.abwa.annotationServerManager.client.deleteAnnotations(annotationsToDelete, (err, result) => {
-                  if (err) {
-                    Alerts.errorAlert({ text: 'Unexpected error when deleting the code.' })
-                  } else {
-                    LanguageUtils.dispatchCustomEvent(Events.themeRemoved, { theme: themeToRemove })
-                  }
-                })
-              })
-              // UPDATED RELATIONSHIPS
-              const candidateRelationshipsToUpdate = importedRelationships.filter(importedRelationship => previousRelationshipsIDs.includes(importedRelationship.id))
-              const relationshipsToUpdate = candidateRelationshipsToUpdate.filter(relationshipToUpdate => {
-                const elementsToCompare = previousRelationships.filter(previousRelationship => previousRelationship.id === relationshipToUpdate.id)
-                if (elementsToCompare.length > 1) {
-                  console.log('problems:' + elementsToCompare)
-                }
-                const elementToCompare = elementsToCompare[0]
-                return !(relationshipToUpdate.fromConcept.id === elementToCompare.fromConcept.id) || !(relationshipToUpdate.toConcept.id === elementToCompare.toConcept.id) || !(relationshipToUpdate.linkingWord === elementToCompare.linkingWord)
-              })
-              console.log(relationshipsToUpdate)
-              // INCLUDE NEW RELATIONSHIPS
-              let relationshipsToInclude = importedRelationships.filter(importedRelationship => !(previousRelationshipsIDs.includes(importedRelationship.id)))
-              console.log(relationshipsToInclude)
-              relationshipsToInclude = relationshipsToInclude.concat(relationshipsToUpdate)
-              if (relationshipsToInclude[0]) {
-                relationshipsToInclude.forEach(relationshipToInclude => {
-                  const tags = ['from' + ':' + relationshipToInclude.fromConcept.name]
-                  tags.push('linkingWord:' + relationshipToInclude.linkingWord)
-                  tags.push('to:' + relationshipToInclude.toConcept.name)
-                  const fromConcept = window.abwa.codebookManager.codebookReader.codebook.themes(theme => theme.id === relationshipToInclude.fromConcept.id)
-                  const toConcept = window.abwa.codebookManager.codebookReader.codebook.themes(theme => theme.id === relationshipToInclude.toConcept.id)
-                  if (fromConcept && toConcept) {
-                    LanguageUtils.dispatchCustomEvent(Events.createAnnotation, {
-                      purpose: 'linking',
-                      tags: tags,
-                      from: relationshipToInclude.fromConcept.id,
-                      to: relationshipToInclude.toConcept.id,
-                      linkingWord: relationshipToInclude.linkingWord
+              Promise.all(beginPromises).then(() => {
+                // REMOVE OLD THEMES
+                const themesToRemove = previousCodebook.themes.filter(previousCodebookTheme => !(importedCodebookIDs.includes(previousCodebookTheme.id)))
+                console.log(themesToRemove)
+                themesToRemove.forEach(themeToRemove => {
+                  if (!(importedCodebookIDs.includes(themeToRemove.cxlID))) {
+                    const annotationsToDelete = [themeToRemove.id]
+                    window.abwa.annotationServerManager.client.deleteAnnotations(annotationsToDelete, (err, result) => {
+                      if (err) {
+                        Alerts.errorAlert({ text: 'Unexpected error when deleting the code.' })
+                      } else {
+                        LanguageUtils.dispatchCustomEvent(Events.themeRemoved, { theme: themeToRemove })
+                      }
                     })
                   }
                 })
-              }
-              // REMOVE OLD RELATIONSHIPS
-              const relationshipsToRemove = previousRelationships.filter(previousRelationship => !(importedRelationshipsIDs.includes(previousRelationship.id)))
-              console.log(relationshipsToRemove)
-              if (relationshipsToRemove[0]) {
-                let annotationsToDelete = []
-                relationshipsToRemove.forEach(relationship => {
-                  annotationsToDelete = annotationsToDelete.concat(relationship.evidenceAnnotations)
+                // UPDATED RELATIONSHIPS
+                const candidateRelationshipsToUpdate = importedRelationships.filter(importedRelationship => previousRelationshipsIDs.includes(importedRelationship.id))
+                const relationshipsToUpdate = candidateRelationshipsToUpdate.filter(relationshipToUpdate => {
+                  const elementsToCompare = previousRelationships.filter(previousRelationship => previousRelationship.id === relationshipToUpdate.id)
+                  if (elementsToCompare.length > 1) {
+                    console.log('problems:' + elementsToCompare)
+                  }
+                  const elementToCompare = elementsToCompare[0]
+                  return !(relationshipToUpdate.fromConcept.id === elementToCompare.fromConcept.id) || !(relationshipToUpdate.toConcept.id === elementToCompare.toConcept.id) || !(relationshipToUpdate.linkingWord === elementToCompare.linkingWord)
                 })
-                const annotationsToDeleteIDs = annotationsToDelete.map(annotationToDelete => annotationToDelete.id)
-                if (annotationsToDeleteIDs[0]) {
-                  window.abwa.annotationServerManager.client.deleteAnnotations(annotationsToDeleteIDs, (err, result) => {
-                    if (err) {
-                      Alerts.errorAlert({ text: 'Unexpected error when deleting the code.' })
+                console.log(relationshipsToUpdate)
+
+                // INCLUDE NEW RELATIONSHIPS
+                let relationshipsToInclude = importedRelationships.filter(importedRelationship => !(previousRelationshipsIDs.includes(importedRelationship.id)))
+                relationshipsToInclude = relationshipsToInclude.concat(relationshipsToUpdate)
+                if (relationshipsToInclude[0]) {
+                  relationshipsToInclude = relationshipsToInclude.filter(importedRelationship => !(previousRelationshipsCXLIDs.includes(importedRelationship.id)))
+                  if (relationshipsToInclude[0]) {
+                    relationshipsToInclude.forEach(relationshipToInclude => {
+                      const tags = ['from' + ':' + relationshipToInclude.fromConcept.name]
+                      tags.push('linkingWord:' + relationshipToInclude.linkingWord)
+                      tags.push('to:' + relationshipToInclude.toConcept.name)
+                      const fromConcept = window.abwa.codebookManager.codebookReader.codebook.themes.find(theme => (theme.id === relationshipToInclude.fromConcept.id) || (theme.cxlID === relationshipToInclude.fromConcept.id))
+                      const toConcept = window.abwa.codebookManager.codebookReader.codebook.themes.find(theme => (theme.id === relationshipToInclude.toConcept.id) || (theme.cxlID === relationshipToInclude.toConcept.id))
+                      if (fromConcept && toConcept) {
+                        LanguageUtils.dispatchCustomEvent(Events.createAnnotation, {
+                          purpose: 'linking',
+                          tags: tags,
+                          from: fromConcept.id,
+                          to: toConcept.id,
+                          linkingWord: relationshipToInclude.linkingWord,
+                          cxlID: relationshipToInclude.id
+                        })
+                      }
+                    })
+                  }
+                }
+                // REMOVE OLD RELATIONSHIPS
+                const relationshipsToRemove = previousRelationships.filter(previousRelationship => !(importedRelationshipsIDs.includes(previousRelationship.id)))
+                console.log(relationshipsToRemove)
+                if (relationshipsToRemove[0]) {
+                  let annotationsToDelete = []
+                  relationshipsToRemove.forEach(relationship => {
+                    if (!(importedRelationshipsIDs.includes(relationship.cxlID))) {
+                      annotationsToDelete = annotationsToDelete.concat(relationship.evidenceAnnotations)
                     }
                   })
+                  if (annotationsToDelete) {
+                    const annotationsToDeleteIDs = annotationsToDelete.map(annotationToDelete => annotationToDelete.id)
+                    if (annotationsToDeleteIDs[0]) {
+                      window.abwa.annotationServerManager.client.deleteAnnotations(annotationsToDeleteIDs, (err, result) => {
+                        if (err) {
+                          Alerts.errorAlert({ text: 'Unexpected error when deleting the code.' })
+                        }
+                      })
+                    }
+                  }
                 }
-              }
-              Alerts.simpleSuccessAlert({ text: 'Concept map succesfully uploaded. Refresh the page!' })
-              window.abwa.groupSelector.retrieveGroups(() => {
-                window.abwa.groupSelector.setCurrentGroup(restoredGroup.id, () => {
-                  window.abwa.sidebar.openSidebar()
-                  // Dispatch annotations updated
-                  Alerts.closeAlert()
+                Alerts.simpleSuccessAlert({ text: 'Concept map succesfully uploaded. Refresh the page!' })
+                window.abwa.groupSelector.retrieveGroups(() => {
+                  window.abwa.groupSelector.setCurrentGroup(restoredGroup.id, () => {
+                    window.abwa.sidebar.openSidebar()
+                    // Dispatch annotations updated
+                    Alerts.closeAlert()
+                  })
                 })
               })
             })

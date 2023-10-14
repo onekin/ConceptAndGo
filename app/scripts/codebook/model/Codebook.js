@@ -210,8 +210,6 @@ class Codebook {
     } else {
       const theme = new Theme({ name: name, annotationGuide, topic })
       annotationGuide.themes.push(theme)
-      const miscTheme = new Theme({ name: 'misc', annotationGuide, isMisc: true })
-      annotationGuide.themes.push(miscTheme)
     }
 
     return annotationGuide

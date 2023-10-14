@@ -3,6 +3,7 @@ import LanguageUtils from '../utils/LanguageUtils'
 import Classifying from './purposes/Classifying'
 import Linking from './purposes/linking/Linking'
 import HypothesisClientManager from '../annotationServer/hypothesis/HypothesisClientManager'
+import jsYaml from 'js-yaml'
 
 class Annotation {
   constructor ({
@@ -17,7 +18,8 @@ class Annotation {
     tags = [],
     creator = window.abwa.groupSelector.getCreatorData() || window.abwa.groupSelector.user.userid,
     created,
-    modified
+    modified,
+    linkingCXLid = ''
   }) {
     if (!_.isArray(target) || _.isEmpty(target[0])) {
       throw new Error('Annotation must have a non-empty target')
@@ -38,6 +40,7 @@ class Annotation {
     if (_.isNumber(modifiedDate)) {
       this.modified = new Date(modified)
     }
+    this.linkingCXLid = linkingCXLid
   }
 
   getBodyForPurpose (purpose) {
@@ -53,6 +56,17 @@ class Annotation {
   }
 
   serialize () {
+    let text
+    if (this.body[0].purpose === Linking.purpose) {
+      text = jsYaml.dump({
+        id: this.id,
+        linkingCXLid: this.linkingCXLid || ''
+      })
+    } else {
+      text = jsYaml.dump({
+        id: this.id
+      })
+    }
     const data = {
       '@context': 'http://www.w3.org/ns/anno.jsonld',
       group: this.group || window.abwa.groupSelector.currentGroup.id,
@@ -65,7 +79,7 @@ class Annotation {
       references: this.references || [],
       tags: this.tags,
       target: this.target,
-      text: '',
+      text: text,
       uri: /*  */ this.target[0].source.doi || /*  */ this.target[0].source.url || this.target[0].source.urn
     }
     // The following lines are added to maintain compatibility with hypothes.is's data model that doesn't follow the W3C in all their attributes
@@ -125,6 +139,12 @@ class Annotation {
         }
         return null
       })
+    }
+    const config = jsYaml.load(annotationObject.text)
+    if (_.isObject(config)) {
+      if (config.linkingCXLid) {
+        annotation.linkingCXLid = config.linkingCXLid
+      }
     }
     if (LanguageUtils.isInstanceOf(window.abwa.annotationServerManager, HypothesisClientManager)) {
       annotation.target = annotationObject.documentMetadata || annotationObject.target

@@ -19,12 +19,13 @@ export class Concept {
 // PVSCL:IFCOND(Linking, LINE)
 
 export class Relationship {
-  constructor (id = null, fromConcept = null, toConcept = null, linkingWord = '', annotations = []) {
+  constructor (id = null, fromConcept = null, toConcept = null, linkingWord = '', annotations = [], cxlID = '') {
     this.id = id
     this.fromConcept = fromConcept
     this.toConcept = toConcept
     this.linkingWord = linkingWord
     this.evidenceAnnotations = annotations
+    this.cxlID = cxlID
   }
 }
 // PVSCL:ENDCOND
@@ -105,7 +106,7 @@ export class MapContentManager {
 
   destroy () {
     // Remove event listeners
-    let events = _.values(this.events)
+    const events = _.values(this.events)
     for (let i = 0; i < events.length; i++) {
       events[i].element.removeEventListener(events[i].event, events[i].handler)
     }
@@ -141,11 +142,11 @@ export class MapContentManager {
   themeCreatedEventHandler () {
     return (event) => {
       // retrieve theme object
-      let theme = Theme.fromAnnotation(event.detail.newThemeAnnotation, window.abwa.codebookManager.codebookReader.codebook)
-      let conceptEvidenceAnnotation = _.filter(window.abwa.annotationManagement.annotationReader.groupClassifiyingAnnotations, (annotation) => {
+      const theme = Theme.fromAnnotation(event.detail.newThemeAnnotation, window.abwa.codebookManager.codebookReader.codebook)
+      const conceptEvidenceAnnotation = _.filter(window.abwa.annotationManagement.annotationReader.groupClassifiyingAnnotations, (annotation) => {
         return annotation.body[0].value.id === theme.id
       })
-      let concept = new Concept(theme, conceptEvidenceAnnotation)
+      const concept = new Concept(theme, conceptEvidenceAnnotation)
       this.concepts.push(concept)
     }
   }
@@ -153,7 +154,7 @@ export class MapContentManager {
   themeRemovedEventHandler () {
     return (event) => {
       // remove concept
-      let theme = event.detail.theme
+      const theme = event.detail.theme
       // remove concept
       this.concepts = _.filter(this.concepts, (concept) => {
         return !(concept.theme.id === theme.id)
@@ -189,19 +190,19 @@ export class MapContentManager {
   // PVSCL:ENDCOND
 
   createConcepts (callback) {
-    let conceptsList = []
-    let themes = window.abwa.codebookManager.codebookReader.codebook.themes
-    let filteredThemes = themes.filter((theme) => {
+    const conceptsList = []
+    const themes = window.abwa.codebookManager.codebookReader.codebook.themes
+    const filteredThemes = themes.filter((theme) => {
       return !theme.isMisc
     })
 
     if (filteredThemes) {
       for (let i = 0; i < filteredThemes.length; i++) {
-        let theme = filteredThemes[i]
-        let conceptEvidenceAnnotation = _.filter(window.abwa.annotationManagement.annotationReader.groupClassifiyingAnnotations, (annotation) => {
+        const theme = filteredThemes[i]
+        const conceptEvidenceAnnotation = _.filter(window.abwa.annotationManagement.annotationReader.groupClassifiyingAnnotations, (annotation) => {
           return annotation.body[0].value.id === theme.id
         })
-        let concept = new Concept(theme, conceptEvidenceAnnotation)
+        const concept = new Concept(theme, conceptEvidenceAnnotation)
         conceptsList.push(concept)
       }
     }
@@ -214,18 +215,26 @@ export class MapContentManager {
 
   createRelationships (callback) {
     this.relationships = []
-    let linkingAnnotations = window.abwa.annotationManagement.annotationReader.groupLinkingAnnotations
+    const linkingAnnotations = window.abwa.annotationManagement.annotationReader.groupLinkingAnnotations
     for (let i = 0; i < linkingAnnotations.length; i++) {
-      let linkAnnotation = linkingAnnotations[i]
-      let linkingObject = linkAnnotation.body[0]
-      let from = window.abwa.codebookManager.codebookReader.codebook.getCodeOrThemeFromId(linkingObject.value.from)
-      let to = window.abwa.codebookManager.codebookReader.codebook.getCodeOrThemeFromId(linkingObject.value.to)
-      let linkingWord = linkingObject.value.linkingWord
-      let relation = this.findRelationship(from, to, linkingWord)
+      const linkAnnotation = linkingAnnotations[i]
+      const linkingObject = linkAnnotation.body[0]
+      const from = window.abwa.codebookManager.codebookReader.codebook.getCodeOrThemeFromId(linkingObject.value.from)
+      const to = window.abwa.codebookManager.codebookReader.codebook.getCodeOrThemeFromId(linkingObject.value.to)
+      const linkingWord = linkingObject.value.linkingWord
+      const relation = this.findRelationship(from, to, linkingWord)
       if (relation) {
         relation.evidenceAnnotations.push(linkAnnotation)
+        if (linkAnnotation.linkingCXLid !== '') {
+          relation.cxlID = linkAnnotation.linkingCXLid
+        }
       } else {
-        let newRelation = new Relationship(linkAnnotation.id, from, to, linkingWord, [])
+        let newRelation
+        if (linkAnnotation.linkingCXLid !== '') {
+          newRelation = new Relationship(linkAnnotation.id, from, to, linkingWord, [], linkAnnotation.linkingCXLid)
+        } else {
+          newRelation = new Relationship(linkAnnotation.id, from, to, linkingWord, [])
+        }
         newRelation.evidenceAnnotations.push(linkAnnotation)
         this.relationships.push(newRelation)
       }
@@ -236,14 +245,14 @@ export class MapContentManager {
   }
 
   findRelationship (from, to, linkingWord) {
-    let relationship = _.find(this.relationships, (relation) => {
+    const relationship = _.find(this.relationships, (relation) => {
       return relation.fromConcept === from && relation.toConcept === to && relation.linkingWord === linkingWord
     })
     return relationship
   }
 
   findRelationshipById (id) {
-    let relationship = _.find(this.relationships, (relation) => {
+    const relationship = _.find(this.relationships, (relation) => {
       return relation.id === id
     })
     return relationship
@@ -263,7 +272,7 @@ export class MapContentManager {
   }
 
   getConceptRelationships (conceptId, callback) {
-    let conceptRelationships = _.filter(this.relationships, (relation) => {
+    const conceptRelationships = _.filter(this.relationships, (relation) => {
       return relation.fromConcept.id === conceptId
     })
     if (_.isFunction(callback)) {
@@ -273,16 +282,16 @@ export class MapContentManager {
 
   linkAnnotationCreatedEventHandler () {
     return (event) => {
-      let linkAnnotation = event.detail.annotation
-      let linkingObject = linkAnnotation.body[0]
-      let from = window.abwa.codebookManager.codebookReader.codebook.getCodeOrThemeFromId(linkingObject.value.from)
-      let to = window.abwa.codebookManager.codebookReader.codebook.getCodeOrThemeFromId(linkingObject.value.to)
-      let linkingWord = linkingObject.value.linkingWord
-      let relation = this.findRelationship(from, to, linkingWord)
+      const linkAnnotation = event.detail.annotation
+      const linkingObject = linkAnnotation.body[0]
+      const from = window.abwa.codebookManager.codebookReader.codebook.getCodeOrThemeFromId(linkingObject.value.from)
+      const to = window.abwa.codebookManager.codebookReader.codebook.getCodeOrThemeFromId(linkingObject.value.to)
+      const linkingWord = linkingObject.value.linkingWord
+      const relation = this.findRelationship(from, to, linkingWord)
       if (relation) {
         relation.evidenceAnnotations.push(linkAnnotation)
       } else {
-        let newRelation = new Relationship(linkAnnotation.id, from, to, linkingWord, [])
+        const newRelation = new Relationship(linkAnnotation.id, from, to, linkingWord, [])
         newRelation.evidenceAnnotations.push(linkAnnotation)
         this.relationships.push(newRelation)
         LanguageUtils.dispatchCustomEvent(Events.relationshipAdded, { relation: newRelation })
@@ -292,7 +301,7 @@ export class MapContentManager {
 
   linkAnnotationDeletedEventHandler () {
     return (event) => {
-      let removedRelation = event.detail.relation
+      const removedRelation = event.detail.relation
       _.remove(this.relationships, (relation) => {
         return relation === removedRelation
       })
@@ -302,12 +311,12 @@ export class MapContentManager {
 
   linkAnnotationUpdatedEventHandler () {
     return (event) => {
-      let linkAnnotation = event.detail.annotation
-      let linkingObject = linkAnnotation.body[0]
-      let from = window.abwa.codebookManager.codebookReader.codebook.getCodeOrThemeFromId(linkingObject.value.from)
-      let to = window.abwa.codebookManager.codebookReader.codebook.getCodeOrThemeFromId(linkingObject.value.to)
-      let linkingWord = linkingObject.value.linkingWord
-      let relation = this.findRelationship(from, to, linkingWord)
+      const linkAnnotation = event.detail.annotation
+      const linkingObject = linkAnnotation.body[0]
+      const from = window.abwa.codebookManager.codebookReader.codebook.getCodeOrThemeFromId(linkingObject.value.from)
+      const to = window.abwa.codebookManager.codebookReader.codebook.getCodeOrThemeFromId(linkingObject.value.to)
+      const linkingWord = linkingObject.value.linkingWord
+      const relation = this.findRelationship(from, to, linkingWord)
       if (relation) {
         relation.evidenceAnnotations = []
         relation.evidenceAnnotations.push(linkAnnotation)
@@ -322,8 +331,8 @@ export class MapContentManager {
 
   evidenceAnnotationAddedEventHandler () {
     return (event) => {
-      let annotation = event.detail.annotation
-      let foundConcept = _.filter(this.concepts, (concept) => {
+      const annotation = event.detail.annotation
+      const foundConcept = _.filter(this.concepts, (concept) => {
         return concept.theme.id === annotation.body[0].value.id
       })
       foundConcept[0].evidenceAnnotations.push(annotation)
@@ -332,8 +341,8 @@ export class MapContentManager {
 
   evidenceAnnotationRemovedEventHandler () {
     return (event) => {
-      let annotation = event.detail.annotation
-      let foundConcept = _.filter(this.concepts, (concept) => {
+      const annotation = event.detail.annotation
+      const foundConcept = _.filter(this.concepts, (concept) => {
         return concept.theme.id === annotation.body[0].value.id
       })
       foundConcept[0].evidenceAnnotations = _.filter(foundConcept.evidenceAnnotations, (evidenceAnnotation) => {

@@ -8,6 +8,7 @@ import CXLImporter from './importExport/cmap/CXLImporter'
 import Codebook from './codebook/model/Codebook'
 import { CXLExporter } from './importExport/cmap/CXLExporter'
 import CmapCloudClient from './importExport/cmap/cmapCloud/CmapCloudClient'
+import ColorUtils from './utils/ColorUtils'
 let noteOpened = false
 
 const kudeatzaileakHasieratu = function () {
@@ -15,6 +16,7 @@ const kudeatzaileakHasieratu = function () {
     let noteOpened = false
     window.cag = {}
     window.cag.annotations = []
+    window.cag.codebookAnnotations = []
     window.cag.annotationServerManager = new HypothesisClientManager()
     window.cag.annotationServerManager.init((err) => {
       if (err) {
@@ -94,12 +96,16 @@ const kudeatzaileakHasieratu = function () {
                         // Check if the parent div contains a child div with class "gwt-Label" and inner text "Annotation"
                         const isAnnotationNote = node.outerHTML.includes('<div class="gwt-Label" style="position: absolute; left: 2px; top: 0px;">Annotation</div>')
                         const isContextMenu = node.outerHTML.includes('<td class="gwt-MenuItem" id="gwt-uid-3" role="menuitem" colspan="2">Annotate...</td>')
+                        const isColors = node.outerHTML.includes('<button type="button" class="gwt-Button">No Fill</button>')
                         if (isAnnotationNote) {
                           console.log("OPEN ANNOTATION'.")
                           showFeedbackNoteFirstTime(node)
                         } else if (isContextMenu) {
                           const contextMenuFeedbackLabel = document.getElementById('gwt-uid-3')
                           contextMenuFeedbackLabel.innerText = 'Feedback...'
+                        } else if (isColors) {
+                          console.log('Color')
+                          updateColors(node)
                         }
                         addToolTipToAnnotations(node)
                       } else if (node.innerText === 'Change Properties...') {
@@ -248,16 +254,16 @@ const createTask = function (groupName, focusQuestion, dimensionString, userData
 }
 
 const createWindow = function (cmapCloudClient, userData) {
-  const htmlString = '<div id="windowDialog" tabIndex="-1" role="dialog" style="position: absolute; height: auto; width: 450px; top: 425px; left: 332px; display: block;" aria-describedby="ui-id-36" aria-labelledby="ui-id-37"> ' +
+  const htmlString = '<div id="windowDialog" tabIndex="-1" role="dialog" style="position: absolute; height: auto; width: 450px; top: 225px; left: 332px; display: block;" aria-describedby="ui-id-36" aria-labelledby="ui-id-37"> ' +
     '<div id="windowHeader">' +
     '<span id="windowDialogTitle">Creating new annotation driven concept map</span> ' +
     '</div> ' +
     '<div id="windowMetadata" style="display: block; width: auto; min-height: 0px; max-height: none; height: 265px;">' +
     '<form>' +
-    '<label htmlFor="rmeta_name" class="windowLabel">What is the name of your Cmap?</label><input placeholder="Cmap name.." type="text" name="name" id="rmeta_name" class="windowInput">' +
-    '<label class="windowLabel" htmlFor="rmeta_focus_question">What is the focus question?</label><input placeholder="Focus question..." type="text" name="focus_question" id="rmeta_focus_question" class="windowInput">' +
-    '<label class="windowLabel" htmlFor="rmeta_keywords">Which are the Categories? (separate them using semicolons;)</label><input placeholder="Category1;Category2..." type="text" name="keywords" id="rmeta_keywords" class="windowInput">' +
-    '<label class="windowLabel" htmlFor="rmeta_urls">Which are the Reading materials? (separate URLs using semicolons;)</label><input placeholder="URL1;URL2..." type="text" name="urls" id="rmeta_urls" class="windowInput">' +
+    '<label htmlFor="rmeta_name" class="windowLabel">Cmap name</label><input placeholder="Provide Cmap name.." type="text" name="name" id="rmeta_name" class="windowInput">' +
+    '<label class="windowLabel" htmlFor="rmeta_focus_question">Focus question</label><input placeholder="Provide focus question..." type="text" name="focus_question" id="rmeta_focus_question" class="windowInput">' +
+    '<label class="windowLabel" htmlFor="rmeta_keywords">Categories separated by semicolons ;</label><input placeholder="Category1;Category2..." type="text" name="keywords" id="rmeta_keywords" class="windowInput">' +
+    '<label class="windowLabel" htmlFor="rmeta_urls">URLs of your reading materials separated by semicolons ;</label><input placeholder="URL1;URL2..." type="text" name="urls" id="rmeta_urls" class="windowInput">' +
     '</form> </div> ' +
     '<div id="windowButtonPane"> ' +
     '<div id="windowButtonSet""> ' +
@@ -338,6 +344,28 @@ const getTextFromSelectedAnnotation = function (selectedAnnotation) {
   return text
 }
 
+const updateColors = function (node) {
+  const divElements = node.querySelectorAll('div[tabindex="0"]>div>div')
+  if (window.cag.codebook) {
+    let dimensionColors = window.cag.codebook.dimensions.map(item => {
+      const color = ColorUtils.turnForCmapCloud(item.color)
+      return color.substring(0, color.length - 4)
+    })
+    dimensionColors = dimensionColors.filter(color => {
+      return color !== '255,255,150'
+    })
+    console.log(dimensionColors)
+    Array.from(divElements).forEach(div => {
+      let background = div.style.backgroundColor
+      background = background.replaceAll('rgb(', '').replaceAll(' ', '').replaceAll(')', '')
+      if (!dimensionColors.includes(background) && background !== '237,244,246') {
+        div.remove()
+      }
+      console.log(div.style.backgroundColor)
+    })
+  }
+}
+
 const addToolTipToAnnotations = function (node) {
   const annotations = node.children[0].children[0].children[0].children
   for (let i = 0; i < annotations.length; i++) {
@@ -371,17 +399,29 @@ const loadAnnotations = function () {
     window.cag.annotationServerManager.client.searchAnnotations({
       group: groupId,
       order: 'desc'
-    }, (err, annotations) => {
+    }, (err, allAnnotations) => {
       if (err) {
         Alerts.errorAlert({
           title: 'Log in required',
           text: 'Annotations not found'
         })
       } else {
-        annotations = _.filter(annotations, (annotation) => {
+        const annotations = _.filter(allAnnotations, (annotation) => {
           return !annotation.motivation && annotation.motivation !== 'codebookDevelopment'
         })
         window.cag.annotations = annotations
+        const codebookDevelopment = _.filter(allAnnotations, (annotation) => {
+          return annotation.motivation && (annotation.motivation === 'codebookDevelopment' || annotation.motivation === 'defining')
+        })
+        window.cag.codebookAnnotations = codebookDevelopment
+        Codebook.fromAnnotations(codebookDevelopment, (err, codebook) => {
+          if (err) {
+            Alerts.errorAlert({ text: 'Error parsing codebook. Error: ' + err.message })
+          } else {
+            console.log(codebook)
+            window.cag.codebook = codebook
+          }
+        })
       }
     })
   }

@@ -125,7 +125,9 @@ class ExportCmapCloud {
         }
       }
       // Add resource-group-list
-      this.referenceURLIntoMap(xmlDoc, urlFiles, folderId)
+      if (!uploadMap) {
+        this.referenceURLIntoMap(xmlDoc, urlFiles, folderId)
+      }
       const mapString = new XMLSerializer().serializeToString(xmlDoc)
       const blob = new window.Blob([mapString], {
         type: 'text/plain;charset=utf-8'
@@ -133,7 +135,7 @@ class ExportCmapCloud {
       let name
       folderName ? name = folderName : name = window.abwa.groupSelector.currentGroup.name
       if (uploadMap) {
-        cmapCloudClient.uploadMap(folderId, mapString, (data) => {
+        cmapCloudClient.uploadMap(folderId, xmlDoc, (data) => {
           console.log(data)
           const urlWithIdentifier = data.childNodes[0].childNodes[5].innerHTML
           const pattern = /id=([\w-]+)/

@@ -84,7 +84,7 @@ class TargetManager {
   tryToLoadTargetId () {
     // Wait until updated all annotations is loaded
     this.targetIdEventListener = document.addEventListener(Events.updatedAllAnnotations, () => {
-      if (window.abwa.annotationManagement.annotationReader.allAnnotations.length > 0) {
+      if (window.abwa.annotationManagement.annotationReader.allAnnotations && window.abwa.annotationManagement.annotationReader.allAnnotations.length > 0) {
         this.documentId = window.abwa.annotationManagement.annotationReader.allAnnotations[0].target[0].source.id
       } else {
         this.documentId = RandomUtils.randomString()

@@ -119,7 +119,20 @@ class CmapCloudClient {
     })
   }
 
-  uploadMap (folderID, map, callback, group, dimensions) {
+  uploadMap (folderID, xmlMap, callback, group, dimensions) {
+    const map = new XMLSerializer().serializeToString(xmlMap)
+    let description = ''
+    Array.from(xmlMap.children[0].children[0].children).forEach(tag => {
+      if (tag.nodeName === 'dc:description') {
+        description = tag.innerHTML
+      }
+    })
+    let language = ''
+    Array.from(xmlMap.children[0].children[0].children).forEach(tag => {
+      if (tag.nodeName === 'dc:language') {
+        language = tag.innerHTML
+      }
+    })
     let title = ''
     if (group) {
       title = LanguageUtils.camelize(group.name) + '(' + group.id + ')'
@@ -136,8 +149,9 @@ class CmapCloudClient {
       },
       data: '<res-meta xmlns:dcterms="http://purl.org/dc/terms/" xmlns="http://cmap.ihmc.us/xml/cmap/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:vcard="http://www.w3.org/2001/vcard-rdf/3.0#"> ' + '\n' +
         '<dc:title>' + title + '</dc:title>\n' +
-        '<dc:description>' + group.name + '</dc:description>\n' +
+        '<dc:description>' + description + '</dc:description>\n' +
         '<dc:subject>' + dimensions + '</dc:subject>\n' +
+        '<dc:language>' + language + '</dc:language>' +
         '<dc:format>x-cmap/x-storable</dc:format>\n' +
         '<dc:contributor><vcard:FN>' + group.id + '</vcard:FN></dc:contributor>' +
         '<dc:creator><vcard:FN>' + group.id + '</vcard:FN></dc:creator>' +
