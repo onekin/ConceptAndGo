@@ -258,7 +258,7 @@ const createWindow = function (cmapCloudClient, userData) {
     '<div id="windowHeader">' +
     '<span id="windowDialogTitle">Creating new annotation driven concept map</span> ' +
     '</div> ' +
-    '<div id="windowMetadata" style="display: block; width: auto; min-height: 0px; max-height: none; height: 265px;">' +
+    '<div id="windowMetadata" style="display: block; width: auto; min-height: 0px; max-height: none; height: 235px;">' +
     '<form>' +
     '<label htmlFor="rmeta_name" class="windowLabel">Cmap name</label><input placeholder="Provide Cmap name.." type="text" name="name" id="rmeta_name" class="windowInput">' +
     '<label class="windowLabel" htmlFor="rmeta_focus_question">Focus question</label><input placeholder="Provide focus question..." type="text" name="focus_question" id="rmeta_focus_question" class="windowInput">' +

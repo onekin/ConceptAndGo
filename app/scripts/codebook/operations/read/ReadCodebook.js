@@ -318,7 +318,19 @@ class ReadCodebook {
             }
           }
         }
-      }/*  */,
+      },
+      ondragstart: (event) => {
+        event.dataTransfer.setData('text/plain', event.target.id)
+      },
+      ondragover: (event) => {
+        event.dataTransfer.setData('text/plain', event.target.id)
+      },
+      ondragleave: (event) => {
+        event.dataTransfer.setData('text/plain', event.target.id)
+      },
+      drop: (event) => {
+        event.dataTransfer.setData('text/plain', event.target.id)
+      },
       buttonRightClickHandler: this.themeRightClickHandler()/*  */
     })
   }

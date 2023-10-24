@@ -216,7 +216,7 @@ class Buttons {
     }
   }
 
-  static createButton ({ id, name, label, data, className, color = 'rgba(200, 200, 200, 1)', description, handler, buttonTemplate, buttonRightClickHandler, ondragstart, ondragover, ondrop }) {
+  static createButton ({ id, name, label, data, className, color = 'rgba(200, 200, 200, 1)', description, handler, buttonTemplate, buttonRightClickHandler, ondragstart, ondragover, ondragleave, ondrop }) {
     if (id) {
       let tagButton
       // Create the container
@@ -264,40 +264,34 @@ class Buttons {
         tagButton.draggable = true
         // On drag start function
         tagButton.addEventListener('dragstart', Buttons.createDragStartHandler(id, ondragstart))
+        console.log('DragSTART')
       }
       if (_.isFunction(ondragover)) {
         // On dragover function
-        tagButton.addEventListener('dragenter', (event) => {
+        tagButton.addEventListener('dragover', (event) => {
           event.stopPropagation()
           tagButton.style.backgroundColor = 'rgba(150,150,150,0.5)'
+          console.log('DragOVER')
         })
+      }
+      if (_.isFunction(ondragleave)) {
         tagButton.addEventListener('dragleave', (event) => {
+          event.stopPropagation()
+          tagButton.style.backgroundColor = tagButton.dataset.baseColor
+          console.log('DragLEAVE')
+        })
+      }
+      if (_.isFunction(ondrop)) {
+        tagButton.addEventListener('drop', (event) => {
+          /*
           event.stopPropagation()
           if (tagButton.dataset.chosen === 'true') {
             tagButton.style.backgroundColor = ColorUtils.setAlphaToColor(ColorUtils.colorFromString(tagButton.dataset.baseColor), 0.6)
           } else {
             tagButton.style.backgroundColor = tagButton.dataset.baseColor
-          }
+          } */
+          console.log('DragDROP')
         })
-      }
-      if (_.isFunction(ondrop)) {
-        // Prevent dragover
-        tagButton.addEventListener('dragover', (e) => {
-          e.preventDefault()
-          e.stopPropagation()
-        })
-        // On drop function
-        tagButton.addEventListener('drop', Buttons.createDropHandler({
-          id,
-          handler: ondrop,
-          beforeDrop: () => {
-            if (tagButton.dataset.chosen === 'true') {
-              tagButton.style.backgroundColor = ColorUtils.setAlphaToColor(ColorUtils.colorFromString(tagButton.dataset.baseColor), 0.6)
-            } else {
-              tagButton.style.backgroundColor = tagButton.dataset.baseColor
-            }
-          }
-        }))
       }
       // Tag button background color change
       // TODO It should be better to set it as a CSS property, but currently there is not an option for that

@@ -186,7 +186,7 @@ export class CXLExporter {
         border.value = 'dashed'
         dimensionAppearance.setAttributeNode(border)
         const fontSize = document.createAttribute('font-size')
-        fontSize.value = '18'
+        fontSize.value = '16'
         dimensionAppearance.setAttributeNode(fontSize)
         conceptAppearanceList.appendChild(dimensionAppearance)
       }
@@ -535,7 +535,7 @@ export class CXLExporter {
         border.value = 'dashed'
         dimensionAppearance.setAttributeNode(border)
         const fontSize = document.createAttribute('font-size')
-        fontSize.value = '18'
+        fontSize.value = '16'
         dimensionAppearance.setAttributeNode(fontSize)
         conceptAppearanceList.appendChild(dimensionAppearance)
       }

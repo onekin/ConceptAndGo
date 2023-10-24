@@ -17,7 +17,7 @@ class LinkingForm {
     return new Promise(() => {
       // Close sidebar if opened
       window.abwa.sidebar.closeSidebar()
-      const title = 'Creating new relationship'
+      const title = 'You are creating a new relation'
       // Get body for classifying
       const showForm = () => {
         // Create form
@@ -28,7 +28,7 @@ class LinkingForm {
           html: html,
           onBeforeOpen: form.onBeforeOpen,
           // position: Alerts.position.bottom, // TODO Must be check if it is better to show in bottom or not
-          confirmButtonText: 'Save relationship',
+          confirmButtonText: 'Save relation',
           denyButtonText: 'Save & Create another',
           callback: form.callback,
           denyCallback: form.denyCallback,

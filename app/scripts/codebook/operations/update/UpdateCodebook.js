@@ -128,8 +128,14 @@ class UpdateCodebook {
           retrievedThemeName = selection.toString().trim().replace(/^\w/, c => c.toUpperCase())
         }
       }
+      let titleName
+      if (alternativeName) {
+        titleName = 'You are creating a new concept for the ' + alternativeName + ': '
+      } else {
+        titleName = 'You are creating a ' + dimensionName + '-categorized concept: '
+      }
       Alerts.multipleInputAlert({
-        title: 'You are creating a new ' + dimensionName + ' code: ',
+        title: titleName,
         html: '<input autofocus class="formCodeName swal2-input" type="text" id="themeName" placeholder="New ' + Config.tags.grouped.group + ' name" value="' + retrievedThemeName + '"/>',
         preConfirm: () => {
           const themeNameElement = document.querySelector('#themeName')
