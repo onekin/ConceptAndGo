@@ -115,7 +115,7 @@ The concept map is exported in a folder that is automatically generated in the C
 Concept&Go  turns the CmapTools canvas into an index of the student's bibliography. This use of concept maps as navigational tools to existing material is reported in the literature. Click on a resource to go back to the reading material, specifically, at the point where the excerpt is placed. Notice 'Lack of tools' at the bottom of the highlighter.
 
 ![Screenshot 2022-09-05 at 16 43 39](https://user-images.githubusercontent.com/31988855/212887674-2f14d456-c812-42d4-a178-26d915d3bde3.png)
-
+https://user-images.githubusercontent.com/31988855/279034580-e8a5ad44-6764-43c9-b849-15e3e23fc93f.png
 **Go back to the annotation space**
  
 By supporting annotations as URLs rather than mere text, it is possible to navigate back to the reading material.  The next figure shows the case for ‘organisms’. Concepts are now displayed together with their annotation counterparts. Click on the annotation icon (), to open the annotations in subsequent browser tabs  (see Fig. 2.3). Students can then go back to the reading sources where the annotation appears, check back their annotations, update as appropriate, and when convenient, move back to see the whole picture again in CmapCloud.
@@ -126,6 +126,8 @@ By supporting annotations as URLs rather than mere text, it is possible to navig
 CmapCloud provides a means for the instructor to provide notes on the learner's map: select distinct map nodes, right-click, and create a textual note (see Figure \ref{fig:selectiveFeedback}(a)). This is an appropriate departing point. It makes notes specific, i.e., pointing to instances in the learner's assignment where the feedback applies. Besides specific, Nicol's quality model also includes the attributes contextualized and selective.
 
 Contextualized feedback is intended to provide feedback that is linked to the learning outcomes. We might structure `the learning outcomes' in terms of categories the learner has to consider while unfolding the concept map. Concept&Go allows the instructor to define a set of categories when they define the focus question. These categories are automatically rendered in the mapping canvas and color coding is used to map concepts to categories.  The instructor can now see at a glance how well the distinct categories are covered and quickly identify gaps in the narrative.
+
+![https://user-images.githubusercontent.com/31988855/212887674-2f14d456-c812-42d4-a178-26d915d3bde3.png](https://user-images.githubusercontent.com/31988855/279034580-e8a5ad44-6764-43c9-b849-15e3e23fc93f.png)
 
 Selective feedback is feedback based on the learner’s prior knowledge and previous work. In the case of using concept mapping as a follow-up strategy in meaningful learning from text, the learner’s previous work may refer to his reading, particularly his annotations.Concept&Go turns annotation into Web object, and hence URI addressable. This allows the instructor to refer to these URI into the feedback.  This turns textual notes into hypertext,  i.e., text and hyperlinks intermingled, making excerpts just a click away for the learner to consult. Akin to CmapCloud way of working, the instructor first selects the concepts to which the note applies. Once selected, right-click for the feedback note to show up. The feedback note extends the CmapCloud by adding the date and a drop-down menu with the set of annotations made by the learner on the concept/relations the note applies to.
 
