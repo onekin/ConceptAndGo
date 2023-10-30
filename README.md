@@ -12,9 +12,13 @@ This scaffolding role of the supervisor represents a major departure from other 
 Concept&Go is a web annotation tool aimed at concept mapping. A concept map is a diagram or graphical tool that visually represents relationships between concepts and ideas. When the reading material (PDF or Web content) is opened in a browser tab,  Concept&Go can be activated with a single click. This causes a sidebar to show up on the left part of the document. This sidebar contains the concepts collected so far. Compared with other Web tools (e.g., Diigo), Concept&Go does not stop at highlighting quotes from text paragraphs but elaborates on the so-gathered quotes to come up with concepts and relationships. From this perspective, Concept&Go is not stand-alone but requires two companions: Hypothes.is as the annotations’ persistent storage, and CmapCloud (the cloud service of CmapTools) to depict the developed concept map with its annotations. 
 
 # How to install it
+**From Chrome Store**
+You can install the extension in your browser from the following link: https://chrome.google.com/webstore/detail/conceptgo/oacbaceaekfkgeegdfknnhnjdghaokpa?hl=es
 
-The first step to start using Concept&Go is to install it from the GitHub repository. You can access the source code in the following link: https://github.com/onekin/ConceptAndGo-DSR
+**From Github**
 
+The first step to start using Concept&Go is to install it from the GitHub repository. You can access the source code in the following link:[https://github.com/onekin/ConceptAndGo-DSR
+](https://github.com/onekin/ConceptAndGov2)
 You can download the last version of the tool from the available releases:
 
 ![Screenshot 2022-09-05 at 16 21 49](https://user-images.githubusercontent.com/31988855/212914936-0a19aa49-2784-47b1-b9b8-3c4a637866c4.png)
@@ -114,9 +118,15 @@ Concept&Go  turns the CmapTools canvas into an index of the student's bibliograp
 
 **Go back to the annotation space**
  
-By supporting annotations as URLs rather than mere text, it is possible to navigate back to the reading material.  The next figure shows the case for ‘organisms’. Concepts are now displayed together with their annotation counterparts. Click on the annotation icon (), for opening the annotations in subsequent browser tabs  (see Fig. 2.3). Students can then go back to the reading sources where the annotation appears, check back their annotations, update as appropriate, and when convenient, move back to see the whole picture again in CmapCloud.
+By supporting annotations as URLs rather than mere text, it is possible to navigate back to the reading material.  The next figure shows the case for ‘organisms’. Concepts are now displayed together with their annotation counterparts. Click on the annotation icon (), to open the annotations in subsequent browser tabs  (see Fig. 2.3). Students can then go back to the reading sources where the annotation appears, check back their annotations, update as appropriate, and when convenient, move back to see the whole picture again in CmapCloud.
 
 ![Screenshot 2022-09-05 at 16 45 35](https://user-images.githubusercontent.com/31988855/212919096-25e6ea39-fe60-4eb6-b81c-4f3a09497993.png)
 
+**Providing Feedback**
+CmapCloud provides a means for the instructor to provide notes on the learner's map: select distinct map nodes, right-click, and create a textual note (see Figure \ref{fig:selectiveFeedback}(a)). This is an appropriate departing point. It makes notes specific, i.e., pointing to instances in the learner's assignment where the feedback applies. Besides specific, Nicol's quality model also includes the attributes contextualized and selective.
 
- 
+Contextualized feedback is intended to provide feedback that is linked to the learning outcomes. We might structure `the learning outcomes' in terms of categories the learner has to consider while unfolding the concept map. Concept&Go allows the instructor to define a set of categories when they define the focus question. These categories are automatically rendered in the mapping canvas and color coding is used to map concepts to categories.  The instructor can now see at a glance how well the distinct categories are covered and quickly identify gaps in the narrative.
+
+Selective feedback is feedback based on the learner’s prior knowledge and previous work. In the case of using concept mapping as a follow-up strategy in meaningful learning from text, the learner’s previous work may refer to his reading, particularly his annotations.Concept&Go turns annotation into Web object, and hence URI addressable. This allows the instructor to refer to these URI into the feedback.  This turns textual notes into hypertext,  i.e., text and hyperlinks intermingled, making excerpts just a click away for the learner to consult. Akin to CmapCloud way of working, the instructor first selects the concepts to which the note applies. Once selected, right-click for the feedback note to show up. The feedback note extends the CmapCloud by adding the date and a drop-down menu with the set of annotations made by the learner on the concept/relations the note applies to.
+
+Last Figure  illustrates the case where the feedback note includes a reference to anno0. Clicking on this link will open a new browser tab with the Wikipedia page displayed at the place where the annotation appears. 
