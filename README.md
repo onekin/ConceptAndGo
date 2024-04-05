@@ -29,8 +29,7 @@ You can install the extension in your browser from the following link:
 - Once the installation is complete, you will see a Concept&Go icon appear in your browser’s toolbar. This indicates that Concept&Go is successfully installed.
 ### Step 3: Setup
 
-The first step to start using Concept&Go is to install it from the GitHub repository. You can access the source code in the following link:[https://github.com/onekin/ConceptAndGo-DSR
-
+Once you have installed it,  you have to follow these steps:
 #### Access to local files
 
 Once you have installed Concept&Go, you will find the web extension icon in the right part at the top of the toolbar. We recommend pining it in the toolbar to facilitate the use of the tool.
