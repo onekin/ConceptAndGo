@@ -22,11 +22,11 @@ Ensure your computer and you meet the minimum requirements for running Concept&G
 - A Hypothes.is user account ([You can register here](https://web.hypothes.is/)).
 - A CmapCloud user account ([You can register here](https://cmapcloud.ihmc.us/users/register.html)).
 
-### Step 2: Install the Chatin Extension
+### Step 2: Install the Concept&Go Extension
 You can install the extension in your browser from the following link: 
-- Open your web browser and navigate to the Concept&Go extension page on the [[Browser Extension Store/Marketplace]([https://chromewebstore.google.com/detail/annotategpt/gjocfhlnleefeikdcnebmohfkgckceip](https://chrome.google.com/webstore/detail/conceptgo/oacbaceaekfkgeegdfknnhnjdghaokpa?hl=es))].
+- Open your web browser and navigate to the Concept&Go extension page on the [[Browser Extension Store/Marketplace](https://chrome.google.com/webstore/detail/conceptgo/oacbaceaekfkgeegdfknnhnjdghaokpa?hl=es)].
 - Click the "Add to Browser" or "Install" button to begin the installation process.
-- Once the installation is complete, you will see a Concept&Go icon appear in your browser’s toolbar. This indicates that AnnotateGPT is successfully installed.
+- Once the installation is complete, you will see a Concept&Go icon appear in your browser’s toolbar. This indicates that Concept&Go is successfully installed.
 ### Step 3: Setup
 
 The first step to start using Concept&Go is to install it from the GitHub repository. You can access the source code in the following link:[https://github.com/onekin/ConceptAndGo-DSR
@@ -155,23 +155,20 @@ Concept&Go communicates with Hypothes.is via Hypothes.is API Client developed fo
 ## Code Structure
 The artifact code is organized as follows:
 
-![structure](https://github.com/onekin/AnnotateGPT/assets/31988855/c57efbff-0919-40ad-9ee2-7be7f52970ce)
+![structure](https://github.com/onekin/ConceptAndGo/assets/31988855/71d93aec-c0fa-445d-a660-93d1218ade55)
 
 
 These are the main components:
 - images. This folder contains the images within the browser extension.
 - pages. This folder contains the html files of the extension.
-- resources. This folder contains mind map templates and the pdf.js library to process pdfs.
 - scripts. This is the main component, it contains the scripts to make the extension work. Based on a web extension architecture this is the main classes:
   - Content Script: contentScript.js, this is the script that is executed when MindMeister is accessed
   - Service worker: background.js, this script initializes all the background scripts to enable the communications
   - Options file: options.js, this is the script executed when the option page is opened
   - The rest of scripts are organized in the following folders.
-     	- contentScript folder. This folder contains the scripts that are executed in the PDF view.
-    		- contentAnnotator -> TextAnnotator is the script where annotations are manage.
-    		- specific -> here you can find the functions associated with the review criteria.
-        - TagManager.js aims to create the review criteria buttons. 
-  	- llm. Here you can find the scripts aimed to establish the communications with Langchain.
+    		- codebook -> Classes associated with the codebook a Concept is represented by a Theme and these are grouped in Dimensions.
+    		- importExport -> Here you can find the files associated with importing and exporting the content with CmapCloud.
+        - contentScript ->  contains the main scripts to control the annotated content.
 
 ## Building and Testing
 To compile the project, you only need to execute the following lines, but make sure you have the node and gulp versions specified in the Development Enviroment section.
