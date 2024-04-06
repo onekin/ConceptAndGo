@@ -143,7 +143,7 @@ The web extension follows the standard web browser extension architecture with c
 
 ## Development Environment
 To develop from the source code, you will need to install node and gulp to build the extension. This are the required versions
-- Node v12.22
+- Node v16.20.0 or greater
 - Gulp v4
 
 ## Library Documentation
