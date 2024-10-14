@@ -104,7 +104,7 @@ class GroupSelector {
                       title: 'Wait!',
                       text: 'In order to start using Concept&Go, first you must have an annotation group. Please, ask your teacher to share you the Hypothes.is group and the CmapCloud map',
                       callback: () => {
-                        // window.open(chrome.extension.getURL('pages/options.html#cmapCloudConfiguration'))
+                        // window.open(chrome.runtime.getURL('pages/options.html#cmapCloudConfiguration'))
                       }
                     })
                   }
@@ -145,7 +145,7 @@ class GroupSelector {
   }
 
   checkIsLoggedIn (callback) {
-    const sidebarURL = chrome.extension.getURL('pages/sidebar/groupSelection.html')
+    const sidebarURL = chrome.runtime.getURL('pages/sidebar/groupSelection.html')
     $.get(sidebarURL, (html) => {
       // Append sidebar to content
       $('#abwaSidebarContainer').append($.parseHTML(html))
@@ -429,7 +429,7 @@ class GroupSelector {
                                           CXLExporter.createCmapFromCmapCloud(newGroup, codebook, groupName, data.userData)
                                         }
                                       } else {
-                                        window.open(chrome.extension.getURL('pages/options.html#cmapCloudConfiguration'))
+                                        window.open(chrome.runtime.getURL('pages/options.html#cmapCloudConfiguration'))
                                         Alerts.infoAlert({
                                           text: 'Please, provide us your Cmap Cloud login credentials in the configuration page of the Web extension.',
                                           title: 'We need your Cmap Cloud credentials'

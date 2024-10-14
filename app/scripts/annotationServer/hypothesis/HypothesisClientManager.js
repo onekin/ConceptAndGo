@@ -5,7 +5,7 @@ import HypothesisClient from 'hypothesis-api-client'
 import AnnotationServerManager from '../AnnotationServerManager'
 import HypothesisClientInterface from './HypothesisClientInterface'
 
-import Alerts from '../../utils/Alerts'
+// import Alerts from '../../utils/Alerts'
 
 const reloadIntervalInSeconds = 1 // Reload the hypothesis client every 10 seconds
 

@@ -3,21 +3,18 @@
   "short_name": "__MSG_appShortName__",
   "description": "__MSG_appDescription__",
   "version": "2.1.0",
-  "manifest_version": 2,
+  "manifest_version": 3,
   "default_locale": "en",
   "icons": {
     "256": "images/cag/icon-512.png"
   },
   "background": {
-    "scripts": [
-      "scripts/background.js"
-    ]
+    "service_worker": "scripts/background.js"
   },
   "content_scripts": [
     {
       "matches": ["*://*/*", "file:///*/*"],
-      "exclude_matches": ["https://hypothes.is/login"],
-      "exclude_matches": ["https://cmapcloud.ihmc.us/cmaps/myCmaps.html"],
+      "exclude_matches": ["https://hypothes.is/login", "https://cmapcloud.ihmc.us/cmaps/myCmaps.html"],
       "js": ["scripts/contentScript.js"],
       "css": ["styles/contentScript.css"],
       "run_at": "document_start",
@@ -55,34 +52,58 @@
       "all_frames": false
     }
   ],
-  "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
-  "page_action": {
+  "action": {
     "default_icon": "images/cag/icon-38-bw.png",
     "default_title": "__MSG_browserActionTitle__"
   },
   "options_page": "pages/options.html",
   "options_ui": {
     "page": "pages/options.html",
-    "chrome_style": false,
     "open_in_tab": true
   },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self';"
+  },
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "rule_set1",
+        "enabled": true,
+        "path": "resources/rules.json"
+      }
+    ]
+  },
   "permissions": [
-    "https://hypothes.is/",
+    "file://*/*",
     "activeTab",
     "storage",
     "downloads",
     "notifications",
-    "file://*/*",
     "contextMenus",
     "webRequest",
-    "webRequestBlocking",
+    "declarativeNetRequest",
+    "tabs",
+    "https://hypothes.is/"
+  ],
+  "host_permissions": [
+    "https://hypothes.is/",
+    "file://*/*",
     "*://doi.org/*",
     "*://dx.doi.org/*",
     "*://www.sciencedirect.com/science/article/pii/*",
     "*://www.dropbox.com/s/",
     "*://*.dropboxusercontent.com/*"
   ],
-  "web_accessible_resources": ["pages/*.html", "content/*", "images/*"],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "pages/*.html", "content/*", "images/*"
+      ],
+      "matches": [
+        "*://*/*"
+      ]
+    }
+  ],
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAh62oqu5gL13CQVRafRtqaTWkS6UQru7zvTinTn2UxJvFUjsOttkumdEhKh4g4fOvBdYtT07LNsxgVpehKNRiZqdlwSBVIrNTO2vdDKIIHGd4WGYZ/DJLJ7IMgoIvVgvDozH+WwqMEhaeldI+flDAPPswBClT8Sve3npYpM1pZAd9MPyi8HPUXOyJd83gJY3n156rS+DKIEvlR3Ree1Hs8Jns7oNG0AN4+XNZQ3U4vE3W8+YWBfgIn0GOqKnAtza2WPQ2Pml3wupILypaVP7fIt4yQ++YI9ucvOqYzhaD1l1aFi2OMCOZSXNaixQ4PrRooLqGsWoKuiechYE92dijOQIDAQAB"
 
 }

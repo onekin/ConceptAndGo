@@ -5,23 +5,18 @@ class Popup {
 
   deactivate () {
     this.activated = false
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      chrome.tabs.sendMessage(tabs[0].id, { action: 'destroyContentScript' }, () => {
-        // eslint-disable-next-line quotes
-        chrome.pageAction.setIcon({ tabId: tabs[0].id, path: "images/cag/icon-38-bw.png" })
-      })
+    chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+      chrome.tabs.sendMessage(tabs[0].id, {action: 'destroyContentScript'})
     })
   }
 
   activate () {
     this.activated = true
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      chrome.tabs.sendMessage(tabs[0].id, { action: 'initContentScript' }, () => {
-        // eslint-disable-next-line quotes
-        chrome.pageAction.setIcon({ tabId: tabs[0].id, path: "images/cag/icon-38.png" })
-      })
+    chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+      chrome.tabs.sendMessage(tabs[0].id, {action: 'initContentScript'})
     })
   }
 }
 
 export default Popup
+

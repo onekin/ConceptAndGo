@@ -20,12 +20,12 @@ const kudeatzaileakHasieratu = function () {
     window.cag.annotationServerManager = new HypothesisClientManager()
     window.cag.annotationServerManager.init((err) => {
       if (err) {
-        window.open(chrome.extension.getURL('pages/options.html#cmapCloudConfiguration'))
+        window.open(chrome.runtime.getURL('pages/options.html#cmapCloudConfiguration'))
       } else {
         window.cag.annotationServerManager.isLoggedIn((err, result) => {
           if (err || !result) {
             if (LanguageUtils.isInstanceOf(window.cag.annotationServerManager, HypothesisClientManager)) {
-              window.open(chrome.extension.getURL('pages/options.html#cmapCloudConfiguration'))
+              window.open(chrome.runtime.getURL('pages/options.html#cmapCloudConfiguration'))
             }
           } else {
             const listElement = document.querySelector('li > a#create-url-res')
@@ -49,7 +49,7 @@ const kudeatzaileakHasieratu = function () {
                       createWindow(cmapCloudClient, data.userData)
                     } else {
                       let callback = () => {
-                        window.open(chrome.extension.getURL('pages/options.html#cmapCloudConfiguration'))
+                        window.open(chrome.runtime.getURL('pages/options.html#cmapCloudConfiguration'))
                       }
                       Alerts.infoAlert({
                         text: 'Please, provide us your Cmap Cloud login credentials in the configuration page of the Web extension.',
@@ -59,7 +59,7 @@ const kudeatzaileakHasieratu = function () {
                     }
                   } else {
                     let callback = () => {
-                      window.open(chrome.extension.getURL('pages/options.html#cmapCloudConfiguration'))
+                      window.open(chrome.runtime.getURL('pages/options.html#cmapCloudConfiguration'))
                     }
                     Alerts.infoAlert({
                       text: 'Please, provide us your Cmap Cloud login credentials in the configuration page of the Web extension.',
@@ -132,7 +132,7 @@ const kudeatzaileakHasieratu = function () {
                                   createWindow(cmapCloudClient, data.userData)
                                 } else {
                                   let callback = () => {
-                                    window.open(chrome.extension.getURL('pages/options.html#cmapCloudConfiguration'))
+                                    window.open(chrome.runtime.getURL('pages/options.html#cmapCloudConfiguration'))
                                   }
                                   Alerts.infoAlert({
                                     text: 'Please, provide us your Cmap Cloud login credentials in the configuration page of the Web extension.',
@@ -142,7 +142,7 @@ const kudeatzaileakHasieratu = function () {
                                 }
                               } else {
                                 let callback = () => {
-                                  window.open(chrome.extension.getURL('pages/options.html#cmapCloudConfiguration'))
+                                  window.open(chrome.runtime.getURL('pages/options.html#cmapCloudConfiguration'))
                                 }
                                 Alerts.infoAlert({
                                   text: 'Please, provide us your Cmap Cloud login credentials in the configuration page of the Web extension.',

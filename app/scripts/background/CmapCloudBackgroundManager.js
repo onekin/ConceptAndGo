@@ -1,7 +1,5 @@
-import axios from 'axios'
 import _ from 'lodash'
 import ChromeStorage from '../utils/ChromeStorage'
-import $ from 'jquery'
 
 class CmapCloudBackgroundManager {
   init () {
@@ -9,13 +7,13 @@ class CmapCloudBackgroundManager {
       if (request.scope === 'cmapCloud') {
         if (request.cmd === 'getUserUid') {
           if (_.isString(request.data.user && request.data.password)) {
-            let user = request.data.user
-            let password = request.data.password
+            const user = request.data.user
+            const password = request.data.password
             this.getUid(user, password, (err, uid) => {
               if (err) {
                 sendResponse({ err: err })
               } else {
-                let userData = {}
+                const userData = {}
                 userData.user = user
                 userData.password = password
                 userData.uid = uid
@@ -40,19 +38,19 @@ class CmapCloudBackgroundManager {
           return true // Async response
         } else if (request.cmd === 'getRootFolderInfo') {
           if (_.isString(request.data.uid)) {
-            let uid = request.data.uid
+            const uid = request.data.uid
             this.getRootFolderInfo(uid, (err, folderInfo) => {
               if (err) {
                 sendResponse({ err: err })
               } else {
-                let folderInfoXML = new XMLSerializer().serializeToString(folderInfo)
+                const folderInfoXML = new XMLSerializer().serializeToString(folderInfo)
                 sendResponse({ info: folderInfoXML })
               }
             })
           }
         } else if (request.cmd === 'getCXL') {
           if (_.isString(request.data.id)) {
-            let cmapId = request.data.id
+            const cmapId = request.data.id
             this.getCXLFile(cmapId, (err, cxlFile) => {
               if (err) {
                 sendResponse({ err: err })
@@ -80,102 +78,137 @@ class CmapCloudBackgroundManager {
     })
   }
 
-  getUid (user, password, callback) {
-    // Open preferences page
-    let settings = {
-      url: 'https://cmapcloud.ihmc.us/j_spring_security_check',
-      method: 'POST',
-      timeout: 0,
-      headers: {
-        Connection: 'keep-aliv',
-        'Cache-Control': 'max-age=0',
-        'Upgrade-Insecure-Requests': '1',
-        Origin: 'https://cmapcloud.ihmc.us',
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'User-Agent': 'Mozilla/5.0 (iPad; CPU OS 11_0 like Mac OS X) AppleWebKit/604.1.34 (KHTML, like Gecko) Version/11.0 Mobile/15A5341f Safari/604.1',
-        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
-        'Sec-Fetch-Site': 'same-origin',
-        'Sec-Fetch-Mode': 'navigate',
-        'Sec-Fetch-User': '?1',
-        'Sec-Fetch-Dest': 'document',
-        Referer: 'https://cmapcloud.ihmc.us/login.html',
-        'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8'
-      },
-      data: {
-        j_username: user,
-        j_password: password,
-        Submit: ''
-      }
-    }
+  async getUid (user, password, callback) {
+    try {
+      // Construct the form data for the login request
+      const formData = new URLSearchParams()
+      formData.append('j_username', user)
+      formData.append('j_password', password)
+      formData.append('Submit', '')
 
-    $.ajax(settings).done(function (response) {
-      let parser = new window.DOMParser()
-      let docPreferences = parser.parseFromString(response, 'text/html')
-      let mapRepositoryElement = docPreferences.querySelector('a[href="/cmaps/myCmaps.html"]')
-      if (_.isElement(mapRepositoryElement)) {
-        // Open managetokens page
-        axios.get('https://cmapcloud.ihmc.us/cmaps/myCmaps.html')
-          .then((response) => {
-            // Retrieve all tokens
-            let locateUID = response.data.match(/uid=[\s\S]*?ou=users/)[0]
-            let uid = locateUID.toString().replace('uid=', '').replace(',ou=users', '')
-            if (uid) {
-              callback(null, uid)
-            } else {
-              callback(new Error('Unable to retrieve UID'))
-            }
-          })
-      } else {
-        callback(new Error('Unable to do the login'))
+      // Login request
+      const loginResponse = await fetch('https://cmapcloud.ihmc.us/j_spring_security_check', {
+        method: 'POST',
+        headers: {
+          Connection: 'keep-alive',
+          'Cache-Control': 'max-age=0',
+          'Upgrade-Insecure-Requests': '1',
+          Origin: 'https://cmapcloud.ihmc.us',
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'User-Agent': 'Mozilla/5.0 (iPad; CPU OS 11_0 like Mac OS X) AppleWebKit/604.1.34 (KHTML, like Gecko) Version/11.0 Mobile/15A5341f Safari/604.1',
+          Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+          'Sec-Fetch-Site': 'same-origin',
+          'Sec-Fetch-Mode': 'navigate',
+          'Sec-Fetch-User': '?1',
+          'Sec-Fetch-Dest': 'document',
+          Referer: 'https://cmapcloud.ihmc.us/login.html',
+          'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8'
+        },
+        body: formData
+      })
+
+      // Check if the login request was successful
+      const loginText = await loginResponse.text()
+      const parser = new DOMParser()
+      const docPreferences = parser.parseFromString(loginText, 'text/html')
+      const mapRepositoryElement = docPreferences.querySelector('a[href="/cmaps/myCmaps.html"]')
+
+      if (!mapRepositoryElement) {
+        return callback(new Error('Unable to do the login'))
       }
-    })
+
+      // Fetch the UID from the /cmaps/myCmaps.html page
+      const myCmapsResponse = await fetch('https://cmapcloud.ihmc.us/cmaps/myCmaps.html')
+      const myCmapsText = await myCmapsResponse.text()
+
+      // Extract the UID using regex
+      const uidMatch = myCmapsText.match(/uid=[\s\S]*?ou=users/)
+      if (uidMatch) {
+        const uid = uidMatch[0].replace('uid=', '').replace(',ou=users', '')
+        callback(null, uid)
+      } else {
+        callback(new Error('Unable to retrieve UID'))
+      }
+    } catch (error) {
+      callback(error)
+    }
   }
 
   getRootFolderInfo (uid, callback) {
-    let xhr = new XMLHttpRequest()
+    // Construct the URL
+    const url = `https://cmapscloud.ihmc.us:443/resources/id=uid=${uid},ou=users,dc=cmapcloud,dc=ihmc,dc=us?cmd=get.compact.resmeta.list`
 
-    xhr.addEventListener('readystatechange', function () {
-      if (this.readyState === 4) {
-        if (_.isFunction(callback)) {
-          callback(null, this.responseXML)
+    // Use fetch to make the request
+    fetch(url)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok')
         }
-      }
-    })
-
-    xhr.open('GET', 'https://cmapscloud.ihmc.us:443/resources/id=uid=' + uid + ',ou=users,dc=cmapcloud,dc=ihmc,dc=us?cmd=get.compact.resmeta.list')
-
-    xhr.send()
+        return response.text() // Use response.text() to handle XML or plain text
+      })
+      .then((xmlData) => {
+        // Assuming you want to pass the XML response to the callback
+        if (typeof callback === 'function') {
+          callback(null, xmlData)
+        }
+      })
+      .catch((error) => {
+        // Pass the error to the callback if needed
+        if (typeof callback === 'function') {
+          callback(error, null)
+        }
+      })
   }
 
   getCXLFile (id, callback) {
-    let xhr = new XMLHttpRequest()
-
-    xhr.addEventListener('readystatechange', function () {
-      if (this.readyState === 4) {
-        if (_.isFunction(callback)) {
-          callback(null, this.responseXML)
+    // Construct the URL
+    const url = `https://cmapscloud.ihmc.us:443/resources/rid=${id}`
+    // Use fetch to make the request
+    fetch(url)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok')
         }
-      }
-    })
-
-    xhr.open('GET', 'https://cmapscloud.ihmc.us:443/resources/rid=' + id)
-
-    xhr.send()
+        return response.text() // Use response.text() to get the raw XML data
+      })
+      .then((xmlData) => {
+        // Assuming you want to pass the XML response to the callback
+        if (typeof callback === 'function') {
+          callback(null, xmlData)
+        }
+      })
+      .catch((error) => {
+        // Pass the error to the callback if needed
+        if (typeof callback === 'function') {
+          callback(error, null)
+        }
+      })
   }
 
   getFolderList (folderId, callback) {
-    let xhr = new XMLHttpRequest()
-    xhr.addEventListener('readystatechange', function () {
-      if (this.readyState === 4) {
-        if (_.isFunction(callback)) {
-          callback(null, this.responseXML)
+    // Construct the URL
+    const url = `https://cmapscloud.ihmc.us:443/resources/rid=${folderId}/?cmd=get.resmeta.list`
+
+    // Use fetch to make the request
+    fetch(url)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok')
         }
-      }
-    })
-
-    xhr.open('GET', 'https://cmapscloud.ihmc.us:443/resources/rid=' + folderId + '/?cmd=get.resmeta.list')
-
-    xhr.send()
+        return response.text() // Use response.text() to handle XML or plain text
+      })
+      .then((xmlData) => {
+        // Assuming you want to pass the XML response to the callback
+        if (typeof callback === 'function') {
+          callback(null, xmlData)
+        }
+      })
+      .catch((error) => {
+        // Pass the error to the callback if needed
+        if (typeof callback === 'function') {
+          callback(error, null)
+        }
+      })
   }
 }
 

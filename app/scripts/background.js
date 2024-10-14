@@ -1,24 +1,8 @@
 import Popup from './popup/Popup'
 import HypothesisManager from './background/HypothesisManager'
-import TargetManager from './background/TargetManager'
+// import TargetManager from './background/TargetManager'
 import CmapCloudBackgroundManager from './background/CmapCloudBackgroundManager'
-
-import _ from 'lodash'
-
-// Enable chromereload by uncommenting this line:
-// import 'chromereload/devonly'
-
-chrome.runtime.onInstalled.addListener((details) => {
-  console.log('previousVersion', details.previousVersion)
-})
-
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  chrome.pageAction.show(tabId)
-})
-
-chrome.tabs.onCreated.addListener((tab) => {
-
-})
+// import _ from 'lodash' */
 
 class Background {
   constructor () {
@@ -28,25 +12,25 @@ class Background {
 
   init () {
     // Initialize hypothesis manager
-    this.hypothesisManager = new HypothesisManager()
-    this.hypothesisManager.init()
+    // this.hypothesisManager = new HypothesisManager()
+    // this.hypothesisManager.init()
 
-    // Initialize doi manager
+    /* // Initialize doi manager
     this.targetManager = new TargetManager()
-    this.targetManager.init()
+    this.targetManager.init() */
 
     // Initialize cmapCloud manager
     this.cmapCloudManager = new CmapCloudBackgroundManager()
     this.cmapCloudManager.init()
 
     // Initialize page_action event handler
-    chrome.pageAction.onClicked.addListener((tab) => {
+    chrome.action.onClicked.addListener((tab) => {
       // Check if current tab is a local file
       if (tab.url.startsWith('file://')) {
         // Check if permission to access file URL is enabled
         chrome.extension.isAllowedFileSchemeAccess((isAllowedAccess) => {
           if (isAllowedAccess === false) {
-            chrome.tabs.create({ url: chrome.runtime.getURL('pages/filePermission.html') })
+            chrome.tabs.create({url: chrome.runtime.getURL('pages/filePermission.html')})
           } else {
             if (this.tabs[tab.id]) {
               if (this.tabs[tab.id].activated) {
@@ -73,7 +57,6 @@ class Background {
         }
       }
     })
-
     // On tab is reloaded
     chrome.tabs.onUpdated.addListener((tabId) => {
       if (this.tabs[tabId]) {
@@ -102,9 +85,9 @@ class Background {
           sendResponse(true)
         } else if (request.cmd === 'amIActivated') {
           if (this.tabs[sender.tab.id].activated) {
-            sendResponse({ activated: true })
+            sendResponse({activated: true})
           } else {
-            sendResponse({ activated: false })
+            sendResponse({activated: false})
           }
         }
       }
@@ -112,5 +95,5 @@ class Background {
   }
 }
 
-window.background = new Background()
-window.background.init()
+const background = new Background()
+background.init()

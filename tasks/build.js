@@ -8,6 +8,7 @@ require('./images')
 require('./fonts')
 require('./chromereload')
 require('./content')
+require('./resources')
 require('./clean')
 
 gulp.task('build', gulp.series('clean', gulp.parallel(
@@ -18,6 +19,7 @@ gulp.task('build', gulp.series('clean', gulp.parallel(
   'locales',
   'images',
   'fonts',
+  'resources',
   'chromereload',
   'content'
 )))

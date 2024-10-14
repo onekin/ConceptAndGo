@@ -7,7 +7,7 @@ import MergeFromCmapCloud from '../importExport/cmap/cmapCloud/MergeFromCmapClou
 
 class Toolset {
   constructor () {
-    this.page = chrome.extension.getURL('pages/sidebar/toolset.html')
+    this.page = chrome.runtime.getURL('pages/sidebar/toolset.html')
   }
 
   init (callback) {
@@ -23,8 +23,8 @@ class Toolset {
       this.toolsetBody = this.sidebarContainer.querySelector('#toolsetBody')
       const toolsetButtonTemplate = this.sidebarContainer.querySelector('#toolsetButtonTemplate')
       // Add link to configuration page of the tool
-      this.toolsetHeader.querySelector('#appNameBadge').href = chrome.extension.getURL('/pages/options.html')
-      const cxlCloudHomeImageUrl = chrome.extension.getURL('/images/cmapCloudHome.png')
+      this.toolsetHeader.querySelector('#appNameBadge').href = chrome.runtime.getURL('/pages/options.html')
+      const cxlCloudHomeImageUrl = chrome.runtime.getURL('/images/cmapCloudHome.png')
       this.cxlCloudHomeImage = $(toolsetButtonTemplate.content.firstElementChild).clone().get(0)
       this.cxlCloudHomeImage.src = cxlCloudHomeImageUrl
       this.cxlCloudHomeImage.id = 'cxlCloudHomeButton'
@@ -35,7 +35,7 @@ class Toolset {
         this.CXLCloudHomeButtonHandler()
       })
       // Export to CmapCloud Pull
-      const cxlCloudPushImageUrl = chrome.extension.getURL('/images/cmapCloudPull.png')
+      const cxlCloudPushImageUrl = chrome.runtime.getURL('/images/cmapCloudPull.png')
       this.cxlCloudImagePull = $(toolsetButtonTemplate.content.firstElementChild).clone().get(0)
       this.cxlCloudImagePull.src = cxlCloudPushImageUrl
       this.cxlCloudImagePull.id = 'cxlCloudButtonPull'
@@ -49,7 +49,7 @@ class Toolset {
         this.CXLCloudPullButtonHandler()
       })
       // Export to CmapCloud Push
-      const cxlCloudPullImageUrl = chrome.extension.getURL('/images/cmapCloudPush.png')
+      const cxlCloudPullImageUrl = chrome.runtime.getURL('/images/cmapCloudPush.png')
       this.cxlCloudImagePush = $(toolsetButtonTemplate.content.firstElementChild).clone().get(0)
       this.cxlCloudImagePush.src = cxlCloudPullImageUrl
       this.cxlCloudImagePush.id = 'cxlCloudButtonPush'
@@ -104,7 +104,7 @@ class Toolset {
         }
       } else {
         const callback = () => {
-          window.open(chrome.extension.getURL('pages/options.html#cmapCloudConfiguration'))
+          window.open(chrome.runtime.getURL('pages/options.html#cmapCloudConfiguration'))
         }
         Alerts.infoAlert({ text: 'Please, provide us your Cmap Cloud login credentials in the configuration page of the Web extension.', title: 'We need your Cmap Cloud credentials', callback: callback() })
       }
@@ -128,7 +128,7 @@ class Toolset {
             }
           } else {
             const callback = () => {
-              window.open(chrome.extension.getURL('pages/options.html#cmapCloudConfiguration'))
+              window.open(chrome.runtime.getURL('pages/options.html#cmapCloudConfiguration'))
             }
             Alerts.infoAlert({
               text: 'Please, provide us your Cmap Cloud login credentials in the configuration page of the Web extension.',
@@ -158,7 +158,7 @@ class Toolset {
               }
             } else {
               const callback = () => {
-                window.open(chrome.extension.getURL('pages/options.html#cmapCloudConfiguration'))
+                window.open(chrome.runtime.getURL('pages/options.html#cmapCloudConfiguration'))
               }
               Alerts.infoAlert({
                 text: 'Please, provide us your Cmap Cloud login credentials in the configuration page of the Web extension.',
