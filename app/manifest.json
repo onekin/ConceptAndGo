@@ -64,15 +64,6 @@
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self';"
   },
-  "declarative_net_request": {
-    "rule_resources": [
-      {
-        "id": "rule_set1",
-        "enabled": true,
-        "path": "resources/rules.json"
-      }
-    ]
-  },
   "permissions": [
     "file://*/*",
     "activeTab",
@@ -80,8 +71,6 @@
     "downloads",
     "notifications",
     "contextMenus",
-    "webRequest",
-    "declarativeNetRequest",
     "tabs",
     "https://hypothes.is/"
   ],

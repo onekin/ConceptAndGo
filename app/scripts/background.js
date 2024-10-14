@@ -12,8 +12,8 @@ class Background {
 
   init () {
     // Initialize hypothesis manager
-    // this.hypothesisManager = new HypothesisManager()
-    // this.hypothesisManager.init()
+    this.hypothesisManager = new HypothesisManager()
+    this.hypothesisManager.init()
 
     /* // Initialize doi manager
     this.targetManager = new TargetManager()
