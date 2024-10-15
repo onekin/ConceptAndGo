@@ -11,6 +11,9 @@
   "background": {
     "service_worker": "scripts/background.js"
   },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self';"
+  },
   "content_scripts": [
     {
       "matches": ["*://*/*", "file:///*/*"],
@@ -19,21 +22,6 @@
       "css": ["styles/contentScript.css"],
       "run_at": "document_start",
       "all_frames": false
-    },
-    {
-      "matches": ["*://dl.acm.org/citation.cfm?*"],
-      "js": ["scripts/acmContentScript.js"],
-      "run_at": "document_end"
-    },
-    {
-      "matches": ["*://www.sciencedirect.com/science/article/pii/*"],
-      "js": ["scripts/scienceDirectContentScript.js"],
-      "run_at": "document_end"
-    },
-    {
-      "matches": ["*://link.springer.com/*"],
-      "js": ["scripts/springerContentScript.js"],
-      "run_at": "document_end"
     },
     {
       "matches": [
@@ -61,27 +49,18 @@
     "page": "pages/options.html",
     "open_in_tab": true
   },
-  "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self';"
-  },
   "permissions": [
-    "file://*/*",
     "activeTab",
     "storage",
     "downloads",
     "notifications",
     "contextMenus",
-    "tabs",
-    "https://hypothes.is/"
+    "tabs"
   ],
   "host_permissions": [
     "https://hypothes.is/",
     "file://*/*",
-    "*://doi.org/*",
-    "*://dx.doi.org/*",
-    "*://www.sciencedirect.com/science/article/pii/*",
-    "*://www.dropbox.com/s/",
-    "*://*.dropboxusercontent.com/*"
+    "*://*/*"
   ],
   "web_accessible_resources": [
     {
@@ -89,10 +68,17 @@
         "pages/*.html", "content/*", "images/*"
       ],
       "matches": [
+        "file://*/*"
+      ]
+    }, {
+      "resources": ["images/*",
+        "scripts/*",
+        "pages/*",
+        "resources/*"],
+      "matches": [
         "*://*/*"
       ]
     }
   ],
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAh62oqu5gL13CQVRafRtqaTWkS6UQru7zvTinTn2UxJvFUjsOttkumdEhKh4g4fOvBdYtT07LNsxgVpehKNRiZqdlwSBVIrNTO2vdDKIIHGd4WGYZ/DJLJ7IMgoIvVgvDozH+WwqMEhaeldI+flDAPPswBClT8Sve3npYpM1pZAd9MPyi8HPUXOyJd83gJY3n156rS+DKIEvlR3Ree1Hs8Jns7oNG0AN4+XNZQ3U4vE3W8+YWBfgIn0GOqKnAtza2WPQ2Pml3wupILypaVP7fIt4yQ++YI9ucvOqYzhaD1l1aFi2OMCOZSXNaixQ4PrRooLqGsWoKuiechYE92dijOQIDAQAB"
-
 }

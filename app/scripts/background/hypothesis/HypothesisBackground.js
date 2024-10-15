@@ -1,6 +1,6 @@
 import _ from 'lodash'
 
-class HypothesisBackgroundManager {
+class HypothesisBackground {
   init () {
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       if (request.scope === 'hypothesisClient') {
@@ -158,4 +158,4 @@ class HypothesisBackgroundManager {
   }
 }
 
-export default HypothesisBackgroundManager
+export default HypothesisBackground

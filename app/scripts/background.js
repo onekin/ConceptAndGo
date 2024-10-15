@@ -1,8 +1,8 @@
 import Popup from './popup/Popup'
-import HypothesisManager from './background/HypothesisManager'
+import HypothesisBackgroundManager from './background/hypothesis/HypothesisBackgroundManager'
 // import TargetManager from './background/TargetManager'
-import CmapCloudBackgroundManager from './background/CmapCloudBackgroundManager'
-// import _ from 'lodash' */
+// import CmapCloudBackgroundManager from './background/CmapCloudBackgroundManager'
+import _ from 'lodash'
 
 class Background {
   constructor () {
@@ -12,7 +12,7 @@ class Background {
 
   init () {
     // Initialize hypothesis manager
-    this.hypothesisManager = new HypothesisManager()
+    this.hypothesisManager = new HypothesisBackgroundManager()
     this.hypothesisManager.init()
 
     /* // Initialize doi manager
@@ -20,8 +20,8 @@ class Background {
     this.targetManager.init() */
 
     // Initialize cmapCloud manager
-    this.cmapCloudManager = new CmapCloudBackgroundManager()
-    this.cmapCloudManager.init()
+    // this.cmapCloudManager = new CmapCloudBackgroundManager()
+    // this.cmapCloudManager.init()
 
     // Initialize page_action event handler
     chrome.action.onClicked.addListener((tab) => {
@@ -30,7 +30,7 @@ class Background {
         // Check if permission to access file URL is enabled
         chrome.extension.isAllowedFileSchemeAccess((isAllowedAccess) => {
           if (isAllowedAccess === false) {
-            chrome.tabs.create({url: chrome.runtime.getURL('pages/filePermission.html')})
+            chrome.tabs.create({ url: chrome.runtime.getURL('pages/filePermission.html') })
           } else {
             if (this.tabs[tab.id]) {
               if (this.tabs[tab.id].activated) {
@@ -85,9 +85,9 @@ class Background {
           sendResponse(true)
         } else if (request.cmd === 'amIActivated') {
           if (this.tabs[sender.tab.id].activated) {
-            sendResponse({activated: true})
+            sendResponse({ activated: true })
           } else {
-            sendResponse({activated: false})
+            sendResponse({ activated: false })
           }
         }
       }

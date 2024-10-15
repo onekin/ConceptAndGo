@@ -1,8 +1,8 @@
 import $ from 'jquery'
 import _ from 'lodash'
 
-import ChromeStorage from '../utils/ChromeStorage'
-import OAuthClient from '../utils/oauth-client'
+import ChromeStorage from '../../utils/ChromeStorage'
+import OAuthClient from '../../utils/oauth-client'
 
 const hypothesisSettings = {
   // eslint-disable-next-line
@@ -109,7 +109,7 @@ class HypothesisManagerOAuth {
         callback(new Error('Unable to retrieve tokens from storage.'))
       } else {
         try {
-          let parsedTokens = JSON.parse(data.data)
+          const parsedTokens = JSON.parse(data.data)
           callback(null, parsedTokens)
         } catch (e) {
           callback(new Error('Unable to retrieve tokens from storage.'))
@@ -189,14 +189,14 @@ class HypothesisManagerOAuth {
   }
 
   retrieveUserProfileMetadata (callback) {
-    let callSettings = {
+    const callSettings = {
       async: true,
       crossDomain: true,
       url: 'https://hypothes.is/account/profile',
       method: 'GET'
     }
     $.ajax(callSettings).done((resultString) => {
-      let tempWrapper = document.createElement('div')
+      const tempWrapper = document.createElement('div')
       tempWrapper.innerHTML = resultString
       try {
         callback(null, {

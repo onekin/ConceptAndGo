@@ -7,7 +7,6 @@ import _ from 'lodash'
 import Annotation from '../Annotation'
 import $ from 'jquery'
 import HypothesisClientManager from '../../annotationServer/hypothesis/HypothesisClientManager'
-import Neo4JClientManager from '../../annotationServer/neo4j/Neo4JClientManager'
 import Linking from '../purposes/linking/Linking'
 import Classifying from '../../annotationManagement/purposes/Classifying'
 import Alerts from '../../utils/Alerts'
@@ -37,7 +36,7 @@ class ReadAnnotation {
     this.initCodebookUpdatedEventListener()
     this.initAnnotationsObserver()
     // TODO Check if client manager is remote
-    if (LanguageUtils.isInstanceOf(window.abwa.annotationServerManager, HypothesisClientManager) || LanguageUtils.isInstanceOf(window.abwa.annotationServerManager, Neo4JClientManager)) {
+    if (LanguageUtils.isInstanceOf(window.abwa.annotationServerManager, HypothesisClientManager)) {
       this.initReloadAnnotationsEvent()
     }
   }

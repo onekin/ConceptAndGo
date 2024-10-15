@@ -5,7 +5,7 @@ import HypothesisClient from 'hypothesis-api-client'
 import AnnotationServerManager from '../AnnotationServerManager'
 import HypothesisClientInterface from './HypothesisClientInterface'
 
-// import Alerts from '../../utils/Alerts'
+import Alerts from '../../utils/Alerts'
 
 const reloadIntervalInSeconds = 1 // Reload the hypothesis client every 10 seconds
 
@@ -24,71 +24,38 @@ class HypothesisClientManager extends AnnotationServerManager {
   }
 
   init (callback) {
-    if (window.background) {
-      this.reloadClient(() => {
-        // Start reloading of client
-        this.reloadInterval = setInterval(() => {
-          this.reloadClient()
-        }, reloadIntervalInSeconds * 1000)
-        if (_.isFunction(callback)) {
-          callback()
-        }
-      })
-    } else {
-      // Check if user is logged in hypothesis
-      chrome.runtime.sendMessage({ scope: 'hypothesis', cmd: 'getToken' }, ({ token }) => {
-        if (this.hypothesisToken !== token) {
-          this.hypothesisToken = token
-        }
-        this.client = new HypothesisClientInterface()
-        if (_.isFunction(callback)) {
-          callback()
-        }
-      })
-    }
+    // Check if user is logged in hypothesis
+    chrome.runtime.sendMessage({ scope: 'hypothesis', cmd: 'getToken' }, ({ token }) => {
+      if (this.hypothesisToken !== token) {
+        this.hypothesisToken = token
+      }
+      this.client = new HypothesisClientInterface()
+      if (_.isFunction(callback)) {
+        callback()
+      }
+    })
   }
 
   reloadClient (callback) {
-    if (_.has(window.background, 'hypothesisManager')) {
-      window.background.hypothesisManager.retrieveHypothesisToken((err, token) => {
-        if (err) {
-          this.client = new HypothesisClient()
-          this.hypothesisToken = null
-        } else {
+    chrome.runtime.sendMessage({ scope: 'hypothesis', cmd: 'getToken' }, ({ token }) => {
+      if (this.hypothesisToken !== token) {
+        this.hypothesisToken = token
+        if (this.hypothesisToken) {
           this.client = new HypothesisClient(token)
-          this.hypothesisToken = token
+        } else {
+          this.client = new HypothesisClient()
         }
-        if (_.isFunction(callback)) {
-          callback()
-        }
-      })
-    } else {
-      chrome.runtime.sendMessage({ scope: 'hypothesis', cmd: 'getToken' }, ({ token }) => {
-        if (this.hypothesisToken !== token) {
-          this.hypothesisToken = token
-          if (this.hypothesisToken) {
-            this.client = new HypothesisClient(token)
-          } else {
-            this.client = new HypothesisClient()
-          }
-        }
-        if (_.isFunction(callback)) {
-          callback()
-        }
-      })
-    }
+      }
+      if (_.isFunction(callback)) {
+        callback()
+      }
+    })
   }
 
   isLoggedIn (callback) {
-    if (_.isFunction(callback)) {
-      if (_.has(window.background, 'hypothesisManager.hypothesisManagerOAuth.tokens')) {
-        callback(null, _.isString(window.background.hypothesisManager.hypothesisManagerOAuth.tokens.accessToken))
-      } else {
-        chrome.runtime.sendMessage({ scope: 'hypothesis', cmd: 'getToken' }, ({ token }) => {
-          callback(null, !_.isEmpty(token))
-        })
-      }
-    }
+    chrome.runtime.sendMessage({ scope: 'hypothesis', cmd: 'getToken' }, ({ token }) => {
+      callback(null, !_.isEmpty(token))
+    })
   }
 
   constructSearchUrl ({ groupId }) {

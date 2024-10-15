@@ -26,12 +26,12 @@ if (_.isEmpty(window.abwa)) {
   let annotation = AnnotationBasedInitializer.getAnnotationHashParam()
   if (annotation) {
     // If extension is not activated, activate
-    chrome.runtime.sendMessage({scope: 'extension', cmd: 'activatePopup'}, () => {
+    chrome.runtime.sendMessage({ scope: 'extension', cmd: 'activatePopup' }, () => {
       console.debug('Activated popup by annotation')
     })
   } else {
     // Check if button is activated for this tab
-    chrome.runtime.sendMessage({scope: 'extension', cmd: 'amIActivated'}, (response) => {
+    chrome.runtime.sendMessage({ scope: 'extension', cmd: 'amIActivated' }, (response) => {
       if (response.activated) {
         if (_.isEmpty(window.abwa.contentScriptManager)) {
           window.abwa.contentScriptManager = new ContentScriptManager()
