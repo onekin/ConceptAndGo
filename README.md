@@ -30,8 +30,8 @@ You can install the extension in your browser from the following link:
 ### Step 3: Setup
 
 Once you have installed it,  you have to follow these steps:
-#### Access to local files
 
+#### Access to local files
 Once you have installed Concept&Go, you will find the web extension icon in the right part at the top of the toolbar. We recommend pining it in the toolbar to facilitate the use of the tool.
 
 ![Screenshot 2022-09-05 at 16 23 01](https://user-images.githubusercontent.com/31988855/188472900-ce49ec6a-9687-4224-93cd-94a633733d92.png)
@@ -42,7 +42,7 @@ The next step is to prepare the setup to prepare the application before using it
 
 In order to do that, you have to activate the “Allow access to file URLs” option.
 
-![Screenshot 2022-09-05 at 16 23 23](https://github.com/user-attachments/assets/4e216f15-35df-4edc-a584-5f2d3f64b2d7)
+![Screenshot 2022-09-05 at 16 23 23](https://user-images.githubusercontent.com/31988855/188473227-b89d284d-e853-499a-89f7-b29eea011873.png)
 
 
 #### Hypothes.is and Cmap cloud user configuration.
