@@ -42,7 +42,7 @@ The next step is to prepare the setup to prepare the application before using it
 
 In order to do that, you have to activate the “Allow access to file URLs” option.
 
-![Screenshot 2022-09-05 at 16 23 23](https://user-images.githubusercontent.com/31988855/188473227-b89d284d-e853-499a-89f7-b29eea011873.png)
+![Screenshot 2022-09-05 at 16 23 23](https://github.com/user-attachments/assets/4e216f15-35df-4edc-a584-5f2d3f64b2d7)
 
 
 #### Hypothes.is and Cmap cloud user configuration.
