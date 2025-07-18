@@ -57,7 +57,8 @@ In the following page, first, you have to Log in to your Hypothes.is account and
 
 Once both configurations have been properly set up, the page will show you that you are logged in to both services.
 
-![Screenshot 2022-09-05 at 16 23 57](https://user-images.githubusercontent.com/31988855/188473407-59b9b560-20ec-42fb-9043-8aa480495a9d.png)
+![Screenshot 2022-09-05 at 16 23 57](https://user-images.githubusercontent.com/31988855/188473227-b89d284d-e853-499a-89f7-b29eea011873.png)
+)
 
 You can change your credentials whenever you like in the same menu by clicking the “Log out” and “Change user credentials” options.
 
