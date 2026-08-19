@@ -89,20 +89,20 @@ class HypothesisClientManager extends AnnotationServerManager {
       title: 'Log in required',
       text: chrome.i18n.getMessage('hypothesisLoginWillBeShown'),
       callback: () => {
-        // Prompt hypothesis login form
-        chrome.runtime.sendMessage({ scope: 'hypothesis', cmd: 'userLoginForm' }, (result) => {
-          if (result.error) {
-            if (_.isFunction(callback)) {
-              callback(new Error(result.error))
-            }
-          } else {
+        // Ask background to open the options page (openOptionsPage not available in content scripts)
+        chrome.runtime.sendMessage({ scope: 'extension', cmd: 'openOptionsPage' })
+        // Listen for tokens being stored (login complete) then reload the client
+        const storageListener = (changes, area) => {
+          if (area === 'local' && changes.hypothesisTokens) {
+            chrome.storage.onChanged.removeListener(storageListener)
             this.reloadClient(() => {
               if (_.isFunction(callback)) {
                 callback(null, this.hypothesisToken)
               }
             })
           }
-        })
+        }
+        chrome.storage.onChanged.addListener(storageListener)
       },
       cancelCallback: () => {
         callback(new Error('User don\'t want to log in hypothes.is'))

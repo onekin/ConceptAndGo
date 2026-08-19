@@ -12,11 +12,11 @@
  * introduced a feature or made a backwards-incompatible release.
  */
 
-import gulp from 'gulp'
-import git from 'gulp-git'
-import bump from 'gulp-bump'
-import filter from 'gulp-filter'
-import tagVersion from 'gulp-tag-version'
+const gulp = require('gulp')
+const git = require('gulp-git')
+const bump = require('gulp-bump')
+const filter = require('gulp-filter')
+const tagVersion = require('gulp-tag-version')
 
 function inc (importance) {
   // get all the files to bump version in

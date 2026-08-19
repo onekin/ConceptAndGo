@@ -1,16 +1,16 @@
-import gulp from 'gulp'
-import gulpif from 'gulp-if'
-import log from 'fancy-log'
-import colors from 'ansi-colors'
-import named from 'vinyl-named'
-import webpack from 'webpack'
-import gulpWebpack from 'webpack-stream'
-import plumber from 'gulp-plumber'
-import livereload from 'gulp-livereload'
-import args from './lib/args'
-import 'regenerator-runtime/runtime'
-import 'core-js/stable'
-import ESLintPlugin from 'eslint-webpack-plugin'
+const gulp = require('gulp')
+const gulpif = require('gulp-if')
+const log = require('fancy-log')
+const colors = require('ansi-colors')
+const named = require('vinyl-named')
+const webpack = require('webpack')
+const gulpWebpack = require('webpack-stream')
+const plumber = require('gulp-plumber')
+const livereload = require('gulp-livereload')
+const args = require('./lib/args')
+require('regenerator-runtime/runtime')
+require('core-js/stable')
+const ESLintPlugin = require('eslint-webpack-plugin')
 
 const ENV = args.production ? 'production' : 'development'
 

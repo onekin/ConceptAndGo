@@ -29,6 +29,8 @@ class ContentScriptManager {
               this.reloadContentByGroup()
               // Initialize listener for group change to reload the content
               this.initListenerForGroupChange()
+              // Open sidebar so the user sees it immediately after activation
+              window.abwa.sidebar.openSidebar()
             })
           })
         })

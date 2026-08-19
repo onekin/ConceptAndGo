@@ -23,6 +23,8 @@ class HypothesisManagerOAuth {
     this.tokens = {}
     // Login window
     this.authWindow = null
+    // Hook called after tokens are stored; set by HypothesisBackgroundManager
+    this.onTokensUpdated = null
   }
 
   /**
@@ -48,27 +50,25 @@ class HypothesisManagerOAuth {
   }
 
   refreshHypothesisToken (callback) {
-    // If refresh token exist refresh and return
-    if (_.isObject(this.tokens)) {
-      this.client.refreshToken(this.tokens.refreshToken).catch((err) => {
-        callback(err)
-      }).then((tokens) => {
+    // If refresh token exists, refresh and return
+    if (_.isObject(this.tokens) && this.tokens.refreshToken) {
+      this.client.refreshToken(this.tokens.refreshToken).then((tokens) => {
         // Save refresh token in chrome storage
         this.saveTokensInStorage(tokens)
         this.tokens = tokens
-      })
-    } else {
-      this.authorize((err) => {
-        if (err) {
-          if (_.isFunction(callback)) {
-            callback(err)
-          }
-        } else {
-          if (_.isFunction(callback)) {
-            callback(null, this.tokens)
-          }
+        if (_.isFunction(callback)) {
+          callback(null, tokens)
+        }
+      }).catch((err) => {
+        if (_.isFunction(callback)) {
+          callback(err)
         }
       })
+    } else {
+      // No refresh token available – user must log in again from the options page
+      if (_.isFunction(callback)) {
+        callback(new Error('No refresh token available. Please log in again from the options page.'))
+      }
     }
   }
 
@@ -156,12 +156,19 @@ class HypothesisManagerOAuth {
           } else {
             sendResponse({ tokens: this.tokens })
           }
-        } else if (request.cmd === 'userLoginForm') {
-          this.authorize((err, tokens) => {
+        } else if (request.cmd === 'storeTokens') {
+          // Tokens exchanged by the options page; store them and update in-memory state
+          const tokens = request.data
+          this.tokens = tokens
+          this.saveTokensInStorage(tokens, (err) => {
             if (err) {
-              sendResponse({ error: 'Unable to authorize Hypothesis client' })
+              sendResponse({ error: 'Unable to store tokens' })
+            } else if (_.isFunction(this.onTokensUpdated)) {
+              // Reload the annotation client with the new token before responding,
+              // so the caller can immediately query getUserProfile without a race.
+              this.onTokensUpdated(() => sendResponse({}))
             } else {
-              sendResponse({ token: tokens.accessToken })
+              sendResponse({})
             }
           })
           return true // Async response

@@ -16,7 +16,7 @@
  * @param  {Object} manifest
  * @return {Object}
  */
-export default function applyBrowserPrefixesFor (_vendor) {
+module.exports = function applyBrowserPrefixesFor (_vendor) {
   vendor = _vendor
   return iterator
 };

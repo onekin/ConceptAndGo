@@ -1,6 +1,6 @@
-import gulp from 'gulp'
-import del from 'del'
-import args from './lib/args'
+const gulp = require('gulp')
+const del = require('del')
+const args = require('./lib/args')
 
 gulp.task('clean', () => {
   return del(`dist/${args.vendor}/**/*`)

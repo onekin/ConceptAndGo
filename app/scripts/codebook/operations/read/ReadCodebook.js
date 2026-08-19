@@ -185,7 +185,12 @@ class ReadCodebook {
     if (group) {
       groupUrl = group.links ? group.links.html : group.url
     } else {
-      groupUrl = window.abwa.groupSelector.currentGroup.links.html
+      const cg = window.abwa.groupSelector.currentGroup
+      if (!cg) {
+        if (_.isFunction(callback)) callback(new Error('No group selected'))
+        return
+      }
+      groupUrl = (cg.links && cg.links.html) ? cg.links.html : cg.url
     }
     window.abwa.annotationServerManager.client.searchAnnotations({
       url: groupUrl,

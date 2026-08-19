@@ -1,20 +1,17 @@
 class Popup {
-  constructor () {
+  constructor (tabId) {
     this.activated = false
+    this.tabId = tabId
   }
 
   deactivate () {
     this.activated = false
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      chrome.tabs.sendMessage(tabs[0].id, { action: 'destroyContentScript' })
-    })
+    chrome.tabs.sendMessage(this.tabId, { action: 'destroyContentScript' })
   }
 
   activate () {
     this.activated = true
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      chrome.tabs.sendMessage(tabs[0].id, { action: 'initContentScript' })
-    })
+    chrome.tabs.sendMessage(this.tabId, { action: 'initContentScript' })
   }
 }
 

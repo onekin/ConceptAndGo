@@ -1,7 +1,7 @@
-import gulp from 'gulp'
-import gulpif from 'gulp-if'
-import livereload from 'gulp-livereload'
-import args from './lib/args'
+const gulp = require('gulp')
+const gulpif = require('gulp-if')
+const livereload = require('gulp-livereload')
+const args = require('./lib/args')
 
 gulp.task('fonts', () => {
   return gulp.src('app/fonts/**/*.{woff,woff2,ttf,eot,svg}')

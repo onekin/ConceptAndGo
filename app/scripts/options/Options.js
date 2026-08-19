@@ -1,6 +1,15 @@
 import Alerts from '../utils/Alerts'
 import _ from 'lodash'
 import $ from 'jquery'
+import OAuthClient from '../utils/oauth-client'
+
+const hypothesisSettings = {
+  // eslint-disable-next-line
+  clientId: '048d4244-8515-11ec-b52d-ef322190ff83',
+  authorizationEndpoint: 'https://hypothes.is/oauth/authorize',
+  revokeEndpoint: 'https://hypothes.is/oauth/revoke',
+  tokenEndpoint: 'https://hypothes.is/api/token'
+}
 
 class Options {
   init () {
@@ -40,9 +49,11 @@ class Options {
     chrome.runtime.sendMessage({ scope: 'hypothesis', cmd: 'getToken' }, ({ token }) => {
       if (_.isString(token)) {
         this.hypothesisToken = token
-        chrome.runtime.sendMessage({ scope: 'hypothesisClient', cmd: 'getUserProfile' }, (profile) => {
+        fetch('https://hypothes.is/api/profile', {
+          headers: { authorization: 'Bearer ' + token }
+        }).then(r => r.json()).then(profile => {
           document.querySelector('#hypothesisLoggedInUsername').innerText = profile.userid
-        })
+        }).catch(() => {})
         this.hypothesisConfigurationContainerElement.querySelector('#hypothesisLoginContainer').setAttribute('aria-hidden', 'true')
       } else {
         this.hypothesisConfigurationContainerElement.querySelector('#hypothesisLoggedInContainer').setAttribute('aria-hidden', 'true')
@@ -90,18 +101,35 @@ class Options {
 
   createHypothesisLoginEventHandler () {
     return () => {
-      chrome.runtime.sendMessage({
-        scope: 'hypothesis',
-        cmd: 'userLoginForm'
-      }, ({ token }) => {
-        this.hypothesisToken = token
-        setTimeout(() => {
-          chrome.runtime.sendMessage({ scope: 'hypothesisClient', cmd: 'getUserProfile' }, (profile) => {
-            document.querySelector('#hypothesisLoggedInUsername').innerText = profile.userid
-            document.querySelector('#hypothesisLoggedInContainer').setAttribute('aria-hidden', 'false')
-          })
-          document.querySelector('#hypothesisLoginContainer').setAttribute('aria-hidden', 'true')
-        }, 1000) // Time before sending request, as background hypothes.is client refresh every second
+      const client = new OAuthClient(hypothesisSettings)
+      const authWindow = OAuthClient.openAuthPopupWindow(window)
+      client.authorize(window, authWindow).then(code => {
+        return client.exchangeAuthCode(code)
+      }).then(tokens => {
+        this.hypothesisToken = tokens.accessToken
+        return new Promise((resolve, reject) => {
+          chrome.runtime.sendMessage(
+            { scope: 'hypothesis', cmd: 'storeTokens', data: tokens },
+            (response) => {
+              if (chrome.runtime.lastError || (response && response.error)) {
+                reject(new Error((response && response.error) || chrome.runtime.lastError.message))
+              } else {
+                resolve()
+              }
+            }
+          )
+        })
+      }).then(() => {
+        return fetch('https://hypothes.is/api/profile', {
+          headers: { authorization: 'Bearer ' + this.hypothesisToken }
+        }).then(r => r.json())
+      }).then(profile => {
+        document.querySelector('#hypothesisLoggedInUsername').innerText = profile.userid
+        document.querySelector('#hypothesisLoggedInContainer').setAttribute('aria-hidden', 'false')
+        document.querySelector('#hypothesisLoginContainer').setAttribute('aria-hidden', 'true')
+      }).catch(err => {
+        console.error('Hypothesis login failed:', err)
+        Alerts.infoAlert({ title: 'Login failed', text: 'Unable to log in to Hypothes.is. Please try again.' })
       })
     }
   }

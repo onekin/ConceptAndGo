@@ -32,7 +32,7 @@ if (_.isEmpty(window.abwa)) {
   } else {
     // Check if button is activated for this tab
     chrome.runtime.sendMessage({ scope: 'extension', cmd: 'amIActivated' }, (response) => {
-      if (response.activated) {
+      if (response && response.activated) {
         if (_.isEmpty(window.abwa.contentScriptManager)) {
           window.abwa.contentScriptManager = new ContentScriptManager()
           if (window.abwa.contentScriptManager.status === ContentScriptManager.status.notInitialized) {

@@ -1,12 +1,12 @@
-import gulp from 'gulp'
-import gulpif from 'gulp-if'
-import log from 'fancy-log'
-import colors from 'ansi-colors'
-import livereload from 'gulp-livereload'
-import jsonTransform from 'gulp-json-transform'
-import plumber from 'gulp-plumber'
-import applyBrowserPrefixesFor from './lib/applyBrowserPrefixesFor'
-import args from './lib/args'
+const gulp = require('gulp')
+const gulpif = require('gulp-if')
+const log = require('fancy-log')
+const colors = require('ansi-colors')
+const livereload = require('gulp-livereload')
+const jsonTransform = require('gulp-json-transform')
+const plumber = require('gulp-plumber')
+const applyBrowserPrefixesFor = require('./lib/applyBrowserPrefixesFor')
+const args = require('./lib/args')
 
 let manifest = () => {
   return gulp.src('app/manifest.json')

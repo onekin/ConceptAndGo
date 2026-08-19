@@ -1,4 +1,4 @@
-import gulp from 'gulp'
+const gulp = require('gulp')
 require('./scripts')
 require('./manifest')
 require('./styles')

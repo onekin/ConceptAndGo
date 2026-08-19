@@ -1,8 +1,8 @@
-import gulp from 'gulp'
-import gulpif from 'gulp-if'
-import imagemin from 'gulp-imagemin'
-import livereload from 'gulp-livereload'
-import args from './lib/args'
+const gulp = require('gulp')
+const gulpif = require('gulp-if')
+const imagemin = require('gulp-imagemin')
+const livereload = require('gulp-livereload')
+const args = require('./lib/args')
 
 gulp.task('images', () => {
   return gulp.src('app/images/**/*')

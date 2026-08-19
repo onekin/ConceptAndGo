@@ -1,4 +1,4 @@
-import yargs from 'yargs'
+const yargs = require('yargs')
 
 const args = yargs
 
@@ -39,4 +39,4 @@ if (typeof args.sourcemaps === 'undefined') {
   args.sourcemaps = !args.production
 }
 
-export default args
+module.exports = args

@@ -38,7 +38,14 @@ class GroupSelector {
         // Retrieve user profile (for further uses in other functionalities of the tool)
         this.retrieveUserProfile(() => {
           // Define current group
-          this.defineCurrentGroup(() => {
+          this.defineCurrentGroup((err) => {
+            if (err) {
+              console.debug('Error defining current group: ' + err.message)
+              if (_.isFunction(callback)) {
+                callback(err)
+              }
+              return
+            }
             this.reloadGroupsContainer()
             console.debug('Initialized group selector')
             if (_.isFunction(callback)) {
@@ -160,16 +167,15 @@ class GroupSelector {
           // Open the sidebar to notify user that needs to log in
           window.abwa.sidebar.openSidebar()
           document.getElementById('hypothesisLoginButton').addEventListener('click', () => {
-            chrome.runtime.sendMessage({ scope: 'hypothesis', cmd: 'userLoginForm' }, () => {
-              if (result.error) {
-                if (_.isFunction(callback)) {
-                  callback(new Error(result.error))
-                }
-              } else {
-                console.debug('Logged in. Reloading...')
+            // Ask background to open options page (openOptionsPage not available in content scripts)
+            chrome.runtime.sendMessage({ scope: 'extension', cmd: 'openOptionsPage' })
+            const storageListener = (changes, area) => {
+              if (area === 'local' && changes.hypothesisTokens) {
+                chrome.storage.onChanged.removeListener(storageListener)
                 window.location.reload()
               }
-            })
+            }
+            chrome.storage.onChanged.addListener(storageListener)
           })
           if (LanguageUtils.isInstanceOf(window.abwa.annotationServerManager, HypothesisClientManager)) {
             // Show login form for Hypothes.is in sidebar
@@ -199,6 +205,10 @@ class GroupSelector {
   }
 
   renderGroupsContainer () {
+    if (!this.currentGroup) {
+      console.debug('renderGroupsContainer: currentGroup is null, skipping render')
+      return
+    }
     const tags = ['motivation:defining']
     tags.push('oa:guide')
     const currentGroupNameElement = document.querySelector('#groupSelectorName')
@@ -241,6 +251,7 @@ class GroupSelector {
         const groupSelectorItemTemplate = document.querySelector('#groupSelectorItem')
         for (let i = 0; i < this.groups.length; i++) {
           const group = this.groups[i]
+          if (!group) continue // skip null/undefined entries
           const groupSelectorItem = $(groupSelectorItemTemplate.content.firstElementChild).clone().get(0)
           // Container
           groupsContainer.appendChild(groupSelectorItem)

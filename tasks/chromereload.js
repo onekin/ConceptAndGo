@@ -1,8 +1,8 @@
-import gulp from 'gulp'
-import log from 'fancy-log'
-import colors from 'ansi-colors'
-import livereload from 'gulp-livereload'
-import args from './lib/args'
+const gulp = require('gulp')
+const log = require('fancy-log')
+const colors = require('ansi-colors')
+const livereload = require('gulp-livereload')
+const args = require('./lib/args')
 
 // In order to make chromereload work you'll need to include
 // the following line in your `scipts/background.js` file.

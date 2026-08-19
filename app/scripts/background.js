@@ -1,3 +1,4 @@
+import './background/patchAxios'
 import Popup from './popup/Popup'
 import HypothesisBackgroundManager from './background/hypothesis/HypothesisBackgroundManager'
 // import TargetManager from './background/TargetManager'
@@ -39,7 +40,7 @@ class Background {
                 this.tabs[tab.id].activate()
               }
             } else {
-              this.tabs[tab.id] = new Popup()
+              this.tabs[tab.id] = new Popup(tab.id)
               this.tabs[tab.id].activate()
             }
           }
@@ -52,7 +53,7 @@ class Background {
             this.tabs[tab.id].activate()
           }
         } else {
-          this.tabs[tab.id] = new Popup()
+          this.tabs[tab.id] = new Popup(tab.id)
           this.tabs[tab.id].activate()
         }
       }
@@ -64,7 +65,7 @@ class Background {
           this.tabs[tabId].activate()
         }
       } else {
-        this.tabs[tabId] = new Popup()
+        this.tabs[tabId] = new Popup(tabId)
       }
     })
 
@@ -84,11 +85,14 @@ class Background {
           }
           sendResponse(true)
         } else if (request.cmd === 'amIActivated') {
-          if (this.tabs[sender.tab.id].activated) {
+          if (this.tabs[sender.tab.id] && this.tabs[sender.tab.id].activated) {
             sendResponse({ activated: true })
           } else {
             sendResponse({ activated: false })
           }
+        } else if (request.cmd === 'openOptionsPage') {
+          chrome.runtime.openOptionsPage()
+          sendResponse({})
         }
       }
     })

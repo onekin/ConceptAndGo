@@ -1,13 +1,13 @@
-import gulp from 'gulp'
-import gulpif from 'gulp-if'
-import log from 'fancy-log'
-import colors from 'ansi-colors'
-import sourcemaps from 'gulp-sourcemaps'
-import less from 'gulp-less'
-import sass from 'gulp-dart-sass'
-import cleanCSS from 'gulp-clean-css'
-import livereload from 'gulp-livereload'
-import args from './lib/args'
+const gulp = require('gulp')
+const gulpif = require('gulp-if')
+const log = require('fancy-log')
+const colors = require('ansi-colors')
+const sourcemaps = require('gulp-sourcemaps')
+const less = require('gulp-less')
+const sass = require('gulp-dart-sass')
+const cleanCSS = require('gulp-clean-css')
+const livereload = require('gulp-livereload')
+const args = require('./lib/args')
 
 sass.compiler = require('sass')
 
