@@ -24,7 +24,17 @@ class ContentScriptManager {
           window.abwa.annotationBasedInitializer.init(() => {
             const GroupSelector = require('../groupManipulation/GroupSelector').default
             window.abwa.groupSelector = new GroupSelector()
-            window.abwa.groupSelector.init(() => {
+            window.abwa.groupSelector.init((err) => {
+              if (err) {
+                // No group could be selected automatically. Open the sidebar so the
+                // user can pick a group manually; content is loaded on group change.
+                console.debug('Group selector initialization failed: ' + err.message)
+                this.initListenerForGroupChange()
+                window.abwa.groupSelector.reloadGroupsContainer(() => {
+                  window.abwa.sidebar.openSidebar()
+                })
+                return
+              }
               // Reload for first time the content by group
               this.reloadContentByGroup()
               // Initialize listener for group change to reload the content

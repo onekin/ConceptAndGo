@@ -58,7 +58,23 @@ class HypothesisBackgroundManager {
   }
 
   initResponses () {
-    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    chrome.runtime.onMessage.addListener((request, sender, rawSendResponse) => {
+      // Error objects lose their non-enumerable `message` when serialized through
+      // runtime messaging. Wrap sendResponse so error messages survive.
+      const sendResponse = (response) => {
+        if (response && response.error) {
+          const error = response.error
+          if (error instanceof Error) {
+            rawSendResponse({ error: { message: error.message, stack: error.stack } })
+            return
+          }
+          if (_.isObject(error)) {
+            rawSendResponse({ error: { message: error.message || JSON.stringify(error) } })
+            return
+          }
+        }
+        rawSendResponse(response)
+      }
       if (request.scope === 'hypothesisClient') {
         // Wait for annotationServerManager to be ready before handling any API call
         this._ready.then(() => {
@@ -83,6 +99,7 @@ class HypothesisBackgroundManager {
             } else if (request.cmd === 'getListOfGroups') {
               this.annotationServerManager.client.getListOfGroups(request.data, (err, result) => {
                 if (err) {
+                  console.error('Unable to retrieve list of groups from Hypothes.is:', err)
                   sendResponse({ error: err })
                 } else {
                   sendResponse(result)

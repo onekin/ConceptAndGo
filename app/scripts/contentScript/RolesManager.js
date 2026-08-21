@@ -41,7 +41,12 @@ class RolesManager {
         }
       } else {
         if (annotations.length > 0) {
-          const params = jsYaml.load(annotations[0].text)
+          let params = {}
+          try {
+            params = jsYaml.load(annotations[0].text)
+          } catch (e) {
+            console.warn('Unable to parse producer annotation text as YAML: ' + e.message)
+          }
           callback(null, params.producerId === window.abwa.groupSelector.user.userid) // Return if current user is producer
         } else {
           if (_.isFunction(callback)) {

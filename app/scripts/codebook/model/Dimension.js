@@ -37,7 +37,12 @@ class Dimension {
     })
     if (_.isString(dimensionTag)) {
       const name = dimensionTag.replace(Config.namespace + ':dimension:', '')
-      const config = jsYaml.load(annotation.text)
+      let config = null
+      try {
+        config = jsYaml.load(annotation.text)
+      } catch (e) {
+        console.warn('Unable to parse dimension annotation text as YAML: ' + e.message)
+      }
       if (_.isObject(config)) {
         const description = config.description
         const color = config.color

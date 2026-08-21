@@ -11,6 +11,11 @@ import CmapCloudClient from './importExport/cmap/cmapCloud/CmapCloudClient'
 import ColorUtils from './utils/ColorUtils'
 let noteOpened = false
 
+const openOptionsPage = function () {
+  // window.open may be blocked by the popup blocker; ask the background to open the options page instead
+  chrome.runtime.sendMessage({ scope: 'extension', cmd: 'openOptionsPage', data: { hash: '#cmapCloudConfiguration' } })
+}
+
 const kudeatzaileakHasieratu = function () {
   const checkDOM = setInterval(function () {
     let noteOpened = false
@@ -20,12 +25,12 @@ const kudeatzaileakHasieratu = function () {
     window.cag.annotationServerManager = new HypothesisClientManager()
     window.cag.annotationServerManager.init((err) => {
       if (err) {
-        window.open(chrome.runtime.getURL('pages/options.html#cmapCloudConfiguration'))
+        openOptionsPage()
       } else {
         window.cag.annotationServerManager.isLoggedIn((err, result) => {
           if (err || !result) {
             if (LanguageUtils.isInstanceOf(window.cag.annotationServerManager, HypothesisClientManager)) {
-              window.open(chrome.runtime.getURL('pages/options.html#cmapCloudConfiguration'))
+              openOptionsPage()
             }
           } else {
             const listElement = document.querySelector('li > a#create-url-res')
@@ -40,7 +45,7 @@ const kudeatzaileakHasieratu = function () {
               aElement.style.fontWeight = 'normal'
               aElement.addEventListener('click', () => {
                 chrome.runtime.sendMessage({ scope: 'cmapCloud', cmd: 'getUserData' }, (response) => {
-                  if (response.data) {
+                  if (response && response.data) {
                     const data = response.data
                     if (data.userData.user && data.userData.password && data.userData.uid) {
                       const cmapCloudClient = new CmapCloudClient(data.userData.user, data.userData.password, data.userData.uid)
@@ -48,23 +53,17 @@ const kudeatzaileakHasieratu = function () {
                       // createTask()
                       createWindow(cmapCloudClient, data.userData)
                     } else {
-                      let callback = () => {
-                        window.open(chrome.runtime.getURL('pages/options.html#cmapCloudConfiguration'))
-                      }
+                      openOptionsPage()
                       Alerts.infoAlert({
                         text: 'Please, provide us your Cmap Cloud login credentials in the configuration page of the Web extension.',
-                        title: 'We need your Cmap Cloud credentials',
-                        callback: callback()
+                        title: 'We need your Cmap Cloud credentials'
                       })
                     }
                   } else {
-                    let callback = () => {
-                      window.open(chrome.runtime.getURL('pages/options.html#cmapCloudConfiguration'))
-                    }
+                    openOptionsPage()
                     Alerts.infoAlert({
                       text: 'Please, provide us your Cmap Cloud login credentials in the configuration page of the Web extension.',
-                      title: 'We need your Cmap Cloud credentials',
-                      callback: callback()
+                      title: 'We need your Cmap Cloud credentials'
                     })
                   }
                 })
@@ -123,7 +122,7 @@ const kudeatzaileakHasieratu = function () {
                           aElement.innerText = 'New annotation-driven Cmap'
                           aElement.addEventListener('click', () => {
                             chrome.runtime.sendMessage({ scope: 'cmapCloud', cmd: 'getUserData' }, (response) => {
-                              if (response.data) {
+                              if (response && response.data) {
                                 const data = response.data
                                 if (data.userData.user && data.userData.password && data.userData.uid) {
                                   const cmapCloudClient = new CmapCloudClient(data.userData.user, data.userData.password, data.userData.uid)
@@ -131,23 +130,17 @@ const kudeatzaileakHasieratu = function () {
                                   // createTask()
                                   createWindow(cmapCloudClient, data.userData)
                                 } else {
-                                  let callback = () => {
-                                    window.open(chrome.runtime.getURL('pages/options.html#cmapCloudConfiguration'))
-                                  }
+                                  openOptionsPage()
                                   Alerts.infoAlert({
                                     text: 'Please, provide us your Cmap Cloud login credentials in the configuration page of the Web extension.',
-                                    title: 'We need your Cmap Cloud credentials',
-                                    callback: callback()
+                                    title: 'We need your Cmap Cloud credentials'
                                   })
                                 }
                               } else {
-                                let callback = () => {
-                                  window.open(chrome.runtime.getURL('pages/options.html#cmapCloudConfiguration'))
-                                }
+                                openOptionsPage()
                                 Alerts.infoAlert({
                                   text: 'Please, provide us your Cmap Cloud login credentials in the configuration page of the Web extension.',
-                                  title: 'We need your Cmap Cloud credentials',
-                                  callback: callback()
+                                  title: 'We need your Cmap Cloud credentials'
                                 })
                               }
                             })
@@ -213,7 +206,8 @@ const createTask = function (groupName, focusQuestion, dimensionString, userData
           urlList.forEach(element => element.trim)
         }
         const dimensionsList = dimensionString.split(';')
-        dimensionsList.forEach(element => element.trim)
+          .map(element => element.trim())
+          .filter(Boolean)
         groupName = LanguageUtils.normalizeString(groupName)
         let tempCodebook
         if (urlList) {

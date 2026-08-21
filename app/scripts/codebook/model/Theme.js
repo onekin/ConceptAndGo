@@ -87,7 +87,12 @@ class Theme {
         dimension = ''
       }
       const name = themeTag.replace(Config.namespace + ':' + Config.tags.grouped.group + ':', '')
-      const config = jsYaml.load(annotation.text)
+      let config = null
+      try {
+        config = jsYaml.load(annotation.text)
+      } catch (e) {
+        console.warn('Unable to parse theme annotation text as YAML: ' + e.message)
+      }
       if (_.isObject(config)) {
         const description = config.description
         const id = annotation.id

@@ -8,10 +8,23 @@ class HypothesisClientInterface {
       cmd: cmd,
       data: data
     }, (result) => {
+      if (chrome.runtime.lastError) {
+        console.error('hypothesisClient ' + cmd + ' failed: ' + chrome.runtime.lastError.message)
+        if (_.isFunction(callback)) {
+          callback(new Error(chrome.runtime.lastError.message))
+        }
+        return
+      }
       if (_.has(result, 'error')) {
-        callback(result.error)
+        const message = (result.error && result.error.message) ? result.error.message : 'Unknown error'
+        console.error('hypothesisClient ' + cmd + ' error: ' + message)
+        if (_.isFunction(callback)) {
+          callback(new Error(message))
+        }
       } else {
-        callback(null, result)
+        if (_.isFunction(callback)) {
+          callback(null, result)
+        }
       }
     })
   }

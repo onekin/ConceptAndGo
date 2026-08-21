@@ -116,6 +116,9 @@ class GroupSelector {
                     })
                   }
                   showForm()
+                  if (_.isFunction(callback)) {
+                    callback(new Error('No annotation group available'))
+                  }
                 }
               } else { // If group was found in extension annotation server
                 if (_.isFunction(callback)) {
@@ -141,6 +144,16 @@ class GroupSelector {
         } else {
           // Set current group
           this.currentGroup = _.find(groups, (group) => { return group.id === annotationGroupId })
+          if (!_.isObject(this.currentGroup)) {
+            // The annotation's group is not available for the current user; fall back to the first group
+            this.currentGroup = _.first(groups)
+          }
+          if (!_.isObject(this.currentGroup)) {
+            if (_.isFunction(callback)) {
+              callback(new Error('Unable to select annotation group'))
+            }
+            return
+          }
           // Save to chrome annotation server current group
           ChromeStorage.setData(this.selectedGroupNamespace, { data: JSON.stringify(this.currentGroup) }, ChromeStorage.local)
           if (_.isFunction(callback)) {

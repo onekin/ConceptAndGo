@@ -43,8 +43,7 @@ class CmapCloudBackgroundManager {
               if (err) {
                 sendResponse({ err: err })
               } else {
-                const folderInfoXML = new XMLSerializer().serializeToString(folderInfo)
-                sendResponse({ info: folderInfoXML })
+                sendResponse({ info: folderInfo })
               }
             })
           }
@@ -55,7 +54,6 @@ class CmapCloudBackgroundManager {
               if (err) {
                 sendResponse({ err: err })
               } else {
-                cxlFile = new XMLSerializer().serializeToString(cxlFile)
                 sendResponse({ info: cxlFile })
               }
             })
@@ -67,8 +65,7 @@ class CmapCloudBackgroundManager {
               if (err) {
                 sendResponse({ err: err })
               } else {
-                const result = new XMLSerializer().serializeToString(response)
-                sendResponse({ info: result })
+                sendResponse({ info: response })
               }
             })
           }
@@ -89,6 +86,8 @@ class CmapCloudBackgroundManager {
       // Login request
       const loginResponse = await fetch('https://cmapcloud.ihmc.us/j_spring_security_check', {
         method: 'POST',
+        credentials: 'include',
+        redirect: 'follow',
         headers: {
           Connection: 'keep-alive',
           'Cache-Control': 'max-age=0',
@@ -109,16 +108,13 @@ class CmapCloudBackgroundManager {
 
       // Check if the login request was successful
       const loginText = await loginResponse.text()
-      const parser = new DOMParser()
-      const docPreferences = parser.parseFromString(loginText, 'text/html')
-      const mapRepositoryElement = docPreferences.querySelector('a[href="/cmaps/myCmaps.html"]')
 
-      if (!mapRepositoryElement) {
+      if (!loginText.includes('/cmaps/myCmaps.html')) {
         return callback(new Error('Unable to do the login'))
       }
 
       // Fetch the UID from the /cmaps/myCmaps.html page
-      const myCmapsResponse = await fetch('https://cmapcloud.ihmc.us/cmaps/myCmaps.html')
+      const myCmapsResponse = await fetch('https://cmapcloud.ihmc.us/cmaps/myCmaps.html', { credentials: 'include' })
       const myCmapsText = await myCmapsResponse.text()
 
       // Extract the UID using regex
@@ -139,7 +135,7 @@ class CmapCloudBackgroundManager {
     const url = `https://cmapscloud.ihmc.us:443/resources/id=uid=${uid},ou=users,dc=cmapcloud,dc=ihmc,dc=us?cmd=get.compact.resmeta.list`
 
     // Use fetch to make the request
-    fetch(url)
+    fetch(url, { credentials: 'include' })
       .then((response) => {
         if (!response.ok) {
           throw new Error('Network response was not ok')
@@ -164,7 +160,7 @@ class CmapCloudBackgroundManager {
     // Construct the URL
     const url = `https://cmapscloud.ihmc.us:443/resources/rid=${id}`
     // Use fetch to make the request
-    fetch(url)
+    fetch(url, { credentials: 'include' })
       .then((response) => {
         if (!response.ok) {
           throw new Error('Network response was not ok')
@@ -190,7 +186,7 @@ class CmapCloudBackgroundManager {
     const url = `https://cmapscloud.ihmc.us:443/resources/rid=${folderId}/?cmd=get.resmeta.list`
 
     // Use fetch to make the request
-    fetch(url)
+    fetch(url, { credentials: 'include' })
       .then((response) => {
         if (!response.ok) {
           throw new Error('Network response was not ok')

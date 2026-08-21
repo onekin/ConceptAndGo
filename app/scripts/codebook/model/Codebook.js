@@ -72,7 +72,15 @@ class Codebook {
   static fromAnnotation (annotation, callback) {
     this.setAnnotationServer(null, (annotationServer) => {
       const tag = AnnotationUtils.getTagFromAnnotation(annotation, 'focusQuestion')
-      const config = jsYaml.load(annotation.text)
+      let config = {}
+      try {
+        config = jsYaml.load(annotation.text)
+      } catch (e) {
+        console.warn('Unable to parse codebook annotation text as YAML: ' + e.message)
+      }
+      if (!_.isObject(config)) {
+        config = {}
+      }
       const urls = config.urls
       let annotationGuideOpts
       if (tag) {
@@ -110,22 +118,36 @@ class Codebook {
         for (let i = 0; i < themeAnnotations.length; i++) {
           const theme = Theme.fromAnnotation(themeAnnotations[i], guide)
           if (LanguageUtils.isInstanceOf(theme, Theme)) {
-            guide.themes.push(theme)
+            // Skip duplicate themes (e.g. created twice due to API retries)
+            const existingTheme = _.find(guide.themes, (currentTheme) => {
+              return currentTheme.name === theme.name
+            })
+            if (!existingTheme) {
+              guide.themes.push(theme)
+            }
           }
         }
         for (let i = 0; i < dimensionsAnnotations.length; i++) {
           const dimension = Dimension.fromAnnotation(dimensionsAnnotations[i], guide)
+          if (!LanguageUtils.isInstanceOf(dimension, Dimension)) {
+            continue
+          }
+          // Skip duplicate dimensions (e.g. created twice due to API retries)
+          const existingDimension = _.find(guide.dimensions, (currentDimension) => {
+            return currentDimension.name === dimension.name
+          })
+          if (existingDimension) {
+            continue
+          }
           const themes = guide.themes.filter((theme) => {
             return theme.dimension === dimension.name
           })
           if (themes) {
-            for (let i = 0; i < themes.length; i++) {
-              dimension.addTheme(themes[i])
+            for (let j = 0; j < themes.length; j++) {
+              dimension.addTheme(themes[j])
             }
           }
-          if (LanguageUtils.isInstanceOf(dimension, Dimension)) {
-            guide.dimensions.push(dimension)
-          }
+          guide.dimensions.push(dimension)
         }
         if (_.isFunction(callback)) {
           callback(null, guide)
@@ -179,9 +201,15 @@ class Codebook {
     } else {
       annotationGuide = new Codebook({ name: name, focusQuestion: topic })
     }
-    if (dimensionsList.length > 0) {
-      for (let i = 0; i < dimensionsList.length; i++) {
-        const dimension = new Dimension({ name: dimensionsList[i], annotationGuide })
+    if (dimensionsList && dimensionsList.length > 0) {
+      // Normalize dimension names: trim and remove empties/duplicates
+      const normalizedDimensions = _.uniq(dimensionsList.filter((dimensionName) => {
+        return _.isString(dimensionName) && dimensionName.trim().length > 0
+      }).map((dimensionName) => {
+        return dimensionName.trim()
+      }))
+      for (let i = 0; i < normalizedDimensions.length; i++) {
+        const dimension = new Dimension({ name: normalizedDimensions[i], annotationGuide })
         const color = ColorUtils.getDimensionColor(annotationGuide.dimensions)
         dimension.color = ColorUtils.setAlphaToColor(color, 0.6)
         annotationGuide.dimensions.push(dimension)

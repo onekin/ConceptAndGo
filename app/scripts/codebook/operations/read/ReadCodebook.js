@@ -148,7 +148,11 @@ class ReadCodebook {
     // Retrieve from annotation server highlighter definition
     this.getCodebookDefinition(null, (err, codebookDefinitionAnnotations) => {
       if (err) {
-        Alerts.errorAlert({ text: 'Unable to retrieve annotations from annotation server to initialize highlighter buttons.' }) // TODO i18n
+        // The specific error has already been alerted by getCodebookDefinition;
+        // notify the caller so the initialization chain is not stalled.
+        if (_.isFunction(callback)) {
+          callback()
+        }
       } else {
         const initCodebookPromise = new Promise((resolve, reject) => {
           if (codebookDefinitionAnnotations.length === 0) {
@@ -187,6 +191,7 @@ class ReadCodebook {
     } else {
       const cg = window.abwa.groupSelector.currentGroup
       if (!cg) {
+        Alerts.errorAlert({ text: 'Unable to retrieve annotations from annotation server to initialize highlighter buttons.' }) // TODO i18n
         if (_.isFunction(callback)) callback(new Error('No group selected'))
         return
       }
@@ -198,6 +203,9 @@ class ReadCodebook {
     }, (err, annotations) => {
       if (err) {
         Alerts.errorAlert({ text: 'Unable to construct the highlighter. Please reload webpage and try it again.' })
+        if (_.isFunction(callback)) {
+          callback(new Error('Unable to retrieve codebook definition annotations'))
+        }
       } else {
         // Retrieve tags which has the namespace
         annotations = _.filter(annotations, (annotation) => {

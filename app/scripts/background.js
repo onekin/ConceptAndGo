@@ -2,7 +2,7 @@ import './background/patchAxios'
 import Popup from './popup/Popup'
 import HypothesisBackgroundManager from './background/hypothesis/HypothesisBackgroundManager'
 // import TargetManager from './background/TargetManager'
-// import CmapCloudBackgroundManager from './background/CmapCloudBackgroundManager'
+import CmapCloudBackgroundManager from './background/CmapCloudBackgroundManager'
 import _ from 'lodash'
 
 class Background {
@@ -21,8 +21,8 @@ class Background {
     this.targetManager.init() */
 
     // Initialize cmapCloud manager
-    // this.cmapCloudManager = new CmapCloudBackgroundManager()
-    // this.cmapCloudManager.init()
+    this.cmapCloudManager = new CmapCloudBackgroundManager()
+    this.cmapCloudManager.init()
 
     // Initialize page_action event handler
     chrome.action.onClicked.addListener((tab) => {
@@ -91,7 +91,12 @@ class Background {
             sendResponse({ activated: false })
           }
         } else if (request.cmd === 'openOptionsPage') {
-          chrome.runtime.openOptionsPage()
+          if (request.data && request.data.hash) {
+            // Open the options page in a new tab, keeping the anchor (e.g. #cmapCloudConfiguration)
+            chrome.tabs.create({ url: chrome.runtime.getURL('pages/options.html' + request.data.hash) })
+          } else {
+            chrome.runtime.openOptionsPage()
+          }
           sendResponse({})
         }
       }

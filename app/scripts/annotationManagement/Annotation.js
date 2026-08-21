@@ -140,7 +140,13 @@ class Annotation {
         return null
       })
     }
-    const config = jsYaml.load(annotationObject.text)
+    let config = null
+    try {
+      config = jsYaml.load(annotationObject.text)
+    } catch (e) {
+      // The annotation text is not valid YAML (e.g. a plain-text note). Ignore it.
+      console.warn('Unable to parse annotation text as YAML: ' + e.message)
+    }
     if (_.isObject(config)) {
       if (config.linkingCXLid) {
         annotation.linkingCXLid = config.linkingCXLid

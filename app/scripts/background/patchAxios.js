@@ -27,7 +27,10 @@ axios.defaults.adapter = (config) => {
     method: (config.method || 'GET').toUpperCase(),
     headers
   }
-  if (config.data !== undefined && config.data !== null) {
+  // fetch() throws for GET/HEAD requests with a body (XHR silently ignored it),
+  // so only attach the body for methods that support it.
+  if (config.data !== undefined && config.data !== null &&
+      fetchConfig.method !== 'GET' && fetchConfig.method !== 'HEAD') {
     fetchConfig.body = config.data
   }
 
@@ -48,8 +51,10 @@ axios.defaults.adapter = (config) => {
         return res
       }
       // Reject with an Axios-compatible error shape
-      // eslint-disable-next-line prefer-promise-reject-errors
-      return Promise.reject({ response: res })
+      const error = new Error('Request failed with status code ' + response.status)
+      error.config = config
+      error.response = res
+      return Promise.reject(error)
     })
   )
 }

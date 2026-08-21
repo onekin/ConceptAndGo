@@ -50,20 +50,30 @@ class HypothesisManagerOAuth {
   }
 
   refreshHypothesisToken (callback) {
+    // Prevent concurrent refreshes (the background reloads the client every second)
+    if (this.refreshing) {
+      this.refreshing.then(
+        (tokens) => { if (_.isFunction(callback)) callback(null, tokens) },
+        (err) => { if (_.isFunction(callback)) callback(err) }
+      )
+      return
+    }
     // If refresh token exists, refresh and return
     if (_.isObject(this.tokens) && this.tokens.refreshToken) {
-      this.client.refreshToken(this.tokens.refreshToken).then((tokens) => {
+      this.refreshing = this.client.refreshToken(this.tokens.refreshToken).then((tokens) => {
         // Save refresh token in chrome storage
         this.saveTokensInStorage(tokens)
         this.tokens = tokens
-        if (_.isFunction(callback)) {
-          callback(null, tokens)
-        }
+        this.refreshing = null
+        return tokens
       }).catch((err) => {
-        if (_.isFunction(callback)) {
-          callback(err)
-        }
+        this.refreshing = null
+        throw err
       })
+      this.refreshing.then(
+        (tokens) => { if (_.isFunction(callback)) callback(null, tokens) },
+        (err) => { if (_.isFunction(callback)) callback(err) }
+      )
     } else {
       // No refresh token available – user must log in again from the options page
       if (_.isFunction(callback)) {
@@ -222,7 +232,7 @@ class HypothesisManagerOAuth {
   }
 
   checkTokenIsExpired (callback) {
-    if (this.tokens) {
+    if (this.tokens && _.isString(this.tokens.accessToken)) {
       // Before X minutes to expire the token it is treated as expired to refresh again
       return this.tokens.expiresAt - 1000 * 60 * minutesBeforeToTreatTokenAsExpired < Date.now()
     } else {
