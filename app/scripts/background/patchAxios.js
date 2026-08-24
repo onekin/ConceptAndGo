@@ -27,6 +27,21 @@ axios.defaults.adapter = (config) => {
     method: (config.method || 'GET').toUpperCase(),
     headers
   }
+  // Serialize query params into the URL. The axios XHR adapter does this
+  // automatically; the fetch adapter must do it manually. The hypothesis
+  // client passes search filters (group, url, tags, order, limit...) here,
+  // so without this step every search silently became an unfiltered global
+  // search.
+  let url = config.url
+  if (config.params && typeof config.params === 'object') {
+    const queryString = Object.keys(config.params)
+      .filter((key) => config.params[key] !== undefined && config.params[key] !== null)
+      .map((key) => encodeURIComponent(key) + '=' + encodeURIComponent(config.params[key]))
+      .join('&')
+    if (queryString) {
+      url += (url.indexOf('?') !== -1 ? '&' : '?') + queryString
+    }
+  }
   // fetch() throws for GET/HEAD requests with a body (XHR silently ignored it),
   // so only attach the body for methods that support it.
   if (config.data !== undefined && config.data !== null &&
@@ -34,7 +49,7 @@ axios.defaults.adapter = (config) => {
     fetchConfig.body = config.data
   }
 
-  return fetch(config.url, fetchConfig).then(response =>
+  return fetch(url, fetchConfig).then(response =>
     response.text().then(text => {
       let data = text
       try { data = JSON.parse(text) } catch (_) {}

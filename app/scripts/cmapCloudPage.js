@@ -175,6 +175,11 @@ const kudeatzaileakHasieratu = function () {
                     showFeedbackNote(targetNode)
                     changeNoteOpenedValue()
                   }
+                } if (mutation.type === 'attributes' && mutation.attributeName === 'class' && mutation.target &&
+                  mutation.target.classList && mutation.target.classList.contains('cmap-tab') &&
+                  mutation.target.classList.contains('active')) {
+                  // A map tab has been opened; load its annotations so the Feedback feature has them available
+                  loadAnnotations()
                 }
               }
             }
@@ -304,25 +309,23 @@ const createWindow = function (cmapCloudClient, userData) {
 }
 
 const getURLFromSelectedAnnotation = function (selectedAnnotation) {
-  console.log(window.cag.annotations)
   const id = selectedAnnotation.slice(-22)
-  console.log(id)
   let url
-  if (window.cag.annotations.length > 0) {
+  if (window.cag.annotations && window.cag.annotations.length > 0) {
     const annotation = window.cag.annotations.find((anno) => {
       return anno.id === id
     })
-    url = annotation.target[0].source + '#' + Config.urlParamName + ':' + annotation.id
+    if (annotation && annotation.target && annotation.target[0] && annotation.target[0].source) {
+      url = annotation.target[0].source + '#' + Config.urlParamName + ':' + annotation.id
+    }
   }
   return url
 }
 
 const getTextFromSelectedAnnotation = function (selectedAnnotation) {
   let text
-  console.log(window.cag.annotations)
   const id = selectedAnnotation.slice(-22)
-  console.log(id)
-  if (window.cag.annotations.length > 0) {
+  if (window.cag.annotations && window.cag.annotations.length > 0) {
     const annotation = window.cag.annotations.find((anno) => {
       return anno.id === id
     })
@@ -365,10 +368,13 @@ const addToolTipToAnnotations = function (node) {
   for (let i = 0; i < annotations.length; i++) {
     const id = annotations[i].innerText.slice(-22)
     console.log(id)
-    if (window.cag.annotations.length > 0) {
+    if (window.cag.annotations && window.cag.annotations.length > 0) {
       const annotation = window.cag.annotations.find((anno) => {
         return anno.id === id
       })
+      if (!annotation || !annotation.target || !annotation.target[0] || !annotation.target[0].selector) {
+        continue
+      }
       const textQuote = annotation.target[0].selector.find((sel) => {
         return sel.type === 'TextQuoteSelector'
       })
@@ -385,7 +391,7 @@ const addToolTipToAnnotations = function (node) {
   }
 }
 
-const loadAnnotations = function () {
+const loadAnnotations = function (callback) {
   console.log('YOU HAVE OPEN A MAP')
   const list = document.querySelectorAll('.cmap-tab.active')
   if (list.length > 0) {
@@ -399,6 +405,9 @@ const loadAnnotations = function () {
           title: 'Log in required',
           text: 'Annotations not found'
         })
+        if (_.isFunction(callback)) {
+          callback(err)
+        }
       } else {
         const annotations = _.filter(allAnnotations, (annotation) => {
           return !annotation.motivation && annotation.motivation !== 'codebookDevelopment'
@@ -411,13 +420,21 @@ const loadAnnotations = function () {
         Codebook.fromAnnotations(codebookDevelopment, (err, codebook) => {
           if (err) {
             Alerts.errorAlert({ text: 'Error parsing codebook. Error: ' + err.message })
+            if (_.isFunction(callback)) {
+              callback(err)
+            }
           } else {
             console.log(codebook)
             window.cag.codebook = codebook
+            if (_.isFunction(callback)) {
+              callback(null)
+            }
           }
         })
       }
     })
+  } else if (_.isFunction(callback)) {
+    callback(null)
   }
 }
 
@@ -545,27 +562,42 @@ const updateProperties = function (node) {
 
 const showFeedbackNote = function (targetNode) {
   console.log('Visibility attribute changed to Feedback note')
+  if (!targetNode || !targetNode.querySelector) {
+    return
+  }
   const textArea = targetNode.querySelector('textarea.gwt-TextArea')
+  const firstInput = targetNode.querySelectorAll('input.gwt-TextBox')[0]
+  const noteDiv = targetNode.querySelector('div[tabindex="0"]')
+  if (!textArea || !firstInput || !noteDiv) {
+    return
+  }
   textArea.style.width = '206px'
   textArea.style.height = '83px'
-  const firstInput = targetNode.querySelectorAll('input.gwt-TextBox')[0]
   firstInput.style.width = textArea.style.width
   // Change width
-  const noteDiv = targetNode.querySelector('div[tabindex="0"]')
   noteDiv.style.height = '320px'
   noteDiv.style.width = '210px'
   const noteChildDiv = noteDiv.querySelector('div')
-  noteChildDiv.style.overflow = 'visible'
+  if (noteChildDiv) {
+    noteChildDiv.style.overflow = 'visible'
+  }
   // change last img
   const lastImg = targetNode.querySelector('img.gwt-Image')
-  lastImg.style.top = '290px'
-  lastImg.style.left = '200px'
-  lastImg.style.visibility = 'hidden'
+  if (lastImg) {
+    lastImg.style.top = '290px'
+    lastImg.style.left = '200px'
+    lastImg.style.visibility = 'hidden'
+  }
   // change noteButton
   const noteButton = targetNode.querySelector('div.gwt-PushButton')
-  noteButton.style.left = '192px'
+  if (noteButton) {
+    noteButton.style.left = '192px'
+  }
   // restore selectElement
   const selectElement = noteDiv.querySelector('select.selectedNames')
+  if (!selectElement) {
+    return
+  }
   selectElement.style.position = 'absolute'
   selectElement.style.left = '2px'
   let position = firstInput.style.top.replace('px', '')
@@ -574,6 +606,9 @@ const showFeedbackNote = function (targetNode) {
   selectElement.style.width = textArea.style.width
   /// Restore second select
   const selectElementAnnotations = noteDiv.querySelector('select.selectedAnnotations')
+  if (!selectElementAnnotations) {
+    return
+  }
   selectElementAnnotations.style.position = 'relative'
   selectElementAnnotations.style.left = '2px'
   let positionSelectElementConcepts = selectElement.style.top.replace('px', '')
@@ -582,12 +617,18 @@ const showFeedbackNote = function (targetNode) {
   selectElementAnnotations.style.width = selectElement.style.width
   // Add button
   const addButton = noteDiv.querySelector('button.addButton')
+  if (!addButton) {
+    return
+  }
   addButton.style.position = 'relative'
   addButton.style.left = '2px'
   addButton.style.top = selectElementAnnotations.style.top
   addButton.style.width = selectElementAnnotations.style.width
   // restore annotation Div
   const annotationDiv = targetNode.querySelector('div.annotationDiv')
+  if (!annotationDiv) {
+    return
+  }
   annotationDiv.style.position = 'relative'
   let positionAddButton = addButton.style.top.replace('px', '')
   positionAddButton = parseInt(positionAddButton) + 5
@@ -596,20 +637,37 @@ const showFeedbackNote = function (targetNode) {
 }
 
 const showFeedbackNoteFirstTime = function (node) {
+  if (!node || !node.querySelector) {
+    return
+  }
   const noteLabel = node.querySelectorAll('.gwt-Label')[0]
+  if (!noteLabel) {
+    return
+  }
   noteLabel.innerText = 'Feedback'
   const noteButton = node.querySelector('div.gwt-PushButton')
-  noteButton.addEventListener('click', function () {
-    // This function will be executed when the div is clicked
-    console.log('Close annotation')
-  })
+  if (noteButton) {
+    noteButton.addEventListener('click', function () {
+      // This function will be executed when the div is clicked
+      console.log('Close annotation')
+    })
+  }
   const textArea = node.querySelector('textarea.gwt-TextArea')
+  if (!textArea) {
+    return
+  }
   textArea.style.width = '206px'
   textArea.style.height = '83px'
   const selectedElements = []
   const firstInput = node.querySelectorAll('input.gwt-TextBox')[0]
+  if (!firstInput) {
+    return
+  }
   firstInput.style.width = textArea.style.width
   const secondInput = node.querySelectorAll('input.gwt-TextBox')[1]
+  if (!secondInput) {
+    return
+  }
   if (!secondInput.value.startsWith('id:')) {
     secondInput.value = 'id:'
   }
@@ -694,9 +752,8 @@ const showFeedbackNoteFirstTime = function (node) {
     const camelized = camelize(selectElement.value)
     if (elem.includes('---' && camelized)) {
       const optionAnnotation = document.createElement('option')
-      const highlightedText = getTextFromSelectedAnnotation(elem)
-      const url = getURLFromSelectedAnnotation(elem)
-      const id = elem.slice(-22)
+      const highlightedText = getTextFromSelectedAnnotation(elem) || ''
+      const url = getURLFromSelectedAnnotation(elem) || ''
       optionAnnotation.value = elem
       optionAnnotation.text = 'TEXT: ' + highlightedText + ' --- FROM:' + url.slice(0, -22).replace('#cag:', '')
       // onchange selectElementAnnotations
@@ -713,10 +770,14 @@ const showFeedbackNoteFirstTime = function (node) {
   addButton.style.top = selectElementAnnotations.style.top
   addButton.style.width = selectElementAnnotations.style.width
   addButton.addEventListener('click', () => {
-    const number = annotationDiv.children.length
-    const newAnchor = document.createElement('a')
     const selectedAnnotation = selectElementAnnotations.value
     const annotationURL = getURLFromSelectedAnnotation(selectedAnnotation)
+    if (!annotationURL) {
+      Alerts.errorAlert({ text: 'Unable to retrieve the annotation URL. Please reload the page and try again.' })
+      return
+    }
+    const number = annotationDiv.children.length
+    const newAnchor = document.createElement('a')
     const id = selectedAnnotation.slice(-22)
     secondInput.value = secondInput.value + id + ';'
     // Set the href attribute
@@ -738,9 +799,8 @@ const showFeedbackNoteFirstTime = function (node) {
         if (elem.includes('->')) {
           if (elem.includes('->' + camelized + '->')) {
             const optionAnnotation = document.createElement('option')
-            const highlightedText = getTextFromSelectedAnnotation(elem)
-            const url = getURLFromSelectedAnnotation(elem)
-            const id = elem.slice(-22)
+            const highlightedText = getTextFromSelectedAnnotation(elem) || ''
+            const url = getURLFromSelectedAnnotation(elem) || ''
             optionAnnotation.value = elem
             optionAnnotation.text = 'TEXT: ' + highlightedText + ' --- FROM:' + url.slice(0, -22).replace('#cag:', '')
             // onchange selectElementAnnotations
@@ -748,9 +808,8 @@ const showFeedbackNoteFirstTime = function (node) {
           }
         } else {
           const optionAnnotation = document.createElement('option')
-          const highlightedText = getTextFromSelectedAnnotation(elem)
-          const url = getURLFromSelectedAnnotation(elem)
-          const id = elem.slice(-22)
+          const highlightedText = getTextFromSelectedAnnotation(elem) || ''
+          const url = getURLFromSelectedAnnotation(elem) || ''
           optionAnnotation.value = elem
           optionAnnotation.text = 'TEXT: ' + highlightedText + ' --- FROM:' + url.slice(0, -22).replace('#cag:', '')
           // onchange selectElementAnnotations
@@ -768,22 +827,34 @@ const showFeedbackNoteFirstTime = function (node) {
   annotationDiv.style.top = addButton.style.top
   annotationDiv.style.width = addButton.style.width
   const savedIDs = secondInput.value.replace('id:', '')
-  if (savedIDs !== '') {
-    const annotationIDs = savedIDs.split(';').filter(Boolean)
-    annotationIDs.forEach(id => {
-      const number = annotationDiv.children.length
-      const newAnchor = document.createElement('a')
-      const annotationURL = getURLFromAnnotationID(id)
-      // Set the href attribute
-      newAnchor.href = annotationURL
-      // Set the inner text or content of the anchor
-      newAnchor.textContent = 'anno' + number + '; '
-      newAnchor.addEventListener('click', () => {
-        window.open(annotationURL)
+  const buildSavedAnnotationLinks = () => {
+    // Reset the container keeping only the label
+    annotationDiv.innerText = 'Annotations: '
+    if (savedIDs !== '') {
+      const annotationIDs = savedIDs.split(';').filter(Boolean)
+      annotationIDs.forEach(id => {
+        const number = annotationDiv.children.length
+        const newAnchor = document.createElement('a')
+        const annotationURL = getURLFromAnnotationID(id)
+        if (!annotationURL) {
+          return
+        }
+        // Set the href attribute
+        newAnchor.href = annotationURL
+        // Set the inner text or content of the anchor
+        newAnchor.textContent = 'anno' + number + '; '
+        newAnchor.addEventListener('click', () => {
+          window.open(annotationURL)
+        })
+        annotationDiv.appendChild(newAnchor)
       })
-      annotationDiv.appendChild(newAnchor)
-    })
+    }
   }
+  buildSavedAnnotationLinks()
+  // Annotations may not be loaded yet; reload the links once they are available
+  loadAnnotations(() => {
+    buildSavedAnnotationLinks()
+  })
   addButton.parentNode.insertBefore(annotationDiv, addButton.nextSibling)
 }
 
@@ -808,11 +879,13 @@ function changeNoteOpenedValue () {
 
 const getURLFromAnnotationID = function (id) {
   let url
-  if (window.cag.annotations.length > 0) {
+  if (window.cag.annotations && window.cag.annotations.length > 0) {
     const annotation = window.cag.annotations.find((anno) => {
       return anno.id === id
     })
-    url = annotation.target[0].source + '#' + Config.urlParamName + ':' + annotation.id
+    if (annotation && annotation.target && annotation.target[0] && annotation.target[0].source) {
+      url = annotation.target[0].source + '#' + Config.urlParamName + ':' + annotation.id
+    }
   }
   return url
 }

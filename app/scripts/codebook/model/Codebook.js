@@ -98,6 +98,7 @@ class Codebook {
 
   static fromAnnotations (annotations, callback) {
     // return Codebook
+    console.log(annotations)
     const guideAnnotation = _.remove(annotations, (annotation) => {
       return _.some(annotation.tags, (tag) => { return tag === Config.namespace + ':guide' })
     })
@@ -106,8 +107,13 @@ class Codebook {
         // TODO Complete the guide from the annotations
         // For the rest of annotations, get themes and codes
         const themeAnnotations = _.remove(annotations, (annotation) => {
+          // Only codebook definition annotations define themes. Classifying
+          // annotations also carry the oa:concept:<name> tag, but they lack the
+          // assignedDimension tag, so they must not be treated as themes.
           return _.some(annotation.tags, (tag) => {
             return tag.includes(Config.namespace + ':' + Config.tags.grouped.group + ':')
+          }) && _.some(annotation.tags, (tag) => {
+            return tag.includes(Config.namespace + ':' + Config.tags.motivation + ':' + 'codebookDevelopment')
           })
         })
         const dimensionsAnnotations = _.remove(annotations, (annotation) => {
@@ -149,6 +155,30 @@ class Codebook {
           }
           guide.dimensions.push(dimension)
         }
+        // Ensure the 'misc' (Parking lot) dimension always exists, so the
+        // sidebar can render it and themes assigned to it have a dimension
+        const existingMiscDimension = _.find(guide.dimensions, (dimension) => {
+          return dimension.isMisc === true
+        })
+        if (!existingMiscDimension) {
+          const miscDimension = new Dimension({ name: 'misc', annotationGuide: guide, isMisc: true })
+          miscDimension.color = ColorUtils.setAlphaToColor(ColorUtils.getMiscColor(), 0.6)
+          guide.dimensions.push(miscDimension)
+        }
+        // Ensure a dimension exists for every dimension assigned to a theme
+        // (e.g. groups whose dimension annotations were never created)
+        guide.themes.forEach((theme) => {
+          if (_.isString(theme.dimension) && theme.dimension !== '' && theme.dimension !== 'undefined') {
+            const dimensionExists = _.find(guide.dimensions, (dimension) => {
+              return dimension.name === theme.dimension
+            })
+            if (!dimensionExists) {
+              const missingDimension = new Dimension({ name: theme.dimension, annotationGuide: guide })
+              missingDimension.color = ColorUtils.setAlphaToColor(ColorUtils.getDimensionColor(guide.dimensions), 0.6)
+              guide.dimensions.push(missingDimension)
+            }
+          }
+        })
         if (_.isFunction(callback)) {
           callback(null, guide)
         }
@@ -191,6 +221,10 @@ class Codebook {
     const annotationGuide = new Codebook({ name: topicName + 'concept map', focusQuestion: topicName })
     const theme = new Theme({ name: topicName, description: 'Topic of the concept map', isTopic: true, annotationGuide })
     annotationGuide.themes.push(theme)
+    // Add the default 'misc' dimension (Parking lot) so new groups always have it
+    const miscDimension = new Dimension({ name: 'misc', annotationGuide, isMisc: true })
+    miscDimension.color = ColorUtils.setAlphaToColor(ColorUtils.getMiscColor(), 0.6)
+    annotationGuide.dimensions.push(miscDimension)
     return annotationGuide
   }
 

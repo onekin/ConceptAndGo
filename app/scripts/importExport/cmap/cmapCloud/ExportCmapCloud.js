@@ -50,6 +50,10 @@ class ExportCmapCloud {
   static exportToExistingFolder (cmapCloudClient, xmlDoc, urlFiles, userData, dimensions, urlString, mappingAnnotation) {
     const urlList = urlString.split(';').filter(Boolean)
     const topic = window.abwa.codebookManager.codebookReader.getTopicTheme()
+    if (!topic) {
+      Alerts.errorAlert({ title: 'Export failed', text: 'Unable to retrieve the topic concept of the current codebook.' })
+      return
+    }
     const elementID = topic.id
     for (let i = 0; i < urlList.length; i++) {
       const direction = urlList[i]
@@ -181,46 +185,40 @@ class ExportCmapCloud {
 
   static referenceURLIntoMap (xmlDoc, urlFiles, folderID) {
     const resourceGroupListElement = xmlDoc.getElementsByTagName('resource-group-list')[0]
-    const resourcesMap = _.chain(urlFiles)
-      .groupBy('parentId')
-      .toPairs()
-      .map(pair => _.zipObject(['parentId', 'urls'], pair))
-      .value()
-    for (let i = 0; i < resourcesMap.length; i++) {
-      const resource = resourcesMap[i]
+    // One resource-group per resource so CmapTools renders each resource
+    // (evidence) on its own line under the parent concept
+    for (let i = 0; i < urlFiles.length; i++) {
+      const url = urlFiles[i]
       const resourceGroupElement = xmlDoc.createElement('resource-group')
       const resourceGroupIdAttribute = document.createAttribute('parent-id')
-      resourceGroupIdAttribute.value = resource.parentId
+      resourceGroupIdAttribute.value = url.parentId
       resourceGroupElement.setAttributeNode(resourceGroupIdAttribute)
       const groupTypeIdAttribute = document.createAttribute('group-type')
       groupTypeIdAttribute.value = 'text-and-image'
       resourceGroupElement.setAttributeNode(groupTypeIdAttribute)
-      for (let j = 0; j < resource.urls.length; j++) {
-        const url = resource.urls[j]
-        const resourceElement = xmlDoc.createElement('resource')
-        const resourceElementLabelAttribute = document.createAttribute('label')
-        resourceElementLabelAttribute.value = url.name
-        resourceElement.setAttributeNode(resourceElementLabelAttribute)
-        const resourceElementNameAttribute = document.createAttribute('resource-name')
-        resourceElementNameAttribute.value = url.name
-        resourceElement.setAttributeNode(resourceElementNameAttribute)
-        const resourceElementURLAttribute = document.createAttribute('resource-url')
-        resourceElementURLAttribute.value = 'https://cmapscloud.ihmc.us:443/id=' + url.id + '/' + url.name + '.url?redirect'
-        resourceElement.setAttributeNode(resourceElementURLAttribute)
-        const resourceElementIdAttribute = document.createAttribute('resource-id')
-        resourceElementIdAttribute.value = url.id
-        resourceElement.setAttributeNode(resourceElementIdAttribute)
-        const resourceFolderIdAttribute = document.createAttribute('resource-folder-id')
-        resourceFolderIdAttribute.value = folderID
-        resourceElement.setAttributeNode(resourceFolderIdAttribute)
-        const resourceServerIdAttribute = document.createAttribute('resource-server-id')
-        resourceServerIdAttribute.value = '1MHZH5RK6-2C8DRLF-1'
-        resourceElement.setAttributeNode(resourceServerIdAttribute)
-        const resourceElementMimetypeAttribute = document.createAttribute('resource-mimetype')
-        resourceElementMimetypeAttribute.value = 'text/x-url'
-        resourceElement.setAttributeNode(resourceElementMimetypeAttribute)
-        resourceGroupElement.appendChild(resourceElement)
-      }
+      const resourceElement = xmlDoc.createElement('resource')
+      const resourceElementLabelAttribute = document.createAttribute('label')
+      resourceElementLabelAttribute.value = url.name
+      resourceElement.setAttributeNode(resourceElementLabelAttribute)
+      const resourceElementNameAttribute = document.createAttribute('resource-name')
+      resourceElementNameAttribute.value = url.name
+      resourceElement.setAttributeNode(resourceElementNameAttribute)
+      const resourceElementURLAttribute = document.createAttribute('resource-url')
+      resourceElementURLAttribute.value = 'https://cmapscloud.ihmc.us:443/id=' + url.id + '/' + url.name + '.url?redirect'
+      resourceElement.setAttributeNode(resourceElementURLAttribute)
+      const resourceElementIdAttribute = document.createAttribute('resource-id')
+      resourceElementIdAttribute.value = url.id
+      resourceElement.setAttributeNode(resourceElementIdAttribute)
+      const resourceFolderIdAttribute = document.createAttribute('resource-folder-id')
+      resourceFolderIdAttribute.value = folderID
+      resourceElement.setAttributeNode(resourceFolderIdAttribute)
+      const resourceServerIdAttribute = document.createAttribute('resource-server-id')
+      resourceServerIdAttribute.value = '1MHZH5RK6-2C8DRLF-1'
+      resourceElement.setAttributeNode(resourceServerIdAttribute)
+      const resourceElementMimetypeAttribute = document.createAttribute('resource-mimetype')
+      resourceElementMimetypeAttribute.value = 'text/x-url'
+      resourceElement.setAttributeNode(resourceElementMimetypeAttribute)
+      resourceGroupElement.appendChild(resourceElement)
       resourceGroupListElement.appendChild(resourceGroupElement)
     }
     const mapString = new XMLSerializer().serializeToString(xmlDoc)

@@ -129,10 +129,6 @@ export class MapContentManager {
             callback()
           }
         })
-        // PVSCL:ELSECOND
-        if (_.isFunction(callback)) {
-          callback()
-        }
         // PVSCL:ENDCOND
       }
     })
@@ -191,7 +187,8 @@ export class MapContentManager {
 
   createConcepts (callback) {
     const conceptsList = []
-    const themes = window.abwa.codebookManager.codebookReader.codebook.themes
+    const codebook = window.abwa.codebookManager.codebookReader.codebook
+    const themes = (codebook && codebook.themes) || []
     const filteredThemes = themes.filter((theme) => {
       return !theme.isMisc
     })

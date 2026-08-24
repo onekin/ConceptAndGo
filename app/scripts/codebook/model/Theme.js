@@ -47,9 +47,14 @@ class Theme {
 
   toAnnotation () {
     const themeTag = Config.namespace + ':' + Config.tags.grouped.group + ':' + this.name
-    const assignedDimensionTag = Config.namespace + ':assignedDimension' + ':' + this.dimension
     const motivationTag = Config.namespace + ':' + Config.tags.motivation + ':' + 'codebookDevelopment'
-    const tags = [themeTag, assignedDimensionTag, motivationTag]
+    const tags = [themeTag]
+    // Only include the dimension tag when the theme actually has a dimension
+    // (avoids storing 'oa:assignedDimension:undefined')
+    if (_.isString(this.dimension) && this.dimension !== '') {
+      tags.push(Config.namespace + ':assignedDimension' + ':' + this.dimension)
+    }
+    tags.push(motivationTag)
     return {
       id: this.id,
       group: this.annotationGuide.annotationServer.group.id,
@@ -83,6 +88,11 @@ class Theme {
       let dimension
       if (dimensionTag) {
         dimension = dimensionTag.replace(Config.namespace + ':assignedDimension' + ':', '')
+        // Older versions stored 'oa:assignedDimension:undefined' for themes
+        // without a dimension (e.g. the topic theme). Treat it as no dimension.
+        if (dimension === 'undefined') {
+          dimension = ''
+        }
       } else {
         dimension = ''
       }

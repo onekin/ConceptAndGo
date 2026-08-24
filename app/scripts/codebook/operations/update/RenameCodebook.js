@@ -34,11 +34,7 @@ class RenameCodebook {
     return (event) => {
       const codebook = event.detail.codebook
       let title
-      // PVSCL:IFCOND(TopicBased, LINE)
       title = 'Rename concept map ' + codebook.name
-      // PVSCL:ELSECOND
-      title = 'Rename review model ' + codebook.name
-      // PVSCL:ENDCOND
       Alerts.inputTextAlert({
         title: title,
         inputPlaceholder: 'Type here the name of your new review model...',

@@ -21,9 +21,6 @@ class ExportCXLArchiveFile {
       // see FileSaver.js
       FileSaver.saveAs(zipFile, LanguageUtils.camelize(window.abwa.groupSelector.currentGroup.name) + '.zip')
     })
-    // PVSCL:ELSECOND
-    FileSaver.saveAs(blob, LanguageUtils.camelize(window.abwa.groupSelector.currentGroup.name) + '.cxl')
-    // PVSCL:ENDCOND
   }
 }
 

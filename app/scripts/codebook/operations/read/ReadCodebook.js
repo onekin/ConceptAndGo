@@ -14,7 +14,9 @@ import Dimension from '../../model/Dimension'
 
 class ReadCodebook {
   constructor () {
-    this.codebook = {}
+    // Always keep a Codebook instance so downstream code (getCodeOrThemeFromId,
+    // themes filter, etc.) never crashes while the codebook is still loading
+    this.codebook = new Codebook({})
     this.events = {}
   }
 
@@ -155,14 +157,47 @@ class ReadCodebook {
         }
       } else {
         const initCodebookPromise = new Promise((resolve, reject) => {
+          // Waits until a codebook is available so the initialization chain
+          // continues with a loaded codebook (creation is asynchronous).
+          const waitForCodebookToBeAvailable = (timeoutMs) => {
+            const startedAt = Date.now()
+            const check = () => {
+              if (this.codebook && _.isFunction(this.codebook.getCodeOrThemeFromId)) {
+                resolve()
+              } else if (Date.now() - startedAt > timeoutMs) {
+                console.warn('Timed out waiting for the codebook to be created')
+                if (!this.codebook || !_.isFunction(this.codebook.getCodeOrThemeFromId)) {
+                  this.codebook = new Codebook({})
+                }
+                resolve()
+              } else {
+                setTimeout(check, 100)
+              }
+            }
+            check()
+          }
+          const createCodebookFromGroupName = () => {
+            const currentGroupName = window.abwa.groupSelector.groupFullName || (window.abwa.groupSelector.currentGroup && window.abwa.groupSelector.currentGroup.name) || ''
+            LanguageUtils.dispatchCustomEvent(Events.createCodebook, { howCreate: 'topicBased', topic: currentGroupName })
+          }
           if (codebookDefinitionAnnotations.length === 0) {
-            const currentGroupFullName = window.abwa.groupSelector.groupFullName || ''
-            LanguageUtils.dispatchCustomEvent(Events.createCodebook, { howCreate: 'topicBased', topic: currentGroupFullName })
-            resolve()
+            createCodebookFromGroupName()
+            waitForCodebookToBeAvailable(10000)
           } else {
             Codebook.fromAnnotations(codebookDefinitionAnnotations, (err, codebook) => {
               if (err) {
-                Alerts.errorAlert({ text: 'Error parsing codebook. Error: ' + err.message })
+                if (err.message === 'No annotations for codebook defined') {
+                  // The group has annotations but no codebook definition (e.g. the
+                  // guide annotation is missing). Create the codebook instead of failing.
+                  createCodebookFromGroupName()
+                  waitForCodebookToBeAvailable(10000)
+                } else {
+                  Alerts.errorAlert({ text: 'Error parsing codebook. Error: ' + err.message })
+                  if (!this.codebook || !_.isFunction(this.codebook.getCodeOrThemeFromId)) {
+                    this.codebook = new Codebook({})
+                  }
+                  resolve()
+                }
               } else {
                 this.codebook = codebook
                 this.renderCodebookInSidebar()
@@ -267,12 +302,10 @@ class ReadCodebook {
       }
     })
     const undefindedThemes = this.codebook.themes.filter((theme) => {
-      return !theme.dimension
+      // The topic theme (isTopic) is represented by the focus question shown in
+      // the sidebar header, so it is not rendered as a tag button
+      return !theme.dimension && !theme.isTopic
     })
-    const miscDimension = this.getMiscDimension()
-    if (miscDimension) {
-      UpdateCodebook.createNewThemeButton(miscDimension, Config.miscDimensionName)
-    }
     for (let i = 0; i < undefindedThemes.length; i++) {
       const theme = undefindedThemes[i]
       themeButtonContainer = this.createThemeButtonContainer(theme)
@@ -280,15 +313,19 @@ class ReadCodebook {
         this.buttonContainer.append(themeButtonContainer)
       }
     }
-    const miscThemes = this.codebook.themes.filter((theme) => {
-      return theme.dimension === miscDimension.name
-    })
-    miscThemes.sort((a, b) => a.name.localeCompare(b.name))
-    for (let i = 0; i < miscThemes.length; i++) {
-      const miscTheme = miscThemes[i]
-      themeButtonContainer = this.createThemeButtonContainer(miscTheme)
-      if (_.isElement(themeButtonContainer)) {
-        this.buttonContainer.append(themeButtonContainer)
+    const miscDimension = this.getMiscDimension()
+    if (miscDimension) {
+      UpdateCodebook.createNewThemeButton(miscDimension, Config.miscDimensionName)
+      const miscThemes = this.codebook.themes.filter((theme) => {
+        return theme.dimension === miscDimension.name
+      })
+      miscThemes.sort((a, b) => a.name.localeCompare(b.name))
+      for (let i = 0; i < miscThemes.length; i++) {
+        const miscTheme = miscThemes[i]
+        themeButtonContainer = this.createThemeButtonContainer(miscTheme)
+        if (_.isElement(themeButtonContainer)) {
+          this.buttonContainer.append(themeButtonContainer)
+        }
       }
     }
     if (_.isFunction(callback)) {
@@ -365,6 +402,9 @@ class ReadCodebook {
    * @param annotation, namespace
    */
   hasANamespace (annotation, namespace) {
+    if (!annotation || !_.isArray(annotation.tags)) {
+      return false
+    }
     return _.findIndex(annotation.tags, (annotationTag) => {
       return _.startsWith(annotationTag.toLowerCase(), (namespace + ':').toLowerCase())
     }) !== -1
@@ -643,9 +683,12 @@ class ReadCodebook {
   relationshipAddedEventHandler () {
     return (event) => {
       const relation = event.detail.relation
+      if (!relation || !relation.fromConcept || !relation.toConcept) {
+        return
+      }
       const themeButton = document.querySelectorAll('.tagButton[data-code-id="' + relation.fromConcept.id + '"]')
       // Add relation to tooltip
-      if (themeButton) {
+      if (themeButton.length > 0) {
         if (themeButton[0].title.includes('Relationships:')) {
           themeButton[0].title += '\n' + relation.linkingWord + ' ' + relation.toConcept.name
         } else {
@@ -658,8 +701,14 @@ class ReadCodebook {
   relationshipDeletedEventHandler () {
     return (event) => {
       const relation = event.detail.relation
+      if (!relation || !relation.fromConcept || !relation.toConcept) {
+        return
+      }
       const themeButton = document.querySelectorAll('.tagButton[data-code-id="' + relation.fromConcept.id + '"]')
       // Add relation to tooltip
+      if (themeButton.length === 0) {
+        return
+      }
       if (themeButton[0].title.includes('Relationships:')) {
         themeButton[0].title = themeButton[0].title.replace('\n' + relation.linkingWord + ' ' + relation.toConcept.name, '')
       }

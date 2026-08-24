@@ -188,6 +188,17 @@ class ReadAnnotation {
           callback(err)
         }
       } else {
+        // The h API search (order + search_after pagination over colliding
+        // 'updated' timestamps) can return the same annotation row more than
+        // once in a single response, which doubled every count. Dedupe by id
+        // at the point where the response enters the extension.
+        annotationObjects = _.uniqBy(annotationObjects, 'id')
+        // Log the current group's annotations once per load so they can be
+        // inspected from the DevTools console (right click -> Copy object)
+        if (!this.hasLoggedGroupAnnotations) {
+          this.hasLoggedGroupAnnotations = true
+          console.log('[CAG] Group annotations (' + (annotationObjects ? annotationObjects.length : 0) + '):', annotationObjects)
+        }
         // this.annotationObjects = annotationObjects.map(annotationObject => Annotation.deserialize(annotationObject))
         let currentResourceAnnotations = _.filter(annotationObjects, (annotationObject) => {
           let uriToCompare = window.abwa.targetManager.getDocumentURIToSaveInAnnotationServer()

@@ -235,7 +235,7 @@ class GroupSelector {
       if (err) {
         Alerts.errorAlert({ title: '', text: 'Error retrieving focus question' })
       } else {
-        if (annotations) {
+        if (annotations && annotations.length > 0) {
           const annotation = annotations[0]
           const tag = AnnotationUtils.getTagFromAnnotation(annotation, 'focusQuestion')
           if (tag) {

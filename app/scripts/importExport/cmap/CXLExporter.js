@@ -35,6 +35,12 @@ export class CXLExporter {
         linkingPhrases.push(linkingPhraseToAdd)
       }
     }
+    // Compute a top-down hierarchical layout so the exported map has coordinates
+    const layout = CXLExporter.layoutMap(
+      Array.isArray(concepts) ? concepts.map((concept) => concept.theme) : [],
+      relationships,
+      window.abwa.codebookManager.codebookReader.codebook.dimensions
+    )
     const urlFiles = []
     const xmlDoc = document.implementation.createDocument(null, 'cmap', null)
     const cmapElement = xmlDoc.firstChild
@@ -71,10 +77,16 @@ export class CXLExporter {
     // Set focus question
     const focusQuestion = xmlDoc.createElement('dc:description')
     const topicTheme = window.abwa.codebookManager.codebookReader.getTopicTheme()
-    if (topicTheme.topic !== '') {
-      focusQuestion.textContent = topicTheme.topic
+    if (topicTheme) {
+      if (topicTheme.topic !== '') {
+        focusQuestion.textContent = topicTheme.topic
+      } else {
+        focusQuestion.textContent = topicTheme.name
+      }
     } else {
-      focusQuestion.textContent = topicTheme.name
+      // No topic theme available (e.g. the codebook was not fully loaded);
+      // fall back to the group name so the export can still be built
+      focusQuestion.textContent = (window.abwa.groupSelector.currentGroup && window.abwa.groupSelector.currentGroup.name) || ''
     }
     metadata.appendChild(focusQuestion)
 
@@ -105,6 +117,8 @@ export class CXLExporter {
     // Create map
     const map = xmlDoc.createElement('map')
     cmapElement.appendChild(map)
+    map.setAttribute('width', layout.mapWidth.toString())
+    map.setAttribute('height', layout.mapHeight.toString())
 
     // Concept list
     const conceptList = xmlDoc.createElement('concept-list')
@@ -188,6 +202,8 @@ export class CXLExporter {
         const fontSize = document.createAttribute('font-size')
         fontSize.value = '16'
         dimensionAppearance.setAttributeNode(fontSize)
+        const dimensionPosition = layout.positions[dimension.id]
+        CXLExporter.setPositionAttributes(dimensionAppearance, dimensionPosition)
         conceptAppearanceList.appendChild(dimensionAppearance)
       }
     }
@@ -234,6 +250,8 @@ export class CXLExporter {
         fontSize.value = '14'
         conceptAppearance.setAttributeNode(fontSize)
       }
+      const conceptPosition = layout.positions[concept.theme.id]
+      CXLExporter.setPositionAttributes(conceptAppearance, conceptPosition)
       conceptAppearanceList.appendChild(conceptAppearance)
       if (concept.evidenceAnnotations.length > 0) {
         for (let i = 0; i < concept.evidenceAnnotations.length; i++) {
@@ -269,6 +287,8 @@ export class CXLExporter {
       id = document.createAttribute('id')
       id.value = linkingPhrase.id
       linkingAppearance.setAttributeNode(id)
+      const linkingPosition = layout.positions[linkingPhrase.id]
+      CXLExporter.setPositionAttributes(linkingAppearance, linkingPosition)
       linkingAppearanceList.appendChild(linkingAppearance)
       if (linkingPhrase.evidenceAnnotations.length > 0) {
         for (let j = 0; j < linkingPhrase.evidenceAnnotations.length; j++) {
@@ -382,6 +402,14 @@ export class CXLExporter {
     // Create processing instruction
     // let pi = xmlDoc.createProcessingInstruction('xml', 'version="1.0" encoding="UTF-8"')
     // xmlDoc.insertBefore(pi, xmlDoc.firstChild)
+    // Compute a top-down hierarchical layout. There are no linking relationships
+    // in this flow, so the topic goes on top, the rest of the concepts stay
+    // loose below it and the legends go at the very bottom.
+    const layout = CXLExporter.layoutMap(
+      (codebook.themes || []).filter((theme) => theme.name !== 'misc'),
+      [],
+      codebook.dimensions
+    )
     // Create map xmlns:dcterms attribute
     const att = document.createAttribute('xmlns:dcterms')
     att.value = 'http://purl.org/dc/terms/'
@@ -415,10 +443,15 @@ export class CXLExporter {
     const focusQuestion = xmlDoc.createElement('dc:description')
     const themes = codebook.themes
     const topicTheme = _.find(themes, (theme) => { return theme.isTopic === true })
-    if (topicTheme.topic !== '') {
-      focusQuestion.textContent = topicTheme.topic
+    if (topicTheme) {
+      if (topicTheme.topic !== '') {
+        focusQuestion.textContent = topicTheme.topic
+      } else {
+        focusQuestion.textContent = topicTheme.name
+      }
     } else {
-      focusQuestion.textContent = topicTheme.name
+      // No topic theme in this codebook; fall back to the group name
+      focusQuestion.textContent = group.name || ''
     }
     metadata.appendChild(focusQuestion)
 
@@ -454,6 +487,8 @@ export class CXLExporter {
     // Create map
     const map = xmlDoc.createElement('map')
     cmapElement.appendChild(map)
+    map.setAttribute('width', layout.mapWidth.toString())
+    map.setAttribute('height', layout.mapHeight.toString())
 
     // Concept list
     const conceptList = xmlDoc.createElement('concept-list')
@@ -537,6 +572,8 @@ export class CXLExporter {
         const fontSize = document.createAttribute('font-size')
         fontSize.value = '16'
         dimensionAppearance.setAttributeNode(fontSize)
+        const dimensionPosition = layout.positions[dimension.id]
+        CXLExporter.setPositionAttributes(dimensionAppearance, dimensionPosition)
         conceptAppearanceList.appendChild(dimensionAppearance)
       }
     }
@@ -581,6 +618,8 @@ export class CXLExporter {
           fontSize.value = '14'
           conceptAppearance.setAttributeNode(fontSize)
         }
+        const conceptPosition = layout.positions[concept.id]
+        CXLExporter.setPositionAttributes(conceptAppearance, conceptPosition)
         conceptAppearanceList.appendChild(conceptAppearance)
       }
     }
@@ -629,5 +668,227 @@ export class CXLExporter {
       }
     }
     return linkingPhrases
+  }
+
+  /**
+   * Computes a top-down hierarchical layout for the concept map and returns the
+   * position and size of every element (concepts, legends and linking phrases).
+   * Rules applied:
+   *  - The topic concept (isTopic, rendered with font-style="bold") goes at the
+   *    very top.
+   *  - Regular concepts are layered below the topic according to the linking
+   *    relationships (longest-path layering).
+   *  - Concepts not related to any other concept are left loose in a row above
+   *    the legends.
+   *  - Dimensions (legends, rendered with font-style="italic|bold") go at the
+   *    very bottom.
+   * @param concepts Array of objects with { id, name, topic, isTopic, dimension }
+   * @param relationships Array of objects with { id, fromConcept: { id }, toConcept: { id }, linkingWord }
+   * @param dimensions Array of objects with { id, name, isMisc }
+   * @returns { positions: { <id>: { x, y, width, height } }, mapWidth, mapHeight }
+   */
+  static layoutMap (concepts, relationships, dimensions) {
+    const positions = {}
+    const levelHeight = 80
+    const horizontalGap = 30
+    const margin = 40
+    const minMapWidth = 200
+
+    // Normalize concept nodes
+    const conceptArr = Array.isArray(concepts) ? concepts.filter((concept) => concept && concept.id) : []
+    const conceptById = {}
+    const conceptNodes = conceptArr.map((concept) => {
+      const label = (concept.topic && concept.topic !== '') ? concept.topic : (concept.name || '')
+      const isTopic = concept.isTopic === true
+      const node = {
+        id: concept.id,
+        isTopic: isTopic,
+        width: Math.min(Math.max(8 * label.length + 20, 50), 220),
+        height: isTopic ? 33 : 30
+      }
+      conceptById[concept.id] = node
+      return node
+    })
+    const n = conceptNodes.length
+
+    // Build directed edges between concepts (only when both endpoints are concepts)
+    const edges = []
+    if (Array.isArray(relationships)) {
+      relationships.forEach((relation) => {
+        if (relation && relation.fromConcept && relation.toConcept &&
+            conceptById[relation.fromConcept.id] && conceptById[relation.toConcept.id] &&
+            relation.fromConcept.id !== relation.toConcept.id) {
+          edges.push([relation.fromConcept.id, relation.toConcept.id])
+        }
+      })
+    }
+
+    // Longest-path layering starting from the topic
+    const level = {}
+    conceptNodes.forEach((node) => { level[node.id] = undefined })
+    const topic = conceptNodes.find((node) => node.isTopic)
+    if (topic) {
+      level[topic.id] = 0
+    }
+    for (let pass = 0; pass < n; pass++) {
+      let changed = false
+      edges.forEach(([fromId, toId]) => {
+        if (level[fromId] === undefined) return
+        const candidate = Math.min(level[fromId] + 1, n)
+        if (level[toId] === undefined || candidate > level[toId]) {
+          level[toId] = candidate
+          changed = true
+        }
+      })
+      if (!changed) break
+    }
+
+    // Concepts not related to any other concept are left loose:
+    // place them in a row right below the main hierarchy
+    const orphans = conceptNodes.filter((node) => level[node.id] === undefined)
+    if (orphans.length > 0) {
+      const definedLevels = conceptNodes.map((node) => level[node.id]).filter((value) => value !== undefined)
+      const baseLevel = definedLevels.length > 0 ? (Math.max(...definedLevels) + 1) : 0
+      orphans.forEach((node) => { level[node.id] = baseLevel })
+      // Keep the internal structure of orphan components
+      for (let pass = 0; pass < n; pass++) {
+        let changed = false
+        edges.forEach(([fromId, toId]) => {
+          const fromIsOrphan = orphans.some((node) => node.id === fromId)
+          const toIsOrphan = orphans.some((node) => node.id === toId)
+          if (!fromIsOrphan || !toIsOrphan) return
+          const candidate = Math.min(level[fromId] + 1, baseLevel + n)
+          if (candidate > level[toId]) {
+            level[toId] = candidate
+            changed = true
+          }
+        })
+        if (!changed) break
+      }
+    }
+    const allDefinedLevels = conceptNodes.map((node) => level[node.id]).filter((value) => value !== undefined)
+    const maxConceptLevel = allDefinedLevels.length > 0 ? Math.max(...allDefinedLevels) : 0
+
+    // Legend nodes (dimensions) go at the very bottom
+    const legendNodes = []
+    if (Array.isArray(dimensions)) {
+      dimensions.filter((dimension) => dimension && dimension.id && !dimension.isMisc).forEach((dimension) => {
+        const label = dimension.name || ''
+        legendNodes.push({
+          id: dimension.id,
+          width: Math.min(Math.max(8 * label.length + 20, 50), 220),
+          height: 33,
+          level: maxConceptLevel + 1
+        })
+      })
+    }
+
+    // Map size: width of the widest level plus margins
+    const levelWidth = (nodesInLevel) => {
+      if (nodesInLevel.length === 0) return 0
+      return nodesInLevel.reduce((sum, node) => sum + node.width, 0) + horizontalGap * (nodesInLevel.length - 1)
+    }
+    let maxLevelWidth = 0
+    for (let l = 0; l <= maxConceptLevel; l++) {
+      const nodesInLevel = conceptNodes.filter((node) => level[node.id] === l)
+      maxLevelWidth = Math.max(maxLevelWidth, levelWidth(nodesInLevel))
+    }
+    maxLevelWidth = Math.max(maxLevelWidth, levelWidth(legendNodes))
+    const mapWidth = Math.max(maxLevelWidth + 2 * margin, minMapWidth)
+    const mapHeight = margin + (maxConceptLevel + 1 + (legendNodes.length > 0 ? 1 : 0)) * levelHeight + margin
+
+    // Barycenter ordering and horizontal placement of each level
+    const parentsOf = {}
+    edges.forEach(([fromId, toId]) => {
+      if (!parentsOf[toId]) parentsOf[toId] = []
+      parentsOf[toId].push(fromId)
+    })
+    const xPositions = {}
+    const assignXForLevel = (nodesInLevel) => {
+      const totalWidth = levelWidth(nodesInLevel)
+      let cursor = (mapWidth - totalWidth) / 2
+      nodesInLevel.forEach((node) => {
+        xPositions[node.id] = cursor
+        cursor += node.width + horizontalGap
+      })
+    }
+    for (let iteration = 0; iteration < 2; iteration++) {
+      for (let l = 0; l <= maxConceptLevel; l++) {
+        const nodesInLevel = conceptNodes.filter((node) => level[node.id] === l)
+        if (iteration > 0 && l > 0) {
+          nodesInLevel.sort((a, b) => {
+            return CXLExporter.barycenterOf(a, parentsOf, xPositions) - CXLExporter.barycenterOf(b, parentsOf, xPositions)
+          })
+        }
+        assignXForLevel(nodesInLevel)
+      }
+    }
+    assignXForLevel(legendNodes)
+
+    // Store concept and legend positions
+    conceptNodes.forEach((node) => {
+      positions[node.id] = {
+        x: Math.round(xPositions[node.id]),
+        y: Math.round(margin + level[node.id] * levelHeight),
+        width: node.width,
+        height: node.height
+      }
+    })
+    legendNodes.forEach((node) => {
+      positions[node.id] = {
+        x: Math.round(xPositions[node.id]),
+        y: Math.round(margin + node.level * levelHeight),
+        width: node.width,
+        height: node.height
+      }
+    })
+
+    // Linking phrase positions: centroid of the concepts they connect
+    if (Array.isArray(relationships)) {
+      const usedPositions = {}
+      relationships.forEach((relation) => {
+        if (!relation || !relation.id) return
+        const endpointIds = []
+        if (relation.fromConcept && relation.fromConcept.id) endpointIds.push(relation.fromConcept.id)
+        if (relation.toConcept && relation.toConcept.id) endpointIds.push(relation.toConcept.id)
+        const known = endpointIds.map((id) => positions[id]).filter((position) => position)
+        let centerX = margin
+        let centerY = margin
+        if (known.length > 0) {
+          centerX = known.reduce((sum, position) => sum + position.x + position.width / 2, 0) / known.length
+          centerY = known.reduce((sum, position) => sum + position.y + position.height / 2, 0) / known.length
+        }
+        const label = relation.linkingWord || ''
+        const width = Math.min(Math.max(8 * label.length + 10, 10), 160)
+        const height = 14
+        let x = Math.round(centerX - width / 2)
+        const y = Math.round(centerY - height / 2)
+        // Avoid overlapping linking phrases placed in the same spot
+        let offset = 0
+        while (usedPositions[x + '|' + y] && offset < 5) {
+          offset++
+          x += 24
+        }
+        usedPositions[x + '|' + y] = true
+        positions[relation.id] = { x: x, y: y, width: width, height: height }
+      })
+    }
+
+    return { positions: positions, mapWidth: mapWidth, mapHeight: mapHeight }
+  }
+
+  static barycenterOf (node, parentsOf, xPositions) {
+    const parents = parentsOf[node.id] || []
+    if (parents.length === 0) return xPositions[node.id] || 0
+    const sum = parents.reduce((acc, parentId) => acc + (xPositions[parentId] || 0), 0)
+    return sum / parents.length
+  }
+
+  static setPositionAttributes (element, position) {
+    if (!element || !position) return
+    element.setAttribute('x', position.x.toString())
+    element.setAttribute('y', position.y.toString())
+    element.setAttribute('width', position.width.toString())
+    element.setAttribute('height', position.height.toString())
   }
 }
