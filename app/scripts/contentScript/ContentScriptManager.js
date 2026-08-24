@@ -14,7 +14,6 @@ class ContentScriptManager {
   }
 
   init () {
-    console.debug('Initializing content script manager')
     this.status = ContentScriptManager.status.initializing
     this.loadTargetManager(() => {
       this.loadAnnotationServer(() => {
@@ -28,7 +27,6 @@ class ContentScriptManager {
               if (err) {
                 // No group could be selected automatically. Open the sidebar so the
                 // user can pick a group manually; content is loaded on group change.
-                console.debug('Group selector initialization failed: ' + err.message)
                 this.initListenerForGroupChange()
                 window.abwa.groupSelector.reloadGroupsContainer(() => {
                   window.abwa.sidebar.openSidebar()
@@ -76,7 +74,6 @@ class ContentScriptManager {
       })
       .then(() => {
         this.status = ContentScriptManager.status.initialized
-        console.debug('Initialized content script manager')
       })
   }
 
@@ -189,7 +186,6 @@ class ContentScriptManager {
   }
 
   destroy (callback) {
-    console.debug('Destroying content script manager')
     this.destroyTargetManager(() => {
       this.destroyCodebookManager()
       this.destroyAnnotationManagement()
@@ -199,7 +195,6 @@ class ContentScriptManager {
         window.abwa.sidebar.destroy(() => {
           this.destroyAnnotationServer(() => {
             this.status = ContentScriptManager.status.notInitialized
-            console.debug('Correctly destroyed content script manager')
             if (_.isFunction(callback)) {
               callback()
             }

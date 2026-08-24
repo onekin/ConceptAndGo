@@ -87,7 +87,6 @@ class GoogleSheetGenerator {
     Promise.all(promises).catch(() => {
 
     }).then((resolves) => {
-      console.debug(resolves)
       const annotationsResolve = _.find(resolves, (resolve) => { return _.has(resolve, 'annotations') })
       const spreadsheetResolve = _.find(resolves, (resolve) => { return _.has(resolve, 'spreadsheet') })
       const spreadsheetId = spreadsheetResolve.spreadsheet.spreadsheetId
@@ -108,7 +107,6 @@ class GoogleSheetGenerator {
       for (let i = 0; i < primaryStudies.length; i++) {
         rows.push(primaryStudies[i].toSpreadsheetRow(columns))
       }
-      console.debug(rows)
       GoogleSheetGenerator.populateSpreadsheet({ spreadsheetId, sheetId, rows, callback })
     })
   }

@@ -172,7 +172,6 @@ class TargetManager {
           this.doi = document.querySelector('meta[name="dc.identifier"]').content
         }
       } catch (e) {
-        console.debug('Doi not found for this document')
       }
     }
     // TODO Try to load doi from chrome tab storage
@@ -180,11 +179,8 @@ class TargetManager {
 
   tryToLoadURLParam () {
     const decodedUri = decodeURIComponent(window.location.href)
-    console.log(decodedUri)
     const params = URLUtils.extractHashParamsFromUrl(decodedUri, '::')
-    console.log(params)
     if (!_.isEmpty(params) && !_.isEmpty(params.url)) {
-      console.debug(params.url)
       this.urlParam = params.url
     }
   }
@@ -193,7 +189,6 @@ class TargetManager {
     try {
       this.citationPdf = document.querySelector('meta[name="citation_pdf_url"]').content
     } catch (e) {
-      console.debug('citation pdf url not found')
     }
   }
 
@@ -232,7 +227,6 @@ class TargetManager {
       this.urlChangeInterval = setInterval(() => {
         const newUrl = this.getDocumentURL()
         if (newUrl !== this.url) {
-          console.debug('Document URL updated from %s to %s', this.url, newUrl)
           this.url = newUrl
           // Reload target information
           this.reloadTargetInformation(() => {
@@ -364,7 +358,6 @@ class TargetManager {
             }
           }
         } catch (e) {
-          console.debug('Title not found for this document')
         }
       }
     })

@@ -68,7 +68,6 @@ class ExportCmapCloud {
         if (response.info) {
           const parser = new DOMParser()
           const answer = parser.parseFromString(response.info, 'text/xml')
-          console.log(answer)
           const list = answer.querySelector('res-meta-list')
           let identifiers = []
           Array.from(list.children).forEach(item => {
@@ -88,7 +87,6 @@ class ExportCmapCloud {
               return null
             }
           })
-          console.log(identifiers)
           if (identifiers.length > 0) {
             Alerts.infoAlert({ text: 'Folder is not empty', title: 'Error' })
           } else {
@@ -140,14 +138,12 @@ class ExportCmapCloud {
       folderName ? name = folderName : name = window.abwa.groupSelector.currentGroup.name
       if (uploadMap) {
         cmapCloudClient.uploadMap(folderId, xmlDoc, (data) => {
-          console.log(data)
           const urlWithIdentifier = data.childNodes[0].childNodes[5].innerHTML
           const pattern = /id=([\w-]+)/
           const match = urlWithIdentifier.match(pattern)
           // Check if a match was found and extract the desired string
           if (match) {
             const mapId = match[1]
-            console.log(mapId)
             let annotationServer
             if (window.cag) {
               annotationServer = window.cag.annotationServerManager
@@ -166,7 +162,7 @@ class ExportCmapCloud {
               }
             })
           } else {
-            console.log('No match found')
+            // No map id found in the upload response; nothing else to do
           }
         }, group, dimensions)
       } else {
@@ -285,7 +281,6 @@ class ExportCmapCloud {
       if (response.info) {
         const parser = new DOMParser()
         const xmlDoc = parser.parseFromString(response.info, 'text/xml')
-        console.log(xmlDoc)
         const list = xmlDoc.querySelector('res-meta-list')
         let identifiers = []
         Array.from(list.children).forEach(item => {
@@ -306,7 +301,6 @@ class ExportCmapCloud {
               return null
             }
           })
-          console.log(identifiers)
           const beginDeletePromises = []
           for (let i = 0; i < identifiers.length; i++) {
             const identifier = identifiers[i]
@@ -318,7 +312,6 @@ class ExportCmapCloud {
             beginDeletePromises.push(beginPromise)
           }
           Promise.all(beginDeletePromises).then(deletedResources => {
-            console.log(deletedResources)
             if (_.isFunction(callback)) {
               callback()
             }

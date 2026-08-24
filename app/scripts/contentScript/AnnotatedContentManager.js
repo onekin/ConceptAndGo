@@ -31,11 +31,9 @@ export class AnnotatedContentManager {
   }
 
   init (callback) {
-    console.debug('Initializing AnnotatedContentManager')
     // Retrieve all the annotations for this assignment
     this.updateAnnotationForAssignment(() => {
       this.reloadTagsChosen()
-      console.debug('Initialized AnnotatedContentManager')
       if (_.isFunction(callback)) {
         callback()
       }
@@ -60,7 +58,6 @@ export class AnnotatedContentManager {
       } else {
         // Retrieve current annotatedThemes
         this.addingCodingsFromAnnotations(assignmentAnnotations)
-        console.debug('Updated annotations for assignment')
         // Callback
         if (_.isFunction(callback)) {
           callback()
@@ -273,7 +270,6 @@ export class AnnotatedContentManager {
     return (event) => {
       this.updateAnnotationForAssignment(() => {
         this.reloadTagsChosen()
-        console.debug('Annotated content manager updated')
         LanguageUtils.dispatchCustomEvent(Events.annotatedContentManagerUpdated, { annotatedThemes: this.annotatedThemes })
       })
     }

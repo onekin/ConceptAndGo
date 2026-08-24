@@ -23,7 +23,6 @@ class CXLMerger {
     if (!restoredGroup) {
       Alerts.errorAlert({ text: 'There is not a map for this annotation group' })
     } else {
-      console.log('The map exist:' + restoredGroup.id)
       CXLMerger.mergeCXL(cxlObject, restoredGroup)
     }
   }
@@ -107,10 +106,6 @@ class CXLMerger {
               const previousRelationshipsIDs = previousRelationships.map(previousRelationship => previousRelationship.id)
               const previousRelationshipsCXLIDs = previousRelationships.map(previousRelationship => previousRelationship.cxlID)
               const importedRelationshipsIDs = importedRelationships.map(importedRelationship => importedRelationship.id)
-              console.log('previousRelationships')
-              console.log(previousRelationships)
-              console.log('importedRelationships')
-              console.log(importedRelationships)
               if (err) {
                 Alerts.errorAlert({ text: 'Error parsing codebook. Error: ' + err.message })
               } else {
@@ -167,7 +162,6 @@ class CXLMerger {
                   const elementToCompare = previousCodebook.themes.filter(previousCodebookTheme => (previousCodebookTheme.id === themeToUpdate.id || previousCodebookTheme.cxlID === themeToUpdate.id))
                   return (!(themeToUpdate.name === elementToCompare[0].name) || !(themeToUpdate.dimension === elementToCompare[0].dimension)) && !themeToUpdate.isTopic
                 })
-                console.log(themesToUpdate)
                 if (themesToUpdate[0]) {
                   themesToUpdate.forEach(themeToUpdate => {
                     const oldTheme = previousCodebook.themes.filter(previousCodebookTheme => (previousCodebookTheme.id === themeToUpdate.id || previousCodebookTheme.cxlID === themeToUpdate.id))
@@ -183,7 +177,6 @@ class CXLMerger {
               let themesToInclude = importedCodebook.themes.filter(importedCodebookTheme => !(previousCodebookIDs.includes(importedCodebookTheme.id)))
               if (themesToInclude[0]) {
                 themesToInclude = themesToInclude.filter(importedCodebookTheme => !(previousCodebookCxlID.includes(importedCodebookTheme.id)))
-                console.log(themesToInclude)
                 if (themesToInclude[0]) {
                   themesToInclude.forEach(themeToInclude => {
                     if (themeToInclude.name !== focusQuestion) {
@@ -217,7 +210,6 @@ class CXLMerger {
               Promise.all(beginPromises).then(() => {
                 // REMOVE OLD THEMES
                 const themesToRemove = previousCodebook.themes.filter(previousCodebookTheme => !(importedCodebookIDs.includes(previousCodebookTheme.id)))
-                console.log(themesToRemove)
                 themesToRemove.forEach(themeToRemove => {
                   if (!(importedCodebookIDs.includes(themeToRemove.cxlID))) {
                     const annotationsToDelete = [themeToRemove.id]
@@ -235,12 +227,11 @@ class CXLMerger {
                 const relationshipsToUpdate = candidateRelationshipsToUpdate.filter(relationshipToUpdate => {
                   const elementsToCompare = previousRelationships.filter(previousRelationship => previousRelationship.id === relationshipToUpdate.id)
                   if (elementsToCompare.length > 1) {
-                    console.log('problems:' + elementsToCompare)
+                    // Multiple previous relationships match; proceed with the first one
                   }
                   const elementToCompare = elementsToCompare[0]
                   return !(relationshipToUpdate.fromConcept.id === elementToCompare.fromConcept.id) || !(relationshipToUpdate.toConcept.id === elementToCompare.toConcept.id) || !(relationshipToUpdate.linkingWord === elementToCompare.linkingWord)
                 })
-                console.log(relationshipsToUpdate)
 
                 // INCLUDE NEW RELATIONSHIPS
                 let relationshipsToInclude = importedRelationships.filter(importedRelationship => !(previousRelationshipsIDs.includes(importedRelationship.id)))
@@ -269,7 +260,6 @@ class CXLMerger {
                 }
                 // REMOVE OLD RELATIONSHIPS
                 const relationshipsToRemove = previousRelationships.filter(previousRelationship => !(importedRelationshipsIDs.includes(previousRelationship.id)))
-                console.log(relationshipsToRemove)
                 if (relationshipsToRemove[0]) {
                   let annotationsToDelete = []
                   relationshipsToRemove.forEach(relationship => {

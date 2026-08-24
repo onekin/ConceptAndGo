@@ -17,11 +17,9 @@ class MoodleReport {
   }
 
   init (callback) {
-    console.debug('Initializing moodle report')
     this.moodleClientManager = new MoodleClientManager(window.abwa.codebookManager.codebookReader.codebook.moodleEndpoint)
     this.moodleClientManager.init(() => {
       if (_.isFunction(callback)) {
-        console.debug('Initialized moodle report')
         callback()
       }
     })
@@ -204,13 +202,11 @@ class MoodleReport {
       }
       return { criteriaName, levelName, maxLevelName, text, url, feedbackCommentElement }
     })
-    console.debug(marks)
     // Reorder criterias as same as are presented in rubric
     const sortingArr = _.map(window.abwa.codebookManager.codebookReader.codebook.themes, 'name')
     marks.slice().sort((a, b) => {
       return sortingArr.indexOf(a.criteriaName) - sortingArr.indexOf(b.criteriaName)
     })
-    console.debug(marks)
     // Get for each criteria name and mark its corresponding criterionId and level from window.abwa.rubric
     const criterionAndLevels = this.getCriterionAndLevel(marks)
     const feedbackComment = this.getFeedbackComment(marks)
@@ -253,7 +249,6 @@ class MoodleReport {
       const remark = mark.text
       criterionAndLevel.push({ criterionId: criteria.moodleCriteriaId, levelid: level.moodleLevelId, remark })
     }
-    console.debug(criterionAndLevel)
     const resultingMarks = {}
     // TODO Append links if shared
     // Merge remarks with same criterionId and append remark

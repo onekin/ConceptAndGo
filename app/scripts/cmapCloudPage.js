@@ -49,7 +49,6 @@ const kudeatzaileakHasieratu = function () {
                     const data = response.data
                     if (data.userData.user && data.userData.password && data.userData.uid) {
                       const cmapCloudClient = new CmapCloudClient(data.userData.user, data.userData.password, data.userData.uid)
-                      console.log('createTask')
                       // createTask()
                       createWindow(cmapCloudClient, data.userData)
                     } else {
@@ -91,19 +90,16 @@ const kudeatzaileakHasieratu = function () {
                       // console.log('added nodes', mutation.addedNodes)
                       const node = mutation.addedNodes[0]
                       if (node.className && node.className === 'gwt-PopupPanel') {
-                        console.log('OPEN')
                         // Check if the parent div contains a child div with class "gwt-Label" and inner text "Annotation"
                         const isAnnotationNote = node.outerHTML.includes('<div class="gwt-Label" style="position: absolute; left: 2px; top: 0px;">Annotation</div>')
                         const isContextMenu = node.outerHTML.includes('<td class="gwt-MenuItem" id="gwt-uid-3" role="menuitem" colspan="2">Annotate...</td>')
                         const isColors = node.outerHTML.includes('<button type="button" class="gwt-Button">No Fill</button>')
                         if (isAnnotationNote) {
-                          console.log("OPEN ANNOTATION'.")
                           showFeedbackNoteFirstTime(node)
                         } else if (isContextMenu) {
                           const contextMenuFeedbackLabel = document.getElementById('gwt-uid-3')
                           contextMenuFeedbackLabel.innerText = 'Feedback...'
                         } else if (isColors) {
-                          console.log('Color')
                           updateColors(node)
                         }
                         addToolTipToAnnotations(node)
@@ -126,7 +122,6 @@ const kudeatzaileakHasieratu = function () {
                                 const data = response.data
                                 if (data.userData.user && data.userData.password && data.userData.uid) {
                                   const cmapCloudClient = new CmapCloudClient(data.userData.user, data.userData.password, data.userData.uid)
-                                  console.log('createTask')
                                   // createTask()
                                   createWindow(cmapCloudClient, data.userData)
                                 } else {
@@ -164,7 +159,7 @@ const kudeatzaileakHasieratu = function () {
                       }
                     }
                   } else {
-                    console.log('removed node', mutation.removedNodes)
+                    // No removed nodes to process
                   }
                 } if (mutation.type === 'attributes' && mutation.attributeName === 'style' && !noteOpened) {
                   const targetNode = mutation.target
@@ -302,7 +297,6 @@ const createWindow = function (cmapCloudClient, userData) {
   }
   const cancelBtn = document.getElementById('cancelBtn')
   cancelBtn.onclick = () => {
-    console.log('cancelBtn')
     window.remove()
     background.remove()
   }
@@ -351,14 +345,12 @@ const updateColors = function (node) {
     dimensionColors = dimensionColors.filter(color => {
       return color !== '255,255,150'
     })
-    console.log(dimensionColors)
     Array.from(divElements).forEach(div => {
       let background = div.style.backgroundColor
       background = background.replaceAll('rgb(', '').replaceAll(' ', '').replaceAll(')', '')
       if (!dimensionColors.includes(background) && background !== '237,244,246') {
         div.remove()
       }
-      console.log(div.style.backgroundColor)
     })
   }
 }
@@ -367,7 +359,6 @@ const addToolTipToAnnotations = function (node) {
   const annotations = node.children[0].children[0].children[0].children
   for (let i = 0; i < annotations.length; i++) {
     const id = annotations[i].innerText.slice(-22)
-    console.log(id)
     if (window.cag.annotations && window.cag.annotations.length > 0) {
       const annotation = window.cag.annotations.find((anno) => {
         return anno.id === id
@@ -392,7 +383,6 @@ const addToolTipToAnnotations = function (node) {
 }
 
 const loadAnnotations = function (callback) {
-  console.log('YOU HAVE OPEN A MAP')
   const list = document.querySelectorAll('.cmap-tab.active')
   if (list.length > 0) {
     const groupId = getGroupId(list)
@@ -424,7 +414,6 @@ const loadAnnotations = function (callback) {
               callback(err)
             }
           } else {
-            console.log(codebook)
             window.cag.codebook = codebook
             if (_.isFunction(callback)) {
               callback(null)
@@ -520,7 +509,6 @@ const getGroupId = function (list) {
 }
 
 const updateProperties = function (node) {
-  console.log('window opened')
   node.style.height = '178.3px'
   const keywordLabel = node.querySelector('label[for="rmeta_keywords"]')
   if (keywordLabel) {
@@ -561,7 +549,6 @@ const updateProperties = function (node) {
 }
 
 const showFeedbackNote = function (targetNode) {
-  console.log('Visibility attribute changed to Feedback note')
   if (!targetNode || !targetNode.querySelector) {
     return
   }
@@ -649,7 +636,6 @@ const showFeedbackNoteFirstTime = function (node) {
   if (noteButton) {
     noteButton.addEventListener('click', function () {
       // This function will be executed when the div is clicked
-      console.log('Close annotation')
     })
   }
   const textArea = node.querySelector('textarea.gwt-TextArea')
@@ -702,13 +688,11 @@ const showFeedbackNoteFirstTime = function (node) {
     }
     if (isSelectedLinkingWord.tagName === 'rect' && isSelectedLinkingWord.stroke === '#9598ff') {
       buttonItem = mapElement.querySelector('image[CanvasType=image]')
-      console.log(buttonItem)
       selectedElements.push({ elem: mapElement, buttonItem: buttonItem })
     }
   })
   const selectedElementsNames = selectedElements.map((element) => {
     let name = ''
-    console.log(element.elem)
     const spans = Array.from(element.elem.children)
     spans.forEach((spanElement) => {
       if (spanElement.textContent === 't') {
@@ -719,7 +703,6 @@ const showFeedbackNoteFirstTime = function (node) {
     })
     return name
   })
-  console.log(selectedElementsNames)
   //
   // Create a select element
   const selectElement = document.createElement('select')
@@ -873,7 +856,6 @@ function camelize (str) {
 function changeNoteOpenedValue () {
   setTimeout(() => {
     noteOpened = false // Change the variable value after 1 second
-    console.log('Variable value changed to true after 1 second')
   }, 1000) // 1000 milliseconds (1 second)
 }
 

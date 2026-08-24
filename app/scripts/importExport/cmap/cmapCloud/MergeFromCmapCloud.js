@@ -23,7 +23,6 @@ class MergeFromCmapCloud {
       if (response.info) {
         const parser = new DOMParser()
         const xmlDoc = parser.parseFromString(response.info, 'text/xml')
-        console.log(xmlDoc)
         const list = xmlDoc.querySelector('res-meta-list')
         const identifiers = []
         Array.from(list.children).forEach(item => {
@@ -33,10 +32,8 @@ class MergeFromCmapCloud {
             }
           })
         })
-        console.log(identifiers)
         if (identifiers.length > 0) {
           const mapId = LanguageUtils.getMapIdFromArray(Array.from(identifiers[0].children))
-          console.log(mapId)
           chrome.runtime.sendMessage({
             scope: 'cmapCloud',
             cmd: 'getCXL',

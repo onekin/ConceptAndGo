@@ -43,7 +43,6 @@ class PreviousVersionAnnotationImporter {
     }
     // Callback
     let callback = () => {
-      console.log(preConfirmData.value)
       let selectedResourceAnnotations = _.filter(window.abwa.annotationManagement.annotationReader.allGroupAnnotations, (annotation) => {
         return annotation.target[0].source.url === preConfirmData.value
       })
@@ -70,11 +69,9 @@ class PreviousVersionAnnotationImporter {
               Alerts.errorAlert({ text: 'Unable to create new group.' })
             } else {
               // Parse annotations and dispatch created codebook
-              console.log(annotation)
             }
           })
         })
-        console.log(annotationsForNewVersion)
         Alerts.simpleSuccessAlert({ text: 'Saved' })
       }
     }
@@ -93,7 +90,6 @@ class PreviousVersionAnnotationImporter {
 
     let annotatedResources = window.abwa.annotationManagement.annotationReader.allGroupAnnotations.map(annotation => annotation.target[0].source.url)
     annotatedResources = _.uniq(annotatedResources).filter(anno => anno !== undefined)
-    console.log(annotatedResources)
 
     // create options
 

@@ -11,7 +11,6 @@ class Toolset {
   }
 
   init (callback) {
-    console.debug('Initializing toolset')
     axios.get(this.page).then((response) => {
       // Get sidebar container
       this.sidebarContainer = document.querySelector('#abwaSidebarContainer')
@@ -66,7 +65,6 @@ class Toolset {
       if (!_.isEmpty(this.toolsetBody.innerHTML)) {
         this.show()
       }
-      console.debug('Initialized toolset')
       if (_.isFunction(callback)) {
         callback()
       }

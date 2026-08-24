@@ -38,7 +38,6 @@ class HypothesisManagerOAuth {
       if (err) {
         console.warn('Unable to load tokens from storage. User need to login again.')
       } else {
-        console.debug('Correctly loaded tokens from storage')
         this.tokens = tokens
       }
       if (_.isFunction(callback)) {
@@ -130,7 +129,6 @@ class HypothesisManagerOAuth {
 
   saveTokensInStorage (tokens, callback) {
     ChromeStorage.setData('hypothesisTokens', { data: JSON.stringify(tokens) }, ChromeStorage.local, (err, response) => {
-      console.debug('Saved token in storage')
       if (_.isFunction(callback)) {
         callback(err, response)
       }
@@ -245,7 +243,6 @@ class HypothesisManagerOAuth {
     this.revokeTokens(() => {
       // Delete tokens from chrome storage
       this.saveTokensInStorage({}, () => {
-        console.debug('User is logged out')
         if (_.isFunction(callback)) {
           callback()
         }
@@ -255,7 +252,6 @@ class HypothesisManagerOAuth {
 
   revokeTokens (callback) {
     this.client.revokeToken(this.tokens.accessToken).then(() => {
-      console.debug('Revoked token')
       this.tokens = {}
       if (_.isFunction(callback)) {
         callback()

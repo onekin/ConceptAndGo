@@ -60,7 +60,6 @@ class ReadAnnotation {
   initReloadAnnotationsEvent (callback) {
     this.reloadInterval = setInterval(() => {
       this.updateAllAnnotations(() => {
-        console.debug('annotations updated')
       })
     }, ANNOTATIONS_UPDATE_INTERVAL_IN_SECONDS * 1000)
     if (_.isFunction(callback)) {
@@ -197,7 +196,6 @@ class ReadAnnotation {
         // inspected from the DevTools console (right click -> Copy object)
         if (!this.hasLoggedGroupAnnotations) {
           this.hasLoggedGroupAnnotations = true
-          console.log('[CAG] Group annotations (' + (annotationObjects ? annotationObjects.length : 0) + '):', annotationObjects)
         }
         // this.annotationObjects = annotationObjects.map(annotationObject => Annotation.deserialize(annotationObject))
         let currentResourceAnnotations = _.filter(annotationObjects, (annotationObject) => {
@@ -479,7 +477,6 @@ class ReadAnnotation {
     return () => {
       // Reload annotations
       this.updateAllAnnotations(() => {
-        console.debug('annotations updated')
       })
     }
   }

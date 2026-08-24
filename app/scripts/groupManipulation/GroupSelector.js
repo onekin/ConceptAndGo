@@ -23,7 +23,6 @@ class GroupSelector {
   }
 
   init (callback) {
-    console.debug('Initializing group selector')
     this.initCodebookDeletedEvent()
     this.initCodebookRenamedEvent()
     this.checkIsLoggedIn((err) => {
@@ -40,14 +39,12 @@ class GroupSelector {
           // Define current group
           this.defineCurrentGroup((err) => {
             if (err) {
-              console.debug('Error defining current group: ' + err.message)
               if (_.isFunction(callback)) {
                 callback(err)
               }
               return
             }
             this.reloadGroupsContainer()
-            console.debug('Initialized group selector')
             if (_.isFunction(callback)) {
               callback(null)
             }
@@ -219,7 +216,6 @@ class GroupSelector {
 
   renderGroupsContainer () {
     if (!this.currentGroup) {
-      console.debug('renderGroupsContainer: currentGroup is null, skipping render')
       return
     }
     const tags = ['motivation:defining']
@@ -308,7 +304,6 @@ class GroupSelector {
   updateCurrentGroupHandler (groupId) {
     this.currentGroup = _.find(this.groups, (group) => { return groupId === group.id })
     ChromeStorage.setData(this.selectedGroupNamespace, { data: JSON.stringify(this.currentGroup) }, ChromeStorage.local, () => {
-      console.debug('Group updated. Name: %s id: %s', this.currentGroup.name, this.currentGroup.id)
       // Dispatch event
       LanguageUtils.dispatchCustomEvent(Events.groupChanged, {
         group: this.currentGroup,
@@ -393,7 +388,6 @@ class GroupSelector {
                 preConfirm: (dimensionString) => {
                   if (_.isString(dimensionString)) {
                     const dimensionsList = dimensionString.split(';')
-                    dimensionsList.forEach(element => console.log(element.trim))
                     if (dimensionsList.length <= 0) {
                       const swal = require('sweetalert2').default
                       swal.showValidationMessage('Meta-concepts not found.')
@@ -414,7 +408,6 @@ class GroupSelector {
                       preConfirm: (urlString) => {
                         if (_.isString(urlString)) {
                           const urlList = urlString.split(';')
-                          urlList.forEach(element => console.log(element.trim))
                           if (urlList.length <= 0) {
                             const swal = require('sweetalert2').default
                             swal.showValidationMessage('URLS not found.')

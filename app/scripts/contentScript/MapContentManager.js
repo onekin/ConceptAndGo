@@ -40,10 +40,8 @@ export class MapContentManager {
   }
 
   init (callback) {
-    console.debug('Initializing MapContentManager')
     // Retrieve all the annotations for this assignment
     this.updateMapContent(() => {
-      console.debug('Initialized MapContentManager')
       if (_.isFunction(callback)) {
         callback()
       }
@@ -118,12 +116,10 @@ export class MapContentManager {
       if (err) {
         // TODO Unable to retrieve annotations for this assignment
       } else {
-        console.debug('Updated annotations for assignment')
         // PVSCL:IFCOND(Linking, LINE)
         // Retrieve current annotatedThemes
         this.createRelationships(() => {
           LanguageUtils.dispatchCustomEvent(Events.relationshipsLoaded, {})
-          console.debug('Updated annotations for assignment')
           // Callback
           if (_.isFunction(callback)) {
             callback()
@@ -171,12 +167,10 @@ export class MapContentManager {
         if (err) {
           // TODO Unable to retrieve annotations for this assignment
         } else {
-          console.debug('Updated annotations for assignment')
           // PVSCL:IFCOND(Linking, LINE)
           // Retrieve current annotatedThemes
           this.createRelationships(() => {
             LanguageUtils.dispatchCustomEvent(Events.relationshipsLoaded, {})
-            console.debug('Updated annotations for assignment')
           })
           // PVSCL:ENDCOND
         }
@@ -257,7 +251,6 @@ export class MapContentManager {
 
   manageRelationships (concept) {
     this.getConceptRelationships(concept.id, (conceptRelationships) => {
-      console.log(conceptRelationships)
       if (conceptRelationships.length === 0) {
         Alerts.errorAlert({ text: 'You do not have links from the ' + concept.name + ' concept.' })
       } else {

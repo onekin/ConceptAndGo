@@ -100,7 +100,6 @@ class CXLImporter {
         if (!restoredGroup) {
           CXLImporter.createNewImportedCmap(cxlObject, title)
         } else {
-          console.log('The map exist:' + restoredGroup.id)
           CXLImporter.updateImportedMap(cxlObject, restoredGroup)
         }
       }
@@ -125,13 +124,11 @@ class CXLImporter {
       if (err) {
         Alerts.errorAlert({ text: 'Error finding groups' })
       } else {
-        console.log(groups)
         const restoredGroup = groups.filter(existingGroups => existingGroups.id === groupID)[0]
         // IF THE IMPORTED MAP DOES NOT EXIST
         if (!restoredGroup) {
           CXLImporter.createNewImportedCmapFromCmapCloud(cxlObject, title)
         } else {
-          console.log('The map exist:' + restoredGroup.id)
           CXLImporter.updateImportedMapFromCmapCloud(cxlObject, restoredGroup)
         }
       }
@@ -390,10 +387,6 @@ class CXLImporter {
               const previousRelationships = window.abwa.mapContentManager.relationships
               const previousRelationshipsIDs = previousRelationships.map(previousRelationship => previousRelationship.id)
               const importedRelationshipsIDs = importedRelationships.map(importedRelationship => importedRelationship.id)
-              console.log('previousRelationships')
-              console.log(previousRelationships)
-              console.log('importedRelationships')
-              console.log(importedRelationships)
               if (err) {
                 Alerts.errorAlert({ text: 'Error parsing codebook. Error: ' + err.message })
               } else {
@@ -445,7 +438,6 @@ class CXLImporter {
                   const elementToCompare = previousCodebook.themes.filter(previousCodebookTheme => previousCodebookTheme.id === themeToUpdate.id)
                   return !(themeToUpdate.name === elementToCompare[0].name) || !(themeToUpdate.dimension === elementToCompare[0].dimension)
                 })
-                console.log(themesToUpdate)
                 if (themesToUpdate[0]) {
                   themesToUpdate.forEach(themeToUpdate => {
                     const oldTheme = previousCodebook.themes.find(theme => { return theme.id === themesToUpdate.id })
@@ -459,7 +451,6 @@ class CXLImporter {
               let themesToInclude = importedCodebook.themes.filter(importedCodebookTheme => !(previousCodebookIDs.includes(importedCodebookTheme.id)))
               if (themesToInclude[0]) {
                 themesToInclude = themesToInclude.filter(importedCodebookTheme => !(previousCodebookNames.includes(importedCodebookTheme.name)))
-                console.log(themesToInclude)
                 if (themesToInclude[0]) {
                   themesToInclude.forEach(themeToInclude => {
                     const newThemeAnnotation = themeToInclude.toAnnotation()
@@ -475,7 +466,6 @@ class CXLImporter {
               }
               // REMOVE OLD THEMES
               const themesToRemove = previousCodebook.themes.filter(previousCodebookTheme => !(importedCodebookIDs.includes(previousCodebookTheme.id)))
-              console.log(themesToRemove)
               themesToRemove.forEach(themeToRemove => {
                 const annotationsToDelete = [themeToRemove.id]
                 window.abwa.annotationServerManager.client.deleteAnnotations(annotationsToDelete, (err, result) => {
@@ -492,15 +482,13 @@ class CXLImporter {
               const relationshipsToUpdate = candidateRelationshipsToUpdate.filter(relationshipToUpdate => {
                 const elementsToCompare = previousRelationships.filter(previousRelationship => previousRelationship.id === relationshipToUpdate.id)
                 if (elementsToCompare.length > 1) {
-                  console.log('problems:' + elementsToCompare)
+                  // Multiple previous relationships match; proceed with the first one
                 }
                 const elementToCompare = elementsToCompare[0]
                 return !(relationshipToUpdate.fromConcept.id === elementToCompare.fromConcept.id) || !(relationshipToUpdate.toConcept.id === elementToCompare.toConcept.id) || !(relationshipToUpdate.linkingWord === elementToCompare.linkingWord)
               })
-              console.log(relationshipsToUpdate)
               // INCLUDE NEW RELATIONSHIPS
               let relationshipsToInclude = importedRelationships.filter(importedRelationship => !(previousRelationshipsIDs.includes(importedRelationship.id)))
-              console.log(relationshipsToInclude)
               relationshipsToInclude = relationshipsToInclude.concat(relationshipsToUpdate)
               if (relationshipsToInclude[0]) {
                 relationshipsToInclude.forEach(relationshipToInclude => {
@@ -518,7 +506,6 @@ class CXLImporter {
               }
               // REMOVE OLD RELATIONSHIPS
               const relationshipsToRemove = previousRelationships.filter(previousRelationship => !(importedRelationshipsIDs.includes(previousRelationship.id)))
-              console.log(relationshipsToRemove)
               if (relationshipsToRemove[0]) {
                 let annotationsToDelete = []
                 relationshipsToRemove.forEach(relationship => {
@@ -794,10 +781,6 @@ class CXLImporter {
               const previousRelationships = []
               const previousRelationshipsIDs = previousRelationships.map(previousRelationship => previousRelationship.id)
               const importedRelationshipsIDs = importedRelationships.map(importedRelationship => importedRelationship.id)
-              console.log('previousRelationships')
-              console.log(previousRelationships)
-              console.log('importedRelationships')
-              console.log(importedRelationships)
               if (err) {
                 Alerts.errorAlert({ text: 'Error parsing codebook. Error: ' + err.message })
               } else {
@@ -849,7 +832,6 @@ class CXLImporter {
                   const elementToCompare = previousCodebook.themes.filter(previousCodebookTheme => previousCodebookTheme.id === themeToUpdate.id)
                   return !(themeToUpdate.name === elementToCompare[0].name) || !(themeToUpdate.dimension === elementToCompare[0].dimension)
                 })
-                console.log(themesToUpdate)
                 if (themesToUpdate[0]) {
                   themesToUpdate.forEach(themeToUpdate => {
                     const oldTheme = previousCodebook.themes.find(theme => { return theme.id === themesToUpdate.id })
@@ -864,7 +846,6 @@ class CXLImporter {
               let themesToInclude = importedCodebook.themes.filter(importedCodebookTheme => !(previousCodebookIDs.includes(importedCodebookTheme.id)))
               if (themesToInclude[0]) {
                 themesToInclude = themesToInclude.filter(importedCodebookTheme => !(previousCodebookNames.includes(importedCodebookTheme.name)))
-                console.log(themesToInclude)
                 if (themesToInclude[0]) {
                   themesToInclude.forEach(themeToInclude => {
                     const newThemeAnnotation = themeToInclude.toAnnotation()
@@ -880,7 +861,6 @@ class CXLImporter {
               }
               // REMOVE OLD THEMES
               const themesToRemove = previousCodebook.themes.filter(previousCodebookTheme => !(importedCodebookIDs.includes(previousCodebookTheme.id)))
-              console.log(themesToRemove)
               themesToRemove.forEach(themeToRemove => {
                 const annotationsToDelete = [themeToRemove.id]
                 window.cag.annotationServerManager.client.deleteAnnotations(annotationsToDelete, (err, result) => {
@@ -897,15 +877,13 @@ class CXLImporter {
               const relationshipsToUpdate = candidateRelationshipsToUpdate.filter(relationshipToUpdate => {
                 const elementsToCompare = previousRelationships.filter(previousRelationship => previousRelationship.id === relationshipToUpdate.id)
                 if (elementsToCompare.length > 1) {
-                  console.log('problems:' + elementsToCompare)
+                  // Multiple previous relationships match; proceed with the first one
                 }
                 const elementToCompare = elementsToCompare[0]
                 return !(relationshipToUpdate.fromConcept.id === elementToCompare.fromConcept.id) || !(relationshipToUpdate.toConcept.id === elementToCompare.toConcept.id) || !(relationshipToUpdate.linkingWord === elementToCompare.linkingWord)
               })
-              console.log(relationshipsToUpdate)
               // INCLUDE NEW RELATIONSHIPS
               let relationshipsToInclude = importedRelationships.filter(importedRelationship => !(previousRelationshipsIDs.includes(importedRelationship.id)))
-              console.log(relationshipsToInclude)
               relationshipsToInclude = relationshipsToInclude.concat(relationshipsToUpdate)
               if (relationshipsToInclude[0]) {
                 relationshipsToInclude.forEach(relationshipToInclude => {
@@ -923,7 +901,6 @@ class CXLImporter {
               }
               // REMOVE OLD RELATIONSHIPS
               const relationshipsToRemove = previousRelationships.filter(previousRelationship => !(importedRelationshipsIDs.includes(previousRelationship.id)))
-              console.log(relationshipsToRemove)
               if (relationshipsToRemove[0]) {
                 let annotationsToDelete = []
                 relationshipsToRemove.forEach(relationship => {

@@ -13,7 +13,6 @@ class UserFilter {
   }
 
   init (callback) {
-    console.debug('Initializing UserFilter')
     this.initUserFilterStructure((err) => {
       if (err) {
         // Handle error
@@ -27,7 +26,6 @@ class UserFilter {
         this.initAllFilter()
         // Init panel construction
         this.initUsersPanel()
-        console.debug('Initialized UserFilter')
         if (_.isFunction(callback)) {
           callback()
         }

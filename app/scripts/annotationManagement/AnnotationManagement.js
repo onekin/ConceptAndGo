@@ -57,11 +57,9 @@ class AnnotationManagement {
           window.abwa.sidebar.openSidebar()
         }
       } else {
-        console.debug('Current selection is empty')
         // If selection is child of sidebar, return null
         if ($(event.target).parents('#abwaSidebarWrapper').toArray().length === 0 &&
           event.target.id !== 'context-menu-layer') {
-          console.debug('Current selection is not child of the annotator sidebar')
           window.abwa.sidebar.closeSidebar()
         }
       }
@@ -104,7 +102,6 @@ class AnnotationManagement {
       // If go to annotation is done by init annotation and it is not found, wait for some seconds for ajax content to be loaded and try again to go to annotation
       if (!_.isElement(firstElementToScroll) && !_.isNumber(this.initializationTimeout)) { // It is done only once, if timeout does not exist previously (otherwise it won't finish never calling goToAnnotation
         this.initializationTimeout = setTimeout(() => {
-          console.debug('Trying to scroll to init annotation in 2 seconds')
           this.initAnnotatorByAnnotation()
         }, 2000)
       } else {

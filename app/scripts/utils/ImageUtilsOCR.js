@@ -4,7 +4,6 @@ import Tesseract from 'tesseract.js'
 
 class ImageUtilsOCR {
   static getStringFromImage (imgElement) {
-    console.log(imgElement.src)
     return Tesseract.recognize(
       imgElement.src,
       'eng',

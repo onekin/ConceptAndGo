@@ -264,21 +264,18 @@ class Buttons {
         tagButton.draggable = true
         // On drag start function
         tagButton.addEventListener('dragstart', Buttons.createDragStartHandler(id, ondragstart))
-        console.log('DragSTART')
       }
       if (_.isFunction(ondragover)) {
         // On dragover function
         tagButton.addEventListener('dragover', (event) => {
           event.stopPropagation()
           tagButton.style.backgroundColor = 'rgba(150,150,150,0.5)'
-          console.log('DragOVER')
         })
       }
       if (_.isFunction(ondragleave)) {
         tagButton.addEventListener('dragleave', (event) => {
           event.stopPropagation()
           tagButton.style.backgroundColor = tagButton.dataset.baseColor
-          console.log('DragLEAVE')
         })
       }
       if (_.isFunction(ondrop)) {
@@ -290,7 +287,6 @@ class Buttons {
           } else {
             tagButton.style.backgroundColor = tagButton.dataset.baseColor
           } */
-          console.log('DragDROP')
         })
       }
       // Tag button background color change

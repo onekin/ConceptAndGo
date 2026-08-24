@@ -15,7 +15,6 @@ class TargetManager {
   init () {
     // Requests to doi.org
     chrome.webRequest.onHeadersReceived.addListener((responseDetails) => {
-      console.debug(responseDetails)
       const locationIndex = _.findIndex(responseDetails.responseHeaders, (header) => header.name === 'location')
       const locationUrl = responseDetails.responseHeaders[locationIndex].value
       try {
@@ -65,7 +64,6 @@ class TargetManager {
           if (params && params[Config.urlParamName]) {
             annotationId = params[Config.urlParamName]
           }
-          console.debug(requestHeaders)
           if (doi && annotationId) {
             const redirectUrl = requestHeaders.url + '#doi:' + doi + '&' + Config.urlParamName + ':' + annotationId
             chrome.tabs.update(requestHeaders.tabId, { url: redirectUrl })

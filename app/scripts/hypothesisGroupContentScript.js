@@ -3,7 +3,6 @@ import HypothesisClientManager from './annotationServer/hypothesis/HypothesisCli
 import _ from 'lodash'
 const selectedGroupNamespace = 'hypothesis.currentGroup'
 
-console.log('Loaded hypothesis group content script')
 
 window.addEventListener('load', () => {
   // Retrieve last saved group
@@ -32,7 +31,6 @@ window.addEventListener('load', () => {
                 if (group) {
                   // Save to chrome storage current group
                   ChromeStorage.setData(selectedGroupNamespace, { data: JSON.stringify(group) }, ChromeStorage.local, () => {
-                    console.log('Set as group: ' + group.name)
                   })
                 }
               }

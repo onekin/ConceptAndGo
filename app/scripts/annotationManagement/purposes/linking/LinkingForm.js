@@ -139,7 +139,6 @@ class LinkingForm {
       Alerts.simpleSuccessAlert({ text: 'Saved', callback: returnToLinkingForm })
     }
     const cancelCallback = () => {
-      console.log('new link canceled')
     }
     return { onBeforeOpen: onBeforeOpen, preConfirm: preConfirm, preDeny: preDeny, callback: callback, denyCallback: denyCallback, cancelCallback: cancelCallback }
   }

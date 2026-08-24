@@ -121,7 +121,6 @@ class ReadCodebook {
    * @param callback
    */
   loadCodebook (callback) {
-    console.debug('Reading codebook')
     this.initCodebookStructure(() => {
       this.initCodebookContent(callback)
     })
@@ -508,12 +507,10 @@ class ReadCodebook {
                 if (err) {
                   console.error('Error while retrieving user profile in hypothesis')
                 } else {
-                  console.log(userProfile)
                   const groupId = window.abwa.groupSelector.currentGroup.id
                   const groupName = window.abwa.groupSelector.currentGroup.name.toLowerCase().replace(/ /g, '-')
                   const query = '?q=tag:' + Config.namespace + ':' + Config.tags.grouped.group + ':' + theme.name.replace(/ /g, '+')
                   const url = 'https://hypothes.is/groups/' + groupId + '/' + groupName + query
-                  console.log(url)
                   window.open(url)
                 }
               })

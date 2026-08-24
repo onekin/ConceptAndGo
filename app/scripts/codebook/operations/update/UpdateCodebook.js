@@ -169,7 +169,6 @@ class UpdateCodebook {
           LanguageUtils.dispatchCustomEvent(Events.createTheme, { theme: newTheme, target: target })
         },
         cancelCallback: () => {
-          console.log('new theme canceled')
         }
       })
     })
@@ -179,7 +178,6 @@ class UpdateCodebook {
         updateMetaConcept: {
           name: 'Rename meta-concept',
           callback: function () {
-            console.log('RENAMING!! ' + dimension.name)
           }
         },
         removeMetaConcept: {
@@ -271,7 +269,6 @@ class UpdateCodebook {
             LanguageUtils.dispatchCustomEvent(Events.createDimension, { dimension: newDimension, target: target })
           },
           cancelCallback: () => {
-            console.log('new dimension canceled')
           }
         })
       } else {
@@ -379,7 +376,6 @@ class UpdateCodebook {
               const linkingBody = linkingAnnotation.body[0]
               return linkingBody.value.from.id === conceptId || linkingBody.value.to === conceptId
             })
-            console.log(linkingAnnotationToRemove)
             const linkingsId = _.map(linkingAnnotationToRemove, (annotation) => { return annotation.id })
             if (_.every(linkingsId, _.isString)) {
               annotationsToDelete = annotationsToDelete.concat(linkingsId)
@@ -537,7 +533,6 @@ class UpdateCodebook {
             const linkingBody = linkingAnnotation.body[0]
             return linkingBody.value.from.id === theme.id || linkingBody.value.to === theme.id
           })
-          console.log(linkingAnnotationToRemove)
           const linkingsId = _.map(linkingAnnotationToRemove, (annotation) => { return annotation.id })
           if (_.every(linkingsId, _.isString)) {
             annotationsToDelete = annotationsToDelete.concat(linkingsId)
@@ -602,7 +597,6 @@ class UpdateCodebook {
           title: 'Merging',
           text: 'All the annotations from ' + theme.name + ' are going to be included for concept ' + conceptWhereMerge.name + '. Are you sure?',
           callback: () => {
-            console.log('TODO: DELETE ' + theme.name + ' and UPDATE ' + conceptWhereMerge.name)
             // Find concept annotations
             const themeAnnotations = window.abwa.mapContentManager.concepts.find((concept) => {
               return concept.theme.id === theme.id
@@ -616,7 +610,6 @@ class UpdateCodebook {
             const linkingAnnotations = relationships.filter((relationship) => {
               return (relationship.fromConcept.id === theme.id) || (relationship.toConcept.id === theme.id)
             }).map(elem => elem.evidenceAnnotations).reduce((acc, val) => acc.concat(val), [])
-            console.log(linkingAnnotations)
             linkingAnnotations.forEach(linkingAnnotation => {
               for (let i = 0; i < linkingAnnotation.tags.length; i++) {
                 let tag = linkingAnnotation.tags[i]

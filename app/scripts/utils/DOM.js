@@ -14,7 +14,6 @@ class DOM {
           element = document.querySelector('#' + selector.value)
         }
         /* else if(selector.type==='RangeSelector'){
-         console.log(selector.value);
          element = document.evaluate('//body'+selector.value, document, null, XPathResult.ANY_TYPE, null);
          } */
       }

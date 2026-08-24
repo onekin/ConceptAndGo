@@ -52,7 +52,7 @@ class HypothesisBackgroundManager {
     this.annotationServerManager = new HypothesisClientBackground(this)
     this.annotationServerManager.init((err) => {
       if (err) {
-        console.debug('Unable to initialize hypothesis client manager. Error: ' + err.message)
+        // Nothing to do on init failure
       }
     })
   }

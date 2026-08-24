@@ -2,7 +2,6 @@ import AnnotationBasedInitializer from './contentScript/AnnotationBasedInitializ
 import ContentScriptManager from './contentScript/ContentScriptManager'
 const _ = require('lodash')
 
-console.debug('Loaded abwa content script')
 if (_.isEmpty(window.abwa)) {
   window.abwa = {} // Global namespace for variables
   // Add listener for popup button click
@@ -27,7 +26,6 @@ if (_.isEmpty(window.abwa)) {
   if (annotation) {
     // If extension is not activated, activate
     chrome.runtime.sendMessage({ scope: 'extension', cmd: 'activatePopup' }, () => {
-      console.debug('Activated popup by annotation')
     })
   } else {
     // Check if button is activated for this tab

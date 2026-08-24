@@ -161,7 +161,6 @@ class DOMTextUtils {
       if (_.isElement(pageElement)) {
         fragmentElement = pageElement
       } else {
-        console.debug('Document page is not loaded, annotation missing.')
         return null
       }
     } else {

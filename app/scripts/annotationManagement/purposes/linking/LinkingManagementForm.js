@@ -257,7 +257,6 @@ class LinkingManagementForm {
       })
     }
     let cancelCallback = () => {
-      console.log('new link canceled')
     }
     return { onBeforeOpen: onBeforeOpen, preConfirm: preConfirm, callback: callback, cancelCallback: cancelCallback }
   }
@@ -268,7 +267,6 @@ class LinkingManagementForm {
     annotations = annotations.map(annotation => {
       const linkingBody = annotation.getBodyForPurpose(Linking.purpose)
       if (linkingBody) {
-        console.log(linkingBody)
         let value = {}
         value.from = data.fromTheme.id
         value.to = data.toTheme.id
@@ -281,7 +279,6 @@ class LinkingManagementForm {
       annotation.tags = tags
       return annotation
     })
-    console.log(annotations)
     const promises = annotations.forEach((annotation) => {
       return new Promise((resolve, reject) => {
         window.abwa.annotationServerManager.client.updateAnnotation(annotation.id, annotation.serialize(), (err, annotation) => {

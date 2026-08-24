@@ -98,7 +98,6 @@ class Codebook {
 
   static fromAnnotations (annotations, callback) {
     // return Codebook
-    console.log(annotations)
     const guideAnnotation = _.remove(annotations, (annotation) => {
       return _.some(annotation.tags, (tag) => { return tag === Config.namespace + ':guide' })
     })
