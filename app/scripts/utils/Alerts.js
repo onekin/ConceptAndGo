@@ -148,7 +148,7 @@ class Alerts {
     } else {
       swal.fire({
         position: position,
-        type: type,
+        icon: type,
         title: title, // TODO i18n
         html: text,
         showConfirmButton: false,
@@ -202,7 +202,7 @@ class Alerts {
         inputPlaceholder: inputPlaceholder,
         inputValue: inputValue,
         html: html,
-        type: type,
+        icon: type,
         preConfirm: preConfirm,
         allowOutsideClick,
         allowEscapeKey,
@@ -354,7 +354,7 @@ class Alerts {
       }
     } else {
       swal.fire({
-        type: Alerts.alertType.warning,
+        icon: Alerts.alertType.warning,
         title: title,
         html: text
       })
